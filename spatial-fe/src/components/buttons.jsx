@@ -12,8 +12,8 @@ const Button = ({ size, text }) => {
       <button
         className={`${
           isActive
-            ? 'bg-[#E70362] text-white rounded-none'
-            : 'bg-white border-2 border-black rounded-none text-black hover:bg-[#E70362] hover:text-white hover:border-transparent'
+            ? 'bg-brand text-white rounded-none'
+            : 'bg-white border-2 border-black rounded-none text-black hover:bg-brand hover:text-white hover:border-transparent'
         } p-3 text-lg font-medium cursor-pointer transition-all duration-300`}
         style={{ width: size.width, height: size.height }}
         onClick={handleClick}
