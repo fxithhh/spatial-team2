@@ -1,22 +1,15 @@
 import React, { useState } from 'react';
 
-const Button = ({ size, text }) => {
-  const [isActive, setIsActive] = useState(false);
-
-  const handleClick = () => {
-    setIsActive(!isActive);
-  };
+const Button = ({ size, text, isActive, onClick }) => {
 
   return (
-    <div className="flex p-2 font-['Roboto']">
+    <div className="flex font-['Roboto']">
       <button
-        className={`${
-          isActive
-            ? 'bg-brand text-white rounded-none'
-            : 'bg-white border-2 border-black rounded-none text-black hover:bg-brandhover hover:text-white hover:border-transparent'
-        } p-3 text-lg font-medium cursor-pointer transition-all duration-300`}
+      className={`p-3 text-lg font-medium cursor-pointer transition-all duration-300 rounded-none
+        ${isActive ? 'bg-brand text-white' : 'bg-white border-2 border-black rounded-none text-black hover:bg-brandhover hover:text-white hover:border-transparent'}
+         px-4 py-2`}
         style={{ width: size.width, height: size.height }}
-        onClick={handleClick}
+        onClick={onClick}
       >
         {text}
       </button>

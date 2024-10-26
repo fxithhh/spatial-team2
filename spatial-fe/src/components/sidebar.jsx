@@ -12,18 +12,18 @@ function Sidebar() {
         text="Create New Exhibit"
       />
       <div className="flex items-center justify-between mb-[30px] pt-[50px]">
-        <h3 className="text-lg font-bold">Recent Exhibits</h3>
+        <h3 className="text-lg font-['Roboto'] font-bold">Recent Exhibits</h3>
         <MagnifyingGlassIcon className="h-5 w-5 text-gray-700 cursor-pointer" />
       </div>
       <ul className="space-y-2 flex flex-col items-center">
         {config.exhibits.map((exhibit) => (
           <li
             key={exhibit.id}
-            className="w-[275px] h-[75px] border-b border-gray-300 flex items-center justify-center"
+            className="w-[275px] h-[75px] border-b border-gray-300 flex items-center justify-center transition duration-300 hover:border-b-4 hover:border-brand"
           >
             <Link
               to={`/exhibitions/${exhibit.id}`}
-              className="text-black text-[24px] font-500 tracking-wider uppercase text-center font-['Roboto_Condensed']"
+              className="text-black text-2xl font-500 tracking-wider uppercase text-center font-['Roboto_Condensed']"
             >
               {exhibit.title}
             </Link>
@@ -32,7 +32,7 @@ function Sidebar() {
         <li>
           <Link
             to="/exhibitions"
-            className="text-gray-500 text-center font-roboto font-medium mt-[15px] flex items-center justify-center"
+            className="text-gray-500 text-center font-['Roboto'] text-lg font-medium mt-[15px] flex items-center justify-center"
           >
             See all
           </Link>
