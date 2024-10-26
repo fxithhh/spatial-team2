@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import config from '../data/config.json';
 
 function Guidelines() {
     // State to hold the values of each slider
@@ -6,8 +9,26 @@ function Guidelines() {
         safety_distance: 25,
         corridor_width: 1.1,
         hose_length: 30,
-        hose_radius: 300
+        hose_radius: 300,
+        selectedExhibit: null,
     });
+
+    // drop down button to choose exhibit
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Toggle dropdown visibility
+    const toggleDropdown = () => {
+        setIsOpen(!isOpen);
+    };
+
+    // Handle exhibit selection in dropdown
+    const handleExhibitSelect = (exhibit) => {
+        setValues((prevValues) => ({
+            ...prevValues,
+            selectedExhibit: exhibit,
+        }));
+        setIsOpen(false); // Close dropdown
+    };
 
     // Handler to update state when slider value changes
     const handleChange = (event) => {
@@ -22,15 +43,49 @@ function Guidelines() {
     const handleSubmit = (event) => {
         event.preventDefault();
         console.log("Form Values:", values);
+        toast.success("Form submitted successfully!");
     };
 
     return (
         <div className="my-12 mx-auto w-1/2">
+
             <h1 className="text-5xl font-semibold mb-4">Guidelines Settings</h1>
             <p className="text-gray-500 text-2xl">Key guidelines for fire safety and emergency exits compliance.</p>
+
+            {/* form */}
             <div className="my-8">
                 <form onSubmit={handleSubmit} className="space-y-4">
 
+                    {/* Choose Exhibit Dropdown */}
+                    <div className="my-8 w-1/2">
+                        <button
+                            onClick={toggleDropdown}
+                            className="px-4 py-2 border-2 border-black font-semibold focus:outline-none"
+                            type="button"
+                        >
+                            {values.selectedExhibit ? values.selectedExhibit.title : "Select an Exhibit"}
+                        </button>
+
+                        {/* Dropdown menu */}
+                        {isOpen && (
+                            <div className="absolute z-10 mt-2 bg-white border border-gray-300 rounded-md shadow-lg">
+                                <ul className="max-h-60 overflow-y-auto">
+                                    {config.exhibits.map((exhibit) => (
+                                        <li
+                                            key={exhibit.id}
+                                            className="px-4 py-2 text-gray-800 hover:bg-gray-100 cursor-pointer"
+                                            onClick={() => {
+                                                console.log(`Selected exhibit: ${exhibit.title}`);
+                                                handleExhibitSelect(exhibit); // Close dropdown on selection
+                                            }}
+                                        >
+                                            {exhibit.title}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
                     {/* Safety Travel Distance Slider */}
                     <div className='my-4'>
                         <div className='grid grid-cols-2'>
@@ -115,6 +170,7 @@ function Guidelines() {
                         </button>
                     </div>
                 </form>
+                <ToastContainer />
             </div>
         </div>
     );

@@ -2,17 +2,12 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Canvas from '../components/canvas'
 import ArtworkCard from '../components/artwork_card';
+import config from '../data/config.json';
 
-// Example exhibits data (same as in Exhibitions.js, could be from API or database)
-const exhibits = [
-    { id: 1, title: 'Everyday Practices', description: 'A deep dive into modern art.' },
-    { id: 2, title: 'Learning Gallery', description: 'A collection of sculptures.' },
-    { id: 3, title: 'ChildISH', description: 'Iconic photography exhibits.' },
-];
 
 function ExhibitDetail() {
     const { id } = useParams();
-    const exhibit = exhibits.find((exhibit) => exhibit.id === parseInt(id));
+    const exhibit = config.exhibits.find((exhibit) => exhibit.id === parseInt(id));
 
     // adding a shape
     const [shapes, setShapes] = useState([]); // State for shapes

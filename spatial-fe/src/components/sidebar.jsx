@@ -2,13 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Button from '../components/buttons';
-
-// Example exhibits data
-const exhibits = [
-  { id: 1, title: 'Everyday Practices', description: 'A deep dive into modern art.', image: require('../assets/everyday_practices.jpeg') },
-  { id: 2, title: 'Learning Gallery', description: 'A collection of sculptures.', image: require('../assets/learning_gallery.jpg') },
-  { id: 3, title: 'ChildISH', description: 'Iconic photography exhibits.', image: require('../assets/childish.jpg') },
-];
+import config from '../data/config.json';
 
 function Sidebar() {
   return (
@@ -22,7 +16,7 @@ function Sidebar() {
         <MagnifyingGlassIcon className="h-5 w-5 text-gray-700 cursor-pointer" />
       </div>
       <ul className="space-y-2 flex flex-col items-center">
-        {exhibits.map((exhibit) => (
+        {config.exhibits.map((exhibit) => (
           <li
             key={exhibit.id}
             className="w-[275px] h-[75px] border-b border-gray-300 flex items-center justify-center"
