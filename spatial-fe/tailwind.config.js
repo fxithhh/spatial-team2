@@ -6,7 +6,8 @@ module.exports = {
     extend: {
       colors:{
         brand: "#E70362",
-        brandhover: "#B0034B"
+        brandhover: "#B0034B",
+        linkhover: "#ffcccb"
       }
     },
   },

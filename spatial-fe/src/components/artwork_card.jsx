@@ -14,8 +14,8 @@ function ArtworkCard() {
           <img className="w-[131px] h-[131px]" src={item.image} alt={item.title} /> {/* Reduced image size slightly to prevent overlap */}
           <div className="p-[24px]">
             <h1 className="font-['Roboto_Condensed'] font-bold text-black text-[24px] overflow-ellipsis wh-fit">{item.title}</h1>
-            <h2 className="font-['Roboto'] font-extralight text-[#979797] text-[20px] overflow-hidden text-ellipsis wh-fit">{item.artist}</h2>
-            <p className="font-['Roboto'] font-bold text-[#979797] text-[16px] overflow-hidden text-ellipsis wh-fit">{item.date}</p>
+            <h2 className="font-['Roboto'] font-extralight text-gray-600 text-[20px] overflow-hidden text-ellipsis wh-fit">{item.artist}</h2>
+            <p className="font-['Roboto'] font-bold text-gray-600 text-[16px] overflow-hidden text-ellipsis wh-fit">{item.date}</p>
           </div>
         </div>
       ))}

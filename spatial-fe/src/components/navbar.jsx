@@ -12,13 +12,13 @@ function NavBar({ onSidebarToggle }) {
         <div className="text-white text-2xl font-medium ml-2">Logo</div>
       </div>
       <div className="flex space-x-7">
-        <Link to="/" className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-[#ffcccb]">
+        <Link to="/" className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-linkhover">
           Home
         </Link>
-        <Link to="/guidelines" className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-[#ffcccb]">
+        <Link to="/guidelines" className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-linkhover">
           Guidelines
         </Link>
-        <div className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-[#ffcccb]">
+        <div className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-linkhover">
           Profile
         </div>
       </div>
