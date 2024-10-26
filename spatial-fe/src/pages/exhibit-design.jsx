@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Canvas from '../components/canvas'
+import ArtworkCard from '../components/artwork_card';
 
 // Example exhibits data (same as in Exhibitions.js, could be from API or database)
 const exhibits = [
@@ -31,15 +32,18 @@ function ExhibitDetail() {
     }
 
     return (
-        <div className='grid grid-cols-2 gap-10 m-4'>
-                <Canvas shapes={shapes}/>
-            <div className="ml-8">
+        <div className='grid grid-cols-2 m-[75px] gap-[75px]'>
+            <Canvas shapes={shapes} className='w-full'/>
+            <div>
                 <h1 className="text-3xl font-bold mb-4">{exhibit.title}</h1>
                 <p className="text-lg text-gray-700">{exhibit.description}</p>
                 <p className="text-sm text-gray-500">Exhibit ID: {exhibit.id}</p>
                 <button onClick={addShape} className="mt-4 p-2 bg-blue-500 text-white rounded">
                     Add Circle
                 </button>
+                <div>
+                    <ArtworkCard/>
+                </div>
             </div>
         </div>
     );
