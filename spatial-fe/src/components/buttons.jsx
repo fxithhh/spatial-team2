@@ -8,7 +8,7 @@ const Button = ({ size, text }) => {
   };
 
   return (
-    <div className="flex p-2">
+    <div className="flex p-2 font-['Roboto']">
       <button
         className={`${
           isActive
