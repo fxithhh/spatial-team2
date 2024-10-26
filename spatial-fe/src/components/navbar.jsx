@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bars3Icon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 
 function NavBar() {
   return (
@@ -12,12 +13,12 @@ function NavBar() {
           <div className="text-white text-2xl font-medium ml-2">Logo</div>
         </div>
         <div className="flex space-x-7">
-          <div className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-[#ffcccb]">
+          <Link to="/" className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-[#ffcccb]">
             Home
-          </div>
-          <div className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-[#ffcccb]">
+          </Link>
+          <Link to="/guidelines" className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-[#ffcccb]">
             Guidelines
-          </div>
+          </Link>
           <div className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-[#ffcccb]">
             Profile
           </div>
