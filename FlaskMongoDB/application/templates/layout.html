@@ -1,11 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<div><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>MongoDB CRUD Operations</title>
 </head>
 <body>
-    <h2>Hello WORLD!!</h2>
+    <h2>Upload JSON File</h2>
+    <form id="jsonUploadForm" enctype="multipart/form-data">
+        <label for="jsonFile">Choose a JSON file:</label>
+        <input type="file" id="jsonFile" name="jsonFile" accept=".json" required>
+        <br><br>
+        <button type="button" onclick="uploadJSON()">Upload</button>
+    </form>
+
+    <h2>View All JSON Data</h2>
+    <button type="button" onclick="getJSON()">View All Data</button>
+    <pre id="jsonDisplay"></pre>
+
+    <h2>Update JSON Entry</h2>
+    <form id="jsonUpdateForm" enctype="multipart/form-data">
+        <label for="updateId">Enter ID to Update:</label>
+        <input type="text" id="updateId" name="updateId" required>
+        <br><br>
+        <label for="updateFile">Choose JSON file to update data:</label>
+        <input type="file" id="updateFile" name="updateFile" accept=".json" required>
+        <br><br>
+        <button type="button" onclick="updateJSON()">Update</button>
+    </form>
+
+    <h2>Delete JSON Entry</h2>
+    <form id="jsonDeleteForm">
+        <label for="deleteId">Enter ID to Delete:</label>
+        <input type="text" id="deleteId" name="deleteId" required>
+        <br><br>
+        <button type="button" onclick="deleteJSON()">Delete</button>
+    </form>
+</div>
+
+
+    <script>
+        // Upload JSON file to MongoDB
+        function uploadJSON() {
+            const formData = new FormData(document.getElementById("jsonUploadForm"));
+            fetch("/upload_json", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || data.error);
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        // Retrieve all JSON entries from MongoDB
+        function getJSON() {
+            fetch("/get_json")
+            .then(response => response.json())
+            .then(data => {
+                const jsonDisplay = document.getElementById("jsonDisplay");
+                jsonDisplay.textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        // Update a JSON entry by ID
+        function updateJSON() {
+        const id = document.getElementById("updateId").value;
+        const fileInput = document.getElementById("updateFile");
+        
+        if (fileInput.files.length === 0) {
+            alert("Please select a JSON file to update.");
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            try {
+                // Parse the file content as JSON
+                const updateData = JSON.parse(event.target.result);
+
+                // Send the parsed JSON to the update endpoint
+                fetch(`/update_json/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(updateData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message || data.error);
+                })
+                .catch(error => console.error("Error:", error));
+            } catch (e) {
+                alert("Invalid JSON format in file.");
+            }
+        };
+
+        reader.readAsText(file); // Read the file as text
+    }
+
+        // Delete a JSON entry by ID
+        function deleteJSON() {
+            const id = document.getElementById("deleteId").value;
+
+            fetch(`/delete_json/${id}`, {
+                method: "DELETE"
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || data.error);
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
 </body>
 </html>
