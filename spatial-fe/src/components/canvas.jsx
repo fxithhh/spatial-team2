@@ -302,7 +302,7 @@ function Canvas({ floorplanImage }) {
             }
 
             function drawGrid() {
-                p.stroke(0, 0, 0, 50); // Thin black lines
+                p.stroke(0, 0, 0, 10); // Thin black lines
                 // Draw vertical lines
                 for (let i = 0; i <= cols; i++) {
                     let x = minX + i * cellSizePx;
@@ -338,16 +338,21 @@ function Canvas({ floorplanImage }) {
             }
 
             function drawHandles(x, y, w, h) {
-                p.fill(0, 0, 255);
-                p.noStroke();
-                let handleSize = 8;
-
-                // Corners
-                p.ellipse(x, y, handleSize);
-                p.ellipse(x + w, y, handleSize);
-                p.ellipse(x, y + h, handleSize);
-                p.ellipse(x + w, y + h, handleSize);
+                p.noFill(); // No fill for the handles
+                p.stroke(0); // Black outline
+                let handleSize = 4;
+            
+                // Draw small squares at the corners inside the rectangle
+                // Top-left corner
+                p.rect(x, y, handleSize, handleSize);
+                // Top-right corner
+                p.rect(x + w - handleSize, y, handleSize, handleSize);
+                // Bottom-left corner
+                p.rect(x, y + h - handleSize, handleSize, handleSize);
+                // Bottom-right corner
+                p.rect(x + w - handleSize, y + h - handleSize, handleSize, handleSize);
             }
+            
 
             function drawLegend() {
                 p.fill(0);
