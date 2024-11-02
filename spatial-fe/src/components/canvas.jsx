@@ -599,7 +599,7 @@ function Canvas({ floorplanImage }) {
 
                         let blackPercentage = (blackPixels / totalPixels) * 100;
 
-                        if (blackPercentage >= 25) {
+                        if (blackPercentage >= 27) {
                             // Add this cell as a wall
                             walls.push({
                                 x: col,
