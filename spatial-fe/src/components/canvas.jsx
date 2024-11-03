@@ -42,6 +42,10 @@ function Canvas({ floorplanImage }) {
             let paths = []; // Stores paths from secluded cells to exits
             let showImage = true; // Flag to control image display
             let checkedCorners = []; // Array to store checked corner cells
+            let grid = []; // Grid to store cell information
+            let mainRegionId = -1;
+            let narrowCorridorCells = []; // Cells to be marked as narrow corridors
+            let wallsChanged = false; // Flag to indicate walls have changed
 
             p.preload = function () {
                 floorplanImg = p.loadImage(floorplanImage);
@@ -102,7 +106,7 @@ function Canvas({ floorplanImage }) {
                 calculateExtremeEdges();
                 if (isScaleDefined) {
                     defineGridFromExtremes();
-                    processGridCells(); // Reprocess grid cells on resize
+                    wallsChanged = true; // Indicate walls need to be reprocessed
                 }
 
                 // Adjust button position
@@ -146,12 +150,18 @@ function Canvas({ floorplanImage }) {
                 }
 
                 if (isScaleDefined) {
+                    if (wallsChanged) {
+                        processGridCells();
+                        wallsChanged = false;
+                    }
+
                     drawGrid();
                     drawWalls();
                     drawSecludedCells();
                     drawPaths();
+                    drawNarrowCorridors(); // Draw narrow corridors
                     drawLegend();
-                
+
                     // Highlight checked corner cells
                     p.fill(255, 0, 0, 100); // Red with transparency
                     p.noStroke();
@@ -161,7 +171,6 @@ function Canvas({ floorplanImage }) {
                         p.rect(x, y, cellSizePx, cellSizePx);
                     }
                 }
-                
             };
 
             p.mousePressed = function () {
@@ -184,8 +193,10 @@ function Canvas({ floorplanImage }) {
                                 defineGridFromExtremes();
                                 isScaleDefined = true;
 
-                                // Process the grid cells after scale is defined
-                                processGridCells();
+                                // Detect autowalls from the floorplan image
+                                detectAutowallsFromImage();
+
+                                wallsChanged = true;
 
                                 // Remove the image after processing
                                 showImage = false;
@@ -245,10 +256,16 @@ function Canvas({ floorplanImage }) {
                 if (isDrawing) {
                     adjustWallPositionAndSize(currentWall);
                     isDrawing = false;
-                    currentWall = null;
+                    wallsChanged = true; // Walls have changed
+                    // Keep currentWall selected
                 } else if (isResizing) {
                     isResizing = false;
+                    wallsChanged = true; // Walls have changed
                     resizeHandle = null;
+                    // Keep currentWall selected
+                } else if (currentWall) {
+                    wallsChanged = true; // Walls have changed
+                    // Keep currentWall selected
                 }
             };
 
@@ -261,8 +278,10 @@ function Canvas({ floorplanImage }) {
                     currentTool = 'wall';
                 } else if (p.keyCode === p.BACKSPACE || p.keyCode === p.DELETE) {
                     if (currentWall && currentWall.type !== 'autoWall') {
+                        // Remove the wall
                         walls.splice(walls.indexOf(currentWall), 1);
-                        currentWall = null;
+                        wallsChanged = true; // Walls have changed
+                        currentWall = null; // Deselect the wall
                     }
                 }
             };
@@ -464,15 +483,16 @@ function Canvas({ floorplanImage }) {
                 p.text(
                     `Grid cell: ${cellSize} cm x ${cellSize} cm`,
                     p.width - 10,
-                    p.height - 55
+                    p.height - 70
                 );
-                p.text(`Current tool: ${currentTool}`, p.width - 10, p.height - 40);
+                p.text(`Current tool: ${currentTool}`, p.width - 10, p.height - 55);
                 p.text(
                     'Press W: Wall, E: Entrance, F: Fire Escape',
                     p.width - 10,
-                    p.height - 25
+                    p.height - 40
                 );
-                p.text('Click the button below to find paths.', p.width - 10, p.height - 10);
+                p.text('Click the button below to find paths.', p.width - 10, p.height - 25);
+                p.text('Narrow corridors are highlighted in red.', p.width - 10, p.height - 10);
             }
 
             function moveWall(gridPos) {
@@ -561,12 +581,60 @@ function Canvas({ floorplanImage }) {
                 return null;
             }
 
-            // New function to process grid cells after scale is defined
+            // Modified processGridCells function to create the grid
             function processGridCells() {
+                // Initialize grid
+                grid = [];
+                for (let col = 0; col < cols; col++) {
+                    grid[col] = [];
+                    for (let row = 0; row < rows; row++) {
+                        grid[col][row] = {
+                            isWall: false,
+                            isExit: false,
+                            x: col,
+                            y: row,
+                        };
+                    }
+                }
+
+                // Mark walls and exits in grid
+                for (let wall of walls) {
+                    if (wall.type === 'wall' || wall.type === 'autoWall') {
+                        for (let i = wall.x; i < wall.x + wall.w; i++) {
+                            for (let j = wall.y; j < wall.y + wall.h; j++) {
+                                if (i >= 0 && i < cols && j >= 0 && j < rows) {
+                                    grid[i][j].isWall = true;
+                                }
+                            }
+                        }
+                    } else if (wall.type === 'entrance' || wall.type === 'fireEscape') {
+                        for (let i = wall.x; i < wall.x + wall.w; i++) {
+                            for (let j = wall.y; j < wall.y + wall.h; j++) {
+                                if (i >= 0 && i < cols && j >= 0 && j < rows) {
+                                    grid[i][j].isExit = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Now, after processing the grid cells, label connected regions
+                labelConnectedRegions();
+
+                // Check corridor widths
+                checkCorridorWidths();
+            }
+
+            // Function to detect autowalls from floorplan image
+            function detectAutowallsFromImage() {
                 floorplanImg.loadPixels();
 
-                // Clear previous auto-detected walls
-                walls = walls.filter((wall) => wall.type !== 'autoWall');
+                // Remove auto-detected walls in place without reassigning walls array
+                for (let i = walls.length - 1; i >= 0; i--) {
+                    if (walls[i].type === 'autoWall') {
+                        walls.splice(i, 1);
+                    }
+                }
 
                 for (let col = 0; col < cols; col++) {
                     for (let row = 0; row < rows; row++) {
@@ -611,8 +679,169 @@ function Canvas({ floorplanImage }) {
                         }
                     }
                 }
+
+                wallsChanged = true; // Indicate that walls have changed and need to be processed
             }
 
+            // Function to label connected regions and identify the main room
+            function labelConnectedRegions() {
+                let regionId = 0;
+                let regionSizes = {};
+
+                for (let col = 0; col < cols; col++) {
+                    for (let row = 0; row < rows; row++) {
+                        grid[col][row].regionId = -1; // Initialize
+                    }
+                }
+
+                for (let col = 0; col < cols; col++) {
+                    for (let row = 0; row < rows; row++) {
+                        if (!grid[col][row].isWall && grid[col][row].regionId === -1) {
+                            // Start new region
+                            let count = floodFill(col, row, regionId);
+                            regionSizes[regionId] = count;
+                            regionId++;
+                        }
+                    }
+                }
+
+                // Find the mainRegionId with largest size
+                let maxSize = -1;
+                mainRegionId = -1;
+                for (let rid in regionSizes) {
+                    if (regionSizes[rid] > maxSize) {
+                        maxSize = regionSizes[rid];
+                        mainRegionId = parseInt(rid);
+                    }
+                }
+            }
+
+            function floodFill(col, row, regionId) {
+                let stack = [];
+                stack.push({ col, row });
+                let count = 0;
+
+                while (stack.length > 0) {
+                    let { col, row } = stack.pop();
+                    if (col < 0 || col >= cols || row < 0 || row >= rows) continue;
+                    let cell = grid[col][row];
+                    if (cell.isWall || cell.regionId !== -1) continue;
+                    cell.regionId = regionId;
+                    count++;
+
+                    // Push neighbors
+                    stack.push({ col: col + 1, row });
+                    stack.push({ col: col - 1, row });
+                    stack.push({ col, row: row + 1 });
+                    stack.push({ col, row: row - 1 });
+                }
+                return count;
+            }
+
+            // Function to check corridor widths and identify narrow corridors
+            function checkCorridorWidths() {
+                // First, initialize arrays for distances
+                let leftDist = [];
+                let rightDist = [];
+                let upDist = [];
+                let downDist = [];
+
+                for (let col = 0; col < cols; col++) {
+                    leftDist[col] = [];
+                    rightDist[col] = [];
+                    upDist[col] = [];
+                    downDist[col] = [];
+                }
+
+                // Compute leftDist
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        if (grid[col][row].isWall || grid[col][row].regionId !== mainRegionId) {
+                            leftDist[col][row] = 0;
+                        } else if (col === 0) {
+                            leftDist[col][row] = 1;
+                        } else {
+                            leftDist[col][row] = leftDist[col - 1][row] + 1;
+                        }
+                    }
+                }
+
+                // Compute rightDist
+                for (let row = 0; row < rows; row++) {
+                    for (let col = cols - 1; col >= 0; col--) {
+                        if (grid[col][row].isWall || grid[col][row].regionId !== mainRegionId) {
+                            rightDist[col][row] = 0;
+                        } else if (col === cols - 1) {
+                            rightDist[col][row] = 1;
+                        } else {
+                            rightDist[col][row] = rightDist[col + 1][row] + 1;
+                        }
+                    }
+                }
+
+                // Compute upDist
+                for (let col = 0; col < cols; col++) {
+                    for (let row = 0; row < rows; row++) {
+                        if (grid[col][row].isWall || grid[col][row].regionId !== mainRegionId) {
+                            upDist[col][row] = 0;
+                        } else if (row === 0) {
+                            upDist[col][row] = 1;
+                        } else {
+                            upDist[col][row] = upDist[col][row - 1] + 1;
+                        }
+                    }
+                }
+
+                // Compute downDist
+                for (let col = 0; col < cols; col++) {
+                    for (let row = rows - 1; row >= 0; row--) {
+                        if (grid[col][row].isWall || grid[col][row].regionId !== mainRegionId) {
+                            downDist[col][row] = 0;
+                        } else if (row === rows - 1) {
+                            downDist[col][row] = 1;
+                        } else {
+                            downDist[col][row] = downDist[col][row + 1] + 1;
+                        }
+                    }
+                }
+
+                // Now, for each cell in main room, compute spans and check widths
+                narrowCorridorCells = []; // Clear previous data
+
+                for (let col = 0; col < cols; col++) {
+                    for (let row = 0; row < rows; row++) {
+                        if (grid[col][row].isWall || grid[col][row].regionId !== mainRegionId) {
+                            continue;
+                        }
+
+                        let hSpan = leftDist[col][row] + rightDist[col][row] - 1;
+                        let vSpan = upDist[col][row] + downDist[col][row] - 1;
+
+                        let hWidth = hSpan * cellSize; // in cm
+                        let vWidth = vSpan * cellSize; // in cm
+
+                        let minimalWidth = Math.min(hWidth, vWidth);
+
+                        if (minimalWidth < 150) {
+                            // Mark the cell as narrow
+                            narrowCorridorCells.push({ x: col, y: row });
+                        }
+                    }
+                }
+            }
+
+            // Function to draw narrow corridors
+            function drawNarrowCorridors() {
+                if (narrowCorridorCells.length > 0) {
+                    p.fill(255, 0, 0, 100); // Red color with transparency
+                    p.noStroke();
+                    for (let cell of narrowCorridorCells) {
+                        let x = minX + cell.x * cellSizePx;
+                        let y = minY + cell.y * cellSizePx;
+                        p.rect(x, y, cellSizePx, cellSizePx);
+                    }
+                }
+            }
             // Implementing Theta* algorithm with optimizations
             function isCornerCell(grid, col, row) {
                 if (grid[col][row].isWall) return false;
