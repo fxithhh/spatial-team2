@@ -1,7 +1,10 @@
 from application import app, mongo, db
 from flask import render_template, request, jsonify
+from flask_cors import CORS
 import json
 from bson import ObjectId
+
+CORS(app)
 
 # Home route to render the HTML form
 @app.route("/")
