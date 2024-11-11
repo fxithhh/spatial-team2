@@ -73,7 +73,7 @@ function ExhibitDetail() {
     };
 
     return (
-        <div className='m-20'>
+        <div className='mx-20 my-12'>
             <Breadcrumb />
             {/* Choose Exhibit Dropdown */}
             <div className="my-8 flex">
@@ -159,17 +159,17 @@ function ExhibitDetail() {
                         ))}
                     </div>
 
-                    <div className="mt-4 border-2 border-black p-4">
+                    <div className="mt-4 border-2 border-black py-4 px-8">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-2xl font-['Roboto_Condensed'] font-semibold">Artwork Details</h3>
                             <button className="text-lg font-bold font-['Roboto_Condensed'] cursor-pointer transition-all duration-300 px-4 py-1 bg-brand text-white hover:bg-brandhover">
                                 <span>See Full Details</span>
                             </button>
                         </div>
-                        <div className="max-h-48 overflow-y-auto">
-                        {selectedArtwork && (
-                    <ArtworkCard artwork={selectedArtwork} /> // Pass the selected artwork as a prop
-                )}
+                        <div className="max-h-80 overflow-y-auto">
+                            {selectedArtwork && (
+                                <ArtworkCard artwork={selectedArtwork} /> // Pass the selected artwork as a prop
+                            )}
                         </div>
                     </div>
 
