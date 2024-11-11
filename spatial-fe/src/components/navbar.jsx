@@ -9,7 +9,7 @@ function NavBar({ onSidebarToggle }) {
         <div className="h-10 w-10 text-white cursor-pointer" onClick={onSidebarToggle}>
           <Bars3Icon />
         </div>
-        <div className="text-white text-2xl font-medium ml-2">Logo</div>
+        <img className="w-1/3 text-white text-2xl font-medium ml-2" src="/spatial-logo.png"></img>
       </div>
       <div className="flex space-x-7">
         <Link to="/" className="text-white text-2xl font-medium cursor-pointer transition-colors duration-300 hover:text-linkhover">

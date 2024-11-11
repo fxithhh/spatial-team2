@@ -1,8 +1,10 @@
+
+
 {
     "exhibits": [
-      { "id": 1, "title": "Everyday Practices", "description": "A deep dive into modern art.", "image": "../assets/everyday_practices.jpeg" },
-      { "id": 2, "title": "Learning Gallery", "description": "A collection of sculptures.", "image": "../assets/learning_gallery.jpg" },
-      { "id": 3, "title": "ChildISH", "description": "Iconic photography exhibits.", "image": "../assets/childish.jpg" }
+      { "id": 1, "title": "Everyday Practices", "description": "A deep dive into modern art.", "image": "assets/everyday_practices.jpeg" },
+      { "id": 2, "title": "Learning Gallery", "description": "A collection of sculptures.", "image": "assets/learning_gallery.jpg" },
+      { "id": 3, "title": "ChildISH", "description": "Iconic photography exhibits.", "image": "assets/childish.jpg" }
     ],
 
     "artworks": [

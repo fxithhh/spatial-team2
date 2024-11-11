@@ -5,9 +5,8 @@ const Button = ({ size, text, isActive, onClick }) => {
   return (
     <div className="flex font-['Roboto']">
       <button
-      className={`p-3 text-lg font-medium cursor-pointer transition-all duration-300 rounded-none
-        ${isActive ? 'bg-brand text-white' : 'bg-white border-2 border-black rounded-none text-black hover:bg-brandhover hover:text-white hover:border-transparent'}
-         px-4 py-2`}
+        className={`p-3 text-lg font-bold font-['Roboto_Condensed'] cursor-pointer transition-all duration-300 rounded-none
+         px-4 py-2 bg-brand text-white hover:bg-brandhover`}
         style={{ width: size.width, height: size.height }}
         onClick={onClick}
       >

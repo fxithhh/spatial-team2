@@ -5,7 +5,7 @@ function ArtworkCard({ artworks }) {
     <div className="flex flex-col space-y-[30px]">
       {artworks.map((item) => (
         <div key={item.id} className="w-full h-[135px] border-2 border-black flex flex-row p-0">
-          <img className="w-[131px] h-[131px]" src={item.image} alt={item.title} />
+          <img  className='w-1/4 object-cover' src={`${process.env.PUBLIC_URL}${item.image}`} alt={item.title} />
           <div className="p-6">
             <h1 className="font-['Roboto_Condensed'] font-bold text-black text-2xl overflow-hidden text-ellipsis whitespace-nowrap">
               {item.title}
