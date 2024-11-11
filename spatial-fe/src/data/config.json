@@ -73,7 +73,7 @@
       "acquisition_type": "Direct Acquisition",
       "historical_significance": "Singapore",
       "exhibition_utilisation": "identity, postcolonial discourse, and memory",
-      "image": "assets/learning_gallery.jpg",
+      "image": "../assets/learning_gallery.jpg",
       "conservation_guidelines": {
         "optimal_temperature": "20–22°C (68–72°F)",
         "optimal_humidity": "45–55%",

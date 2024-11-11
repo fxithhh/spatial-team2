@@ -1,8 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+
+//components
 import Canvas from '../components/canvas'; // Ensure the correct import path
 import ArtworkCard from '../components/artwork_card';
 import Breadcrumb from '../components/breadcrumb';
+import ImportArtWork from '../popups/import-artwork';
+import FullArtworkDetails from '../popups/full-artwork-details';
+
+// data
 import config from '../data/config.json';
 
 //icons
@@ -28,8 +34,10 @@ function ExhibitDetail() {
     const [floorplanImage, setFloorplanImage] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedPath, setSelectedPath] = useState("Artwork Connections");
-    const [activeTab, setActiveTab] = useState("Artwork Connections");
+    const [activeTab, setActiveTab] = useState("Path 1");
     const [selectedArtwork, setSelectedArtwork] = useState(null);
+    const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // add artwork popup
+    const [isArtworkDetailsOpen, setIsArtworkDetailsOpen] = useState(false); // artwork details popup
 
     const fileInputRef = useRef(null); // Create a ref for the file input
 
@@ -72,6 +80,25 @@ function ExhibitDetail() {
         setSelectedArtwork(artwork);
     };
 
+    // open and close add artwork popup
+    const openAddArtwork = () => {
+        setIsAddArtworkOpen(true);
+    };
+
+    const closeAddArtwork = () => {
+        setIsAddArtworkOpen(false);
+    };
+
+
+    // open and close artwork details popup
+    const openArtworkDetails = () => {
+        setIsArtworkDetailsOpen(true);
+    };
+
+    const closeArtworkDetails = () => {
+        setIsArtworkDetailsOpen(false);
+    };
+
     return (
         <div className='mx-20 my-12'>
             <Breadcrumb />
@@ -97,7 +124,7 @@ function ExhibitDetail() {
                                         className="px-4 py-2 text-gray-800 hover:bg-gray-100 cursor-pointer"
                                         onClick={() => {
                                             console.log(`Selected exhibit path: ${path}`);
-                                            handlePathSelect(path); // Close dropdown on selection
+                                            handlePathSelect(path);
                                         }}
                                     >
                                         {path}
@@ -122,7 +149,9 @@ function ExhibitDetail() {
                     <div className="border-2 border-black py-4 px-8">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-2xl font-['Roboto_Condensed'] font-semibold">List of Artworks</h3>
-                            <button className="text-lg font-bold font-['Roboto_Condensed'] cursor-pointer transition-all duration-300 px-4 py-1 bg-brand text-white hover:bg-brandhover">
+                            <button
+                                onClick={openAddArtwork}
+                                className="text-lg font-bold font-['Roboto_Condensed'] cursor-pointer transition-all duration-300 px-4 py-1 bg-brand text-white hover:bg-brandhover">
                                 <span className="flex items-center"><AiOutlinePlus className="mr-2" /> Add Artwork</span>
                             </button>
                         </div>
@@ -162,7 +191,9 @@ function ExhibitDetail() {
                     <div className="mt-4 border-2 border-black py-4 px-8">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-2xl font-['Roboto_Condensed'] font-semibold">Artwork Details</h3>
-                            <button className="text-lg font-bold font-['Roboto_Condensed'] cursor-pointer transition-all duration-300 px-4 py-1 bg-brand text-white hover:bg-brandhover">
+                            <button
+                                onClick={openArtworkDetails}
+                                className="text-lg font-bold font-['Roboto_Condensed'] cursor-pointer transition-all duration-300 px-4 py-1 bg-brand text-white hover:bg-brandhover">
                                 <span>See Full Details</span>
                             </button>
                         </div>
@@ -172,9 +203,11 @@ function ExhibitDetail() {
                             )}
                         </div>
                     </div>
-
                 </div>
             </div>
+            {isAddArtworkOpen && (<ImportArtWork isOpen={isAddArtworkOpen} closeAddArtwork={closeAddArtwork} />)}
+            {isArtworkDetailsOpen && (<FullArtworkDetails isOpen={isArtworkDetailsOpen} closeArtworkDetails={closeArtworkDetails} />)}
+
         </div>
     );
 }

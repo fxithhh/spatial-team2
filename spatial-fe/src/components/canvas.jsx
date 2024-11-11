@@ -1233,8 +1233,8 @@ function Canvas({ floorplanImage }) {
     return (
         <div
             ref={sketchRef}
-            className="w-full h-full border-2 border-gray-300"
-            style={{ height: '500px', position: 'relative' }}
+            className="w-full h-full border-2 border-gray-300 relative"
+            // style={{position: 'relative' }}
         ></div>
     );
 }
