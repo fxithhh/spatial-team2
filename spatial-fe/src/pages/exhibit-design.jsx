@@ -5,8 +5,8 @@ import { useParams } from 'react-router-dom';
 import Canvas from '../components/canvas'; // Ensure the correct import path
 import ArtworkCard from '../components/artwork_card';
 import Breadcrumb from '../components/breadcrumb';
-import ImportArtWork from '../popups/import-artwork';
-import FullArtworkDetails from '../popups/full-artwork-details';
+import ImportArtWork from '../components/popups/import-artwork';
+import FullArtworkDetails from '../components/popups/full-artwork-details';
 
 // data
 import config from '../data/config.json';
@@ -206,8 +206,7 @@ function ExhibitDetail() {
                 </div>
             </div>
             {isAddArtworkOpen && (<ImportArtWork isOpen={isAddArtworkOpen} closeAddArtwork={closeAddArtwork} />)}
-            {isArtworkDetailsOpen && (<FullArtworkDetails isOpen={isArtworkDetailsOpen} closeArtworkDetails={closeArtworkDetails} />)}
-
+            {isArtworkDetailsOpen && (<FullArtworkDetails isOpen={isArtworkDetailsOpen} closeArtworkDetails={closeArtworkDetails} artwork={selectedArtwork} />)}
         </div>
     );
 }
