@@ -1,18 +1,84 @@
-
-
 {
-    "exhibits": [
-      { "id": 1, "title": "Everyday Practices", "description": "A deep dive into modern art.", "image": "assets/everyday_practices.jpeg" },
-      { "id": 2, "title": "Learning Gallery", "description": "A collection of sculptures.", "image": "assets/learning_gallery.jpg" },
-      { "id": 3, "title": "ChildISH", "description": "Iconic photography exhibits.", "image": "assets/childish.jpg" }
-    ],
-
-    "artworks": [
-    { "id": 1, "title": "Everyday Practices", "description": "A deep dive into modern art.", "image": "../assets/everyday_practices.jpeg" },
-    { "id": 2, "title": "Learning Gallery", "description": "A collection of sculptures.", "image": "../assets/learning_gallery.jpg" },
-    { "id": 3, "title": "ChildISH", "description": "Iconic photography exhibits.", "image": "../assets/childish.jpg" },
-    { "id": 4, "title": "Scanning", "description": "Artwork by Amy Lee Sanford, created in 2013.", "image": "../assets/everyday_practices.jpeg" },
-    { "id": 5, "title": "Blinded No More So Immortality We Go", "description": "Artwork by Anne Samat, created in 2017.", "image": "../assets/learning_gallery.jpg" },
-    { "id": 6, "title": "Golden Teardrop", "description": "Artwork by Arin Rungjang, created in 2013.", "image": "../assets/childish.jpg" }
+  "exhibits": [
+    {
+      "id": 1,
+      "title": "Everyday Practices",
+      "description": "A deep dive into modern art.",
+      "image": "assets/everyday_practices.jpeg"
+    },
+    {
+      "id": 2,
+      "title": "Learning Gallery",
+      "description": "A collection of sculptures.",
+      "image": "assets/learning_gallery.jpg"
+    },
+    {
+      "id": 3,
+      "title": "ChildISH",
+      "description": "Iconic photography exhibits.",
+      "image": "assets/childish.jpg"
+    }
+  ],
+  "artworks": [
+    {
+      "id": 1,
+      "title": "Portrait No. 1 to 5",
+      "dimensions": "10cm x 5cm x 8cm",
+      "description": "Inspired by the rich history of the region, the Moyang series of portraits by Fyerool Darma stand in some ways as an attempt...",
+      "artist_name": "Fyerool Darma",
+      "date_of_creation": "2014-05-11",
+      "material": "canvas",
+      "display_type": "wall hanging",
+      "geographical_association": "Singapore",
+      "acquisition_type": "Direct Acquisition",
+      "historical_significance": "Singapore",
+      "exhibition_utilisation": "identity, postcolonial discourse, and memory",
+      "image": "../assets/childish.jpg",
+      "conservation_guidelines": {
+        "optimal_temperature": "20–22°C (68–72°F)",
+        "optimal_humidity": "45–55%",
+        "light_levels": "200 lux"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Second Artwork",
+      "dimensions": "10cm x 5cm x 8cm",
+      "description": "Inspired by the rich history of the region, the Moyang series of portraits by Fyerool Darma stand in some ways as an attempt...",
+      "artist_name": "Fyerool Darma",
+      "date_of_creation": "2014-05-11",
+      "material": "canvas",
+      "display_type": "wall hanging",
+      "geographical_association": "Singapore",
+      "acquisition_type": "Direct Acquisition",
+      "historical_significance": "Singapore",
+      "exhibition_utilisation": "identity, postcolonial discourse, and memory",
+      "image": "../assets/everyday_practices.jpeg",
+      "conservation_guidelines": {
+        "optimal_temperature": "20–22°C (68–72°F)",
+        "optimal_humidity": "45–55%",
+        "light_levels": "200 lux"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Third Artwork",
+      "dimensions": "10cm x 5cm x 8cm",
+      "description": "Inspired by the rich history of the region, the Moyang series of portraits by Fyerool Darma stand in some ways as an attempt...",
+      "artist_name": "Fyerool Darma",
+      "date_of_creation": "2014-05-11",
+      "material": "canvas",
+      "display_type": "wall hanging",
+      "geographical_association": "Singapore",
+      "acquisition_type": "Direct Acquisition",
+      "historical_significance": "Singapore",
+      "exhibition_utilisation": "identity, postcolonial discourse, and memory",
+      "image": "assets/learning_gallery.jpg",
+      "conservation_guidelines": {
+        "optimal_temperature": "20–22°C (68–72°F)",
+        "optimal_humidity": "45–55%",
+        "light_levels": "200 lux"
+      }
+    }
   ]
 }

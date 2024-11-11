@@ -2,11 +2,12 @@ import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import Canvas from '../components/canvas'; // Ensure the correct import path
 import ArtworkCard from '../components/artwork_card';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import Button from '../components/buttons';
 import Breadcrumb from '../components/breadcrumb';
 import config from '../data/config.json';
+
+//icons
 import { AiOutlineDown } from "react-icons/ai";
+import { AiOutlinePlus } from "react-icons/ai";
 
 function ExhibitDetail() {
     const { id } = useParams();
@@ -17,10 +18,18 @@ function ExhibitDetail() {
         "Audience POV"
     ];
 
+    const tabs = [
+        { id: 1, label: "Path 1" },
+        { id: 2, label: "Path 2" },
+        { id: 3, label: "Path 3" },
+    ];
+
     // react use state hooks
     const [floorplanImage, setFloorplanImage] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedPath, setSelectedPath] = useState("Artwork Connections");
+    const [activeTab, setActiveTab] = useState("Artwork Connections");
+    const [selectedArtwork, setSelectedArtwork] = useState(null);
 
     const fileInputRef = useRef(null); // Create a ref for the file input
 
@@ -36,16 +45,6 @@ function ExhibitDetail() {
         }
     };
 
-    const [activeButton, setActiveButton] = useState(null);
-
-    const handleButtonClick = (buttonText) => {
-        if (activeButton === buttonText) {
-            setActiveButton(null);
-        } else {
-            setActiveButton(buttonText);
-        }
-    };
-
     if (!exhibit) {
         return <div className="container mx-auto p-4">Exhibit not found.</div>;
     }
@@ -56,13 +55,26 @@ function ExhibitDetail() {
         setIsOpen(!isOpen);
     };
 
+    // function to select path to display
     const handlePathSelect = (path) => {
-        setSelectedPath(path); // Set the selected exhibit
-        setIsOpen(false); // Close dropdown
+        setSelectedPath(path);
+        setIsOpen(false);
+    };
+
+    // Function to switch between path tabs
+    const handleTabClick = (tab) => {
+        setActiveTab(tab);
+    };
+
+    // select artwork to display details
+    // Handle artwork selection
+    const handleArtworkSelect = (artwork) => {
+        setSelectedArtwork(artwork);
     };
 
     return (
         <div className='m-20'>
+            <Breadcrumb />
             {/* Choose Exhibit Dropdown */}
             <div className="my-8 flex">
                 <h1 className="font-['Roboto_Condensed'] font-bold text-4xl mr-8">Viewing Mode</h1>
@@ -98,41 +110,69 @@ function ExhibitDetail() {
                 </div>
             </div>
 
-            <Breadcrumb />
             <div className="grid grid-cols-3 gap-6">
+                {/* canvas div */}
                 <div className="col-span-2">
                     <Canvas floorplanImage={floorplanImage} />
                 </div>
-                <div className="overflow-y-auto p-4 pt-0 pb-0">
-                    <h1 className="text-2xl font-['Roboto'] font-semibold mb-4 text-center">Artworks</h1>
-                    <div className="flex justify-center m-4">
-                        <Button size={{ width: '275px', height: '75px' }} text="Add Artwork" />
+
+                {/* sandbox div */}
+                <div>
+                    <h2 className="text-2xl font-['Roboto_Condensed'] font-semibold -mt-8 text-center">Museum Sandbox</h2>
+                    <div className="border-2 border-black py-4 px-8">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-2xl font-['Roboto_Condensed'] font-semibold">List of Artworks</h3>
+                            <button className="text-lg font-bold font-['Roboto_Condensed'] cursor-pointer transition-all duration-300 px-4 py-1 bg-brand text-white hover:bg-brandhover">
+                                <span className="flex items-center"><AiOutlinePlus className="mr-2" /> Add Artwork</span>
+                            </button>
+                        </div>
+
+                        {/* toggle between paths */}
+                        <div className="flex justify-around mb-4 ">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => {
+                                        handleTabClick(tab.label)
+                                        console.log(`Selected generated path: ${tab.label}`)
+                                    }
+                                    }
+                                    className={`w-full ${activeTab === tab.label ? "border-b-4 border-brand" : "border-b-2 border-gray-500 text-gray-500"}`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {config.artworks.map((artwork) => (
+                            <div key={artwork.id}
+                                onClick={() => {
+                                    handleArtworkSelect(artwork)
+                                    console.log(`Selected generated path: ${artwork.title}`)
+
+                                }}
+                                className="grid grid-cols-12 py-1 px-2 my-2 border-b-2 cursor-pointer max-h-60 overflow-y-auto hover:border-2 hover:bg-linkhover hover:border-brand">
+                                <span className='col-span-5 capitalize'>{artwork.id}. {artwork.title}</span>
+                                <span className='col-span-3 capitalize'>{artwork.display_type}</span>
+                                <span className='col-span-4 capitalize'>{artwork.dimensions}</span>
+                            </div>
+                        ))}
                     </div>
-                    <div className="flex flex-row justify-between pb-[15px]">
-                        <h3 className="text-lg font-['Roboto'] font-bold">Existing Artworks</h3>
-                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-700 cursor-pointer" />
+
+                    <div className="mt-4 border-2 border-black p-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-2xl font-['Roboto_Condensed'] font-semibold">Artwork Details</h3>
+                            <button className="text-lg font-bold font-['Roboto_Condensed'] cursor-pointer transition-all duration-300 px-4 py-1 bg-brand text-white hover:bg-brandhover">
+                                <span>See Full Details</span>
+                            </button>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                        {selectedArtwork && (
+                    <ArtworkCard artwork={selectedArtwork} /> // Pass the selected artwork as a prop
+                )}
+                        </div>
                     </div>
-                    <div className="max-h-[475px] overflow-y-auto">
-                        <ArtworkCard artworks={config.artworks} />
-                    </div>
-                    <h1 className="text-2xl font-['Roboto'] font-semibold mb-4 text-center pt-6">
-                        Floor Plan
-                    </h1>
-                    <div className="flex justify-center m-4">
-                        <Button
-                            size={{ width: '275px', height: '75px' }}
-                            text="Import Floor Plan"
-                            onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                        />
-                        <input
-                            ref={fileInputRef}
-                            id="floorplan-upload"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFloorplanUpload}
-                            style={{ display: 'none' }}
-                        />
-                    </div>
+
                 </div>
             </div>
         </div>
