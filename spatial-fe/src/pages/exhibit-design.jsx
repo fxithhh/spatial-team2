@@ -4,6 +4,7 @@ import Canvas from '../components/canvas'; // Ensure the correct import path
 import ArtworkCard from '../components/artwork_card';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Button from '../components/buttons';
+import Breadcrumb from '../components/breadcrumb';
 import config from '../data/config.json';
 
 function ExhibitDetail() {
@@ -40,8 +41,8 @@ function ExhibitDetail() {
     }
 
     return (
-        <div>
-            <div className="flex flex-row justify-center gap-8 mt-8">
+        <div className='m-20'>
+            {/* <div className="flex flex-row justify-center gap-8 mt-8">
                 <Button
                     size={{ width: '265px', height: '50px' }}
                     text="Heat Map"
@@ -60,10 +61,14 @@ function ExhibitDetail() {
                     isActive={activeButton === 'Audience POV'}
                     onClick={() => handleButtonClick('Audience POV')}
                 />
-            </div>
-            <div className="grid grid-cols-2 m-[75px] gap-[75px]">
-                <Canvas floorplanImage={floorplanImage} className="w-full" />
-                <div className="overflow-y-auto max-h-[calc(100vh-150px)] p-4 pt-0 pb-0">
+            </div> */}
+            <Breadcrumb />
+            <h1 className="font-['Roboto_Condensed'] font-bold text-3xl mb-12">Viewing Mode</h1>
+            <div className="grid grid-cols-3 gap-6">
+                <div className="col-span-2">
+                    <Canvas floorplanImage={floorplanImage} />
+                </div>
+                <div className="overflow-y-auto p-4 pt-0 pb-0">
                     <h1 className="text-2xl font-['Roboto'] font-semibold mb-4 text-center">Artworks</h1>
                     <div className="flex justify-center m-4">
                         <Button size={{ width: '275px', height: '75px' }} text="Add Artwork" />
