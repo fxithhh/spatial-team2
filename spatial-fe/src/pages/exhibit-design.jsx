@@ -6,12 +6,22 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Button from '../components/buttons';
 import Breadcrumb from '../components/breadcrumb';
 import config from '../data/config.json';
+import { AiOutlineDown } from "react-icons/ai";
 
 function ExhibitDetail() {
     const { id } = useParams();
     const exhibit = config.exhibits.find((exhibit) => exhibit.id === parseInt(id));
+    const exhibitPaths = [
+        "Artwork Connections",
+        "Fire & Emergency Plan",
+        "Audience POV"
+    ];
 
+    // react use state hooks
     const [floorplanImage, setFloorplanImage] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedPath, setSelectedPath] = useState("Artwork Connections");
+
     const fileInputRef = useRef(null); // Create a ref for the file input
 
     // Function to handle floorplan image upload
@@ -40,30 +50,55 @@ function ExhibitDetail() {
         return <div className="container mx-auto p-4">Exhibit not found.</div>;
     }
 
+    // dropdown stuff
+
+    const toggleDropdown = () => {
+        setIsOpen(!isOpen);
+    };
+
+    const handlePathSelect = (path) => {
+        setSelectedPath(path); // Set the selected exhibit
+        setIsOpen(false); // Close dropdown
+    };
+
     return (
         <div className='m-20'>
-            {/* <div className="flex flex-row justify-center gap-8 mt-8">
-                <Button
-                    size={{ width: '265px', height: '50px' }}
-                    text="Heat Map"
-                    isActive={activeButton === 'Heat Map'}
-                    onClick={() => handleButtonClick('Heat Map')}
-                />
-                <Button
-                    size={{ width: '265px', height: '50px' }}
-                    text="Fire / Emergency Plan"
-                    isActive={activeButton === 'Fire / Emergency Plan'}
-                    onClick={() => handleButtonClick('Fire / Emergency Plan')}
-                />
-                <Button
-                    size={{ width: '265px', height: '50px' }}
-                    text="Audience POV"
-                    isActive={activeButton === 'Audience POV'}
-                    onClick={() => handleButtonClick('Audience POV')}
-                />
-            </div> */}
+            {/* Choose Exhibit Dropdown */}
+            <div className="my-8 flex">
+                <h1 className="font-['Roboto_Condensed'] font-bold text-4xl mr-8">Viewing Mode</h1>
+                <div>
+                    <button
+                        onClick={toggleDropdown}
+                        className="px-4 py-2 bg-brand text-white font-semibold font-['Roboto_Condensed'] focus:outline-none hover:bg-brandhover active:bg-brandhover"
+                        type="button"
+                    >
+                        <span className='flex items-center'>{selectedPath ? selectedPath : "Select a Pathway"} <AiOutlineDown className='ml-2' /></span>
+                    </button>
+
+                    {/* Dropdown menu */}
+                    {isOpen && (
+                        <div className="absolute z-10 mt-2 bg-white border border-gray-300 rounded-md shadow-lg font-['Roboto_Condensed']">
+                            <ul className="max-h-60 overflow-y-auto ">
+                                {exhibitPaths.map((path) => (
+                                    <li
+                                        key={path}
+                                        className="px-4 py-2 text-gray-800 hover:bg-gray-100 cursor-pointer"
+                                        onClick={() => {
+                                            console.log(`Selected exhibit path: ${path}`);
+                                            handlePathSelect(path); // Close dropdown on selection
+                                        }}
+                                    >
+                                        {path}
+                                    </li>
+                                ))}
+
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <Breadcrumb />
-            <h1 className="font-['Roboto_Condensed'] font-bold text-3xl mb-12">Viewing Mode</h1>
             <div className="grid grid-cols-3 gap-6">
                 <div className="col-span-2">
                     <Canvas floorplanImage={floorplanImage} />
