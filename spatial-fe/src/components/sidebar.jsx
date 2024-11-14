@@ -6,9 +6,9 @@ import config from '../data/config.json';
 
 function Sidebar() {
   return (
-    <div className="pt-[50px] px-[40px] bg-[#FFFFFF] h-[calc(100vh-78px)] w-[355px] font-roboto ease-in-out duration-300">
+    <div className="p-8 bg-[#FFFFFF] h-[calc(100vh-78px)] w-[355px] font-roboto ease-in-out duration-300">
       <Button
-        size={{ width: '275px', height: '75px' }}
+        size={{ width: '20em', height: '3em' }}
         text="Create New Exhibit"
       />
       <div className="flex items-center justify-between mb-[30px] pt-[50px]">

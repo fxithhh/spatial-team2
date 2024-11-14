@@ -1,15 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Button from '../components/buttons';
 import config from '../data/config.json';
+import CreateExhibit from "../components/popups/create-exhibit"
 
 function ExhibitsList() {
+
+  const [isAddExhibitOpen, setIsAddExhibitOpen] = useState(false); // add artwork popup
+
+  // open and close add artwork popup
+  const openAddExhibit = () => {
+    setIsAddExhibitOpen(true);
+  };
+
+  const closeAddExhibit = () => {
+    setIsAddExhibitOpen(false);
+  };
+
+
   return (
     <div className="mx-auto w-[70%]">
       <div className="flex justify-between w-full mt-32 h-[65px] mb-4">
         <h1 className="text-4xl font-bold font-['Roboto_Condensed'] h-[65px]">Exhibitions</h1>
-        <Button size={{ width: '265px', height: '65px' }} text="Create New Exhibit" />
+        <Button size={{ width: '12em', height: '2.5em' }} text="Create New Exhibit" onClick={openAddExhibit} />
       </div>
       <h2 className="text-2xl font-['Roboto_Condensed'] font-light text-[#979797] mb-16">Streamline your exhibition planning, manage effortlessly, and simplify your exhibition process.</h2>
       <div className="flex justify-between items-center pb-6">
@@ -35,6 +49,7 @@ function ExhibitsList() {
           </div>
         ))}
       </div>
+      {isAddExhibitOpen && (<CreateExhibit isOpen={isAddExhibitOpen} closeAddExhibit={closeAddExhibit} />)}
     </div>
   );
 }

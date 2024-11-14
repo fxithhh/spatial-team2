@@ -5,8 +5,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { ImCross } from 'react-icons/im';
-import { AiOutlineDown } from "react-icons/ai";
-import { AiOutlineUp } from "react-icons/ai";
+import { FaAngleDown } from "react-icons/fa6";
+import { FaAngleUp } from "react-icons/fa6";
 
 function ImportArtWork({ isOpen, closeAddArtwork }) {
     // Style popup
@@ -22,7 +22,9 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
 
     const [formData, setFormData] = useState({
         title: "",
-        dimensions: "",
+        width: "",
+        height: "",
+        breadth: "",
         description: "",
         artist_name: "",
         date_of_creation: "",
@@ -33,6 +35,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         historical_significance: "",
         style_significance: "",
         exhibition_utilisation: "",
+        image: null
     });
 
     const materialOptions = ["Painting", "Sculpture", "Photography", "Digital Art", "Mixed Media", "Canvas"];
@@ -40,6 +43,9 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
 
     const displayOptions = ["Wall Hanging", "Floor", "Ceiling Hanging", "Screen",];
     const [isDisplayDropdownOpen, setIsDisplayDropdownOpen] = useState(false);
+
+    // preview uploaded image
+    const [previewImage, setPreviewImage] = useState(null);
 
     // Handle multi-select dropdown toggle for material
     const toggleMaterialDropdown = () => {
@@ -95,6 +101,18 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         }));
     };
 
+    // handle image upload
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFormData((prevFormData) => ({
+                ...prevFormData,
+                image: file,
+            }));
+            setPreviewImage(URL.createObjectURL(file)); // Generate preview URL
+        }
+    };
+
     // Handle input changes dynamically
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -107,8 +125,13 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
     // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Form Data:', formData);
-        // Process formData or send it to an API
+        try {
+            console.log('Form Data:', formData);
+            toast.success("Form submitted successfully!");
+        } catch (error) {
+            console.error("Submission Error:", error);
+            toast.error("An error occurred while submitting the form. Please try again.");
+        }
     };
 
     return (
@@ -124,10 +147,10 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
 
                     {/* form */}
                     <div className="my-8">
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="">
 
                             {/* Artwork Title Input */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Title of Artwork <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
@@ -140,8 +163,22 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                                 />
                             </div>
 
+                            {/* Artwork Description Input */}
+                            <div className='my-8 pb-4'>
+                                <label className="font-semibold text-gray-400 text-xl">Artwork Description <span className='text-brand'>*</span></label>
+                                <input
+                                    type="text"
+                                    id="description"
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    className="w-full mt-2 border-b-2 outline-none"
+                                    required
+                                />
+                            </div>
+
                             {/* Artist Name Input */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Artist Name <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
@@ -155,10 +192,10 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             </div>
 
                             {/* Date of Creation Input */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Date of Creation <span className='text-brand'>*</span></label>
                                 <input
-                                    type="date"
+                                    type="text"
                                     id="date_of_creation"
                                     name="date_of_creation"
                                     value={formData.date_of_creation}
@@ -169,7 +206,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             </div>
 
                             {/* Material of Artwork Input */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Material of Artwork <span className='text-brand'>*</span></label>
                                 <div className="border-b-2 outline-none py-2 flex items-center gap-2">
                                     {formData.material.map((option) => (
@@ -181,8 +218,8 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                                             />
                                         </span>
                                     ))}
-                                    <span className="ml-auto text-gray-400 cursor-pointer" onClick={toggleMaterialDropdown}>
-                                        {isMaterialDropdownOpen ? <AiOutlineUp /> : <AiOutlineDown />}
+                                    <span className="ml-auto text-gray-400 cursor-pointer pr-2 pl-20" onClick={toggleMaterialDropdown}>
+                                        {isMaterialDropdownOpen ? <FaAngleUp className='text-xl' /> : <FaAngleDown className='text-xl' n />}
 
                                     </span>
 
@@ -208,21 +245,54 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             </div>
 
                             {/* Dimensions of Artwork */}
-                            <div className='my-8'>
-                                <label className="font-semibold text-gray-400 text-xl">Dimensions of Artwork <span className='text-brand'>*</span></label>
+                            <div className='my-8 pb-4'>
+                                <label className="w-full font-semibold text-gray-400 text-xl">Dimensions of Artwork <span className='text-brand'>*</span></label>
+                                <br></br> <br></br>
+                                {/* Width Input */}
                                 <input
-                                    type="text"
-                                    id="dimensions"
-                                    name="dimensions"
-                                    value={formData.dimensions}
+                                    type="number"
+                                    id="width"
+                                    name="width"
+                                    value={formData.width}
                                     onChange={handleInputChange}
-                                    className="w-full mt-2 border-b-2 outline-none"
+                                    className="w-30 p-2 mr-2 border-2 border-gray-300 outline-none"
+                                    placeholder="Width"
                                     required
                                 />
+                                {/* "x" separator */}
+                                <span className="text-gray-600"> x </span>
+
+                                {/* Height Input */}
+                                <input
+                                    type="number"
+                                    id="height"
+                                    name="height"
+                                    value={formData.height}
+                                    onChange={handleInputChange}
+                                    className="w-30 p-2 mx-2 border-2 border-gray-300 outline-none"
+                                    placeholder="Height"
+                                    required
+                                />
+                                {/* "x" separator */}
+                                <span className="text-gray-600"> x </span>
+
+                                {/* Breadth Input */}
+                                <input
+                                    type="number"
+                                    id="breadth"
+                                    name="breadth"
+                                    value={formData.breadth}
+                                    onChange={handleInputChange}
+                                    className="w-30 p-2 mx-2 border-2 border-gray-300 outline-none"
+                                    placeholder="Breadth"
+                                    required
+                                />
+                                {/* cm unit */}
+                                <span className="text-gray-600">cm</span>
                             </div>
 
                             {/* Display Type Input */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Display Type <span className='text-brand'>*</span></label>
                                 <div className="border-b-2 outline-none py-2 flex items-center gap-2">
                                     {formData.display_type.map((option) => (
@@ -234,8 +304,8 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                                             />
                                         </span>
                                     ))}
-                                    <span className="ml-auto text-gray-400 cursor-pointer" onClick={toggleDisplayDropdown}>
-                                        {isDisplayDropdownOpen ? <AiOutlineUp /> : <AiOutlineDown />}
+                                    <span className="ml-auto text-gray-400 cursor-pointer pr-2 pl-20" onClick={toggleDisplayDropdown}>
+                                        {isDisplayDropdownOpen ? <FaAngleUp className='text-xl' /> : <FaAngleDown className='text-xl' />}
 
                                     </span>
 
@@ -261,7 +331,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             </div>
 
                             {/* Geographical Association */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Geographical Association <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
@@ -275,7 +345,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             </div>
 
                             {/* Acquisition Type */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Acquisition Type <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
@@ -289,7 +359,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             </div>
 
                             {/* Historical Significance */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Historical Significance <span className='text-sm text-gray-300'>(Optional)</span></label>
                                 <input
                                     type="text"
@@ -302,7 +372,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             </div>
 
                             {/* Style Significance */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Style Significance <span className='text-sm text-gray-300'>(Optional)</span></label>
                                 <input
                                     type="text"
@@ -315,7 +385,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             </div>
 
                             {/* Exhibition Utilisation */}
-                            <div className='my-8'>
+                            <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Exhibition Utilisation <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
@@ -328,6 +398,26 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                                 />
                             </div>
 
+                            {/* Artwork Image Upload */}
+                            <div className='my-8 pb-4'>
+                                <label className="font-semibold text-gray-400 text-xl">Artwork Image <span className='text-brand'>*</span></label>
+                                <input
+                                    type="file"
+                                    onChange={handleImageUpload}
+                                    accept="image/*"
+                                    className="w-full mt-2"
+                                />
+
+                                {/* Image Preview */}
+                                {previewImage && (
+                                    <div className="my-4">
+                                        <p className="font-semibold text-brand text-lg">Image Preview:</p>
+                                        <img src={previewImage} alt="Preview" className="w-full h-auto mt-2" />
+                                    </div>
+                                )}
+                            </div>
+
+
                             {/* Submit Button */}
                             <div className='mx-auto flex justify-center'>
                                 <button
@@ -338,7 +428,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                                 </button>
                             </div>
                         </form>
-                        <ToastContainer />
+                        <ToastContainer position="bottom-right" autoClose={3000} />
                     </div>
 
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 //components
@@ -12,7 +12,7 @@ import FullArtworkDetails from '../components/popups/full-artwork-details';
 import config from '../data/config.json';
 
 //icons
-import { AiOutlineDown } from "react-icons/ai";
+import { FaAngleDown } from "react-icons/fa6";
 import { AiOutlinePlus } from "react-icons/ai";
 
 function ExhibitDetail() {
@@ -20,8 +20,7 @@ function ExhibitDetail() {
     const exhibit = config.exhibits.find((exhibit) => exhibit.id === parseInt(id));
     const exhibitPaths = [
         "Artwork Connections",
-        "Fire & Emergency Plan",
-        "Audience POV"
+        "Fire & Emergency Plan"
     ];
 
     const tabs = [
@@ -39,26 +38,11 @@ function ExhibitDetail() {
     const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // add artwork popup
     const [isArtworkDetailsOpen, setIsArtworkDetailsOpen] = useState(false); // artwork details popup
 
-    const fileInputRef = useRef(null); // Create a ref for the file input
-
-    // Function to handle floorplan image upload
-    const handleFloorplanUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setFloorplanImage(e.target.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     if (!exhibit) {
         return <div className="container mx-auto p-4">Exhibit not found.</div>;
     }
 
     // dropdown stuff
-
     const toggleDropdown = () => {
         setIsOpen(!isOpen);
     };
@@ -111,7 +95,7 @@ function ExhibitDetail() {
                         className="px-4 py-2 bg-brand text-white font-semibold font-['Roboto_Condensed'] focus:outline-none hover:bg-brandhover active:bg-brandhover"
                         type="button"
                     >
-                        <span className='flex items-center'>{selectedPath ? selectedPath : "Select a Pathway"} <AiOutlineDown className='ml-2' /></span>
+                        <span className='flex items-center'>{selectedPath ? selectedPath : "Select a Pathway"} <FaAngleDown className='ml-2' /></span>
                     </button>
 
                     {/* Dropdown menu */}
@@ -198,9 +182,9 @@ function ExhibitDetail() {
                             </button>
                         </div>
                         <div className="max-h-80 overflow-y-auto">
-                            {selectedArtwork && (
+                            {selectedArtwork ? (
                                 <ArtworkCard artwork={selectedArtwork} /> // Pass the selected artwork as a prop
-                            )}
+                            ) : <p className='text-lg text-red-500'>Select an artwork to display its information.</p>}
                         </div>
                     </div>
                 </div>

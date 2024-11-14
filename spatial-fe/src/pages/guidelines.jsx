@@ -3,6 +3,9 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import config from '../data/config.json';
 
+import { FaAngleDown } from "react-icons/fa6";
+
+
 function Guidelines() {
     // State to hold the values of each slider
     const [values, setValues] = useState({
@@ -47,7 +50,7 @@ function Guidelines() {
     };
 
     return (
-        <div className="my-12 mx-auto w-1/2">
+        <div className="my-12 mx-auto w-1/2 font-['Roboto_Condensed']">
 
             <h1 className="text-5xl font-semibold mb-4">Guidelines Settings</h1>
             <p className="text-gray-500 text-2xl">Key guidelines for fire safety and emergency exits compliance.</p>
@@ -60,10 +63,10 @@ function Guidelines() {
                     <div className="my-8 w-1/2">
                         <button
                             onClick={toggleDropdown}
-                            className="px-4 py-2 border-2 border-black font-semibold focus:outline-none"
+                            className="px-4 py-2 border-2 border-black font-semibold focus:outline-none flex items-center"
                             type="button"
                         >
-                            {values.selectedExhibit ? values.selectedExhibit.title : "Select an Exhibit"}
+                            {values.selectedExhibit ? values.selectedExhibit.title : "Select an Exhibit"} <FaAngleDown className='ml-2'/>
                         </button>
 
                         {/* Dropdown menu */}
@@ -164,7 +167,7 @@ function Guidelines() {
                     <div className='mx-auto flex justify-center'>
                         <button
                             type="submit"
-                            className="bg-brand text-white py-2 px-8 rounded hover:bg-brandhover"
+                            className="bg-brand text-white text-lg py-2 px-8 rounded hover:bg-brandhover"
                         >
                             Save Settings
                         </button>
