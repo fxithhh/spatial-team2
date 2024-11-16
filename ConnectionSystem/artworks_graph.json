@@ -1,0 +1,81 @@
+{
+    "directed": false,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "artist": "Wong Hoy Cheong",
+            "description": "Wong Hoy Cheong\nTapestry of Justice\n1999\u20132004\n\nThumbprints, petals and leaves; 2000 x 89 cm\n\nOver 10,000 photocopied thumbprints are connected into a delicate tapestry, punctuated with leaves and petals from plants, such as the hibiscus (Malaysia\u2019s national flower), rose and beech. The artist conceived this installation to serve simultaneously as a work of art and a petition. This was during Malaysia\u2019s late 1990s Reformasi movement, when the redress of social injustices and other political issues held sway. For the next six years, the artist collected the thumbprints shown here to repeal the nation\u2019s Internal Security Act, which allowed for detention without trial. The dual symbolism of thumbprints is ironic\u2014conventionally viewed as evidential of criminal activity, the thumbprint was also the most reliable form of personal identification before the advent of DNA sequencing. Fragile and hopeful, the tapestry emphasises the power of collective effort in effecting transformation.",
+            "imageurl": "https://www.singaporeartmuseum.sg/-/media/SAM/Images/Everyday-Practices/artwork/Wong-Hoy-Cheong-1920-x-1440.png?w=1920&hash=6A71EDDAC1EDC66BD5B6A24B057A7550",
+            "id": "Tapestry of Justice"
+        },
+        {
+            "artist": "Guo-Liang Tan",
+            "description": "Guo-Liang Tan\nPeripheral Ritual I\u2013III\n2018\n\nAcrylic on aeronautical fabric stretched over wood; 163 x 408 cm\n\nPeripheral Ritual I\u2013III consists of three paintings that were created separately but are here presented as a triptych. Across the panels, thinned paint is allowed to flow, diffuse and spread without direct brush contact. This method, applied to the slightly water-resistant aeronautical fabric surfaces, produces stains and marks that appear accidental. They are, however, meticulously composed through a process akin to choreography. The artist describes his approach as using his \u201cown body to respond to the painting as objects,\u201d employing gestures such as shifting, tilting and turning. This physicality of the paintings is also asserted by the wooden stretcher bars that are visible through the translucent fabric. The amorphous hues evoke the appearance of bruised skin and suggest the body\u2019s capacity to endure.",
+            "imageurl": "https://www.singaporeartmuseum.sg/-/media/SAM/Images/Everyday-Practices/artwork/GuoLiang-Tan--1920-x-1440.png?w=1920&hash=A7DDCF23E6A129CF126F1E5FB7DE2E51",
+            "id": "Peripheral Ritual I\u2013III"
+        },
+        {
+            "artist": "Imhathai Suwatthanasilp",
+            "description": "Imhathai Suwatthanasilp\nThe Flower Field\n2012\n\nHair, bed frame, acrylic sheets and LED lights; 100 x 210 x 57 cm\n\nIn this field of bright white light, thousands of intricate flowers seem to float. Ethereal and idyllic, they evoke a utopian realm of rest and reward, like Elysium. On closer look, the fuzzy flowers are found to be meticulously handspun balls of hair, specifically the hair shorn of cancer patients, survivors and donors in the Hair for Hope charity programme. These are arranged on a lightbox that Imhathai Suwatthanasilp had repurposed from a bed frame. Starkly backlit, the strands offer a tender tribute to the resilience of the human spirit. Imhathai dedicates her craftsmanship towards a message of hope for a brighter future.",
+            "imageurl": "https://www.singaporeartmuseum.sg/-/media/SAM/Images/Everyday-Practices/artwork/Imhathai--1920-x-1440.png?w=1920&hash=9CA10C38D8088607CB6FCB403DF91DAD",
+            "id": "The Flower Field"
+        },
+        {
+            "artist": "Jerome Kugan",
+            "description": "Jerome Kugan\nThe Internalised Self series (Atlas, Apollo, Icarus, Ganymede)\n2018\n\nWatercolour and pencil on used HIV-medication packaging paper; Various dimensions\n\nAmbiguous, androgynous figures devoid of genitalia and hair are depicted against crimson backgrounds, on recycled carton packages of antiretroviral drugs. The medication gestures to the artist\u2019s HIV-positive status, rendering this series deeply autobiographical. Striking dramatic poses, the figures mime the Greek myths of Ganymede, Atlas, Icarus and Apollo, after how they are typically portrayed in early history paintings: Ganymede, desired for his youthful beauty, was abducted by Zeus in the guise of an eagle, and became both immortal cupbearer and the object of Zeus\u2019s desire; Atlas, punished for siding with the losing side in the Titan-Olympian war, was burdened with the weight of heavens for eternity; Icarus plunged into the sea after soaring too close to the sun despite his father\u2019s advice; Apollo, god of the sun, whose charisma masked an egoistic, jealous and sometimes vengeful nature. The fates and symbolism of these four characters resonate with Kugan\u2019s sense of the tragedy and irony of his own predicament.",
+            "imageurl": "https://www.singaporeartmuseum.sg/-/media/SAM/Images/Everyday-Practices/artwork/Jerome--1920-x-1440.png?w=1920&hash=723B1B040320BB8285231F877CE1A95B",
+            "id": "The Internalised Self series (Atlas, Apollo, Icarus, Ganymede)"
+        }
+    ],
+    "links": [
+        {
+            "visual_connectivity_score": 4,
+            "visual_reasoning": "Visually, both artworks share a sense of organic flow and a delicate, textured quality. 'Tapestry of Justice' features a grid of thumbprints and plant materials, creating a layered and complex surface. 'Peripheral Ritual I\u2013III,' with its flow of thinned paint, also emphasizes surface texture and organic forms, although through a more abstract and fluid approach. The commonality lies in the emphasis on intricate details, but the execution and mediums differ.",
+            "narrative_connectivity_score": 2,
+            "narrative_reasoning": "Narratively, the artworks diverge. 'Tapestry of Justice' is rooted in political activism and collective effort, representing a tangible response to social issues. It carries a strong historical and societal significance. 'Peripheral Ritual I\u2013III,' on the other hand, appears more focused on personal expression and bodily experience, using ritual and physicality to explore endurance and form. While both involve a degree of physical interaction with the medium, their themes and intended messages differ significantly.",
+            "source": "Tapestry of Justice",
+            "target": "Peripheral Ritual I\u2013III"
+        },
+        {
+            "visual_connectivity_score": 6,
+            "visual_reasoning": "Both artworks create complex patterns using small, detailed elements. \"Tapestry of Justice\" uses thumbprints, leaves, and petals to form a grid-like structure, while \"The Flower Field\" features delicate, flower-like forms made from hair. Both works use repetitive, organic motifs and emphasize texture and intricacy. However, the materials and presentation methods differ, with one being a tapestry and the other a lightbox installation.",
+            "narrative_connectivity_score": 7,
+            "narrative_reasoning": "The narrative themes of both artworks share a focus on hope and collective human effort. \"Tapestry of Justice\" deals with social justice and the power of unity, using thumbprints to symbolize individual and collective identity in changing society. \"The Flower Field\" also embodies hope and resilience, using hair from cancer patients and donors to convey a message of solidarity and brighter futures. Both works highlight personal contributions towards transformative communal goals, though differing in specific context and medium.",
+            "source": "Tapestry of Justice",
+            "target": "The Flower Field"
+        },
+        {
+            "visual_connectivity_score": 3,
+            "visual_reasoning": "While both artworks employ repetition and texture, their styles and mediums differ significantly. Wong's piece uses thumbprints and floral elements to create a tapestry, primarily monochromatic with earthy tones. In contrast, Jerome Kugan's series uses vibrant red backgrounds and androgynous figures, emphasizing flat color fields and strong contrasts. Their visual languages reflect different artistic traditions and purposes, contributing to a moderate visual connectivity score.",
+            "narrative_connectivity_score": 4,
+            "narrative_reasoning": "Both artworks deal with themes of identity and resistance but in different contexts. Wong's tapestry reflects social and political issues in Malaysia, emphasizing collective action against injustice. Kugan's series is deeply personal, using Greek myths to explore themes of identity and the artist's HIV status. While different in focus\u2014one collective, one individual\u2014they both address the human condition and the struggle with societal norms, providing a stronger narrative connection.",
+            "source": "Tapestry of Justice",
+            "target": "The Internalised Self series (Atlas, Apollo, Icarus, Ganymede)"
+        },
+        {
+            "visual_connectivity_score": 2,
+            "visual_reasoning": "The artworks diverge in materials and presentation. \"Peripheral Ritual I\u2013III\" employs acrylic on fabric with a soft, flowing appearance, focusing on amorphous hues and a translucent effect. In contrast, \"The Flower Field\" uses hair and LED lights, creating intricate, detailed floral patterns. The visual focus of the first is on abstract diffusion while the second emphasizes detailed repetition and light.",
+            "narrative_connectivity_score": 4,
+            "narrative_reasoning": "Both artworks explore themes of endurance and resilience. \"Peripheral Ritual I\u2013III\" suggests the body's capacity to endure through its bruised, skin-like forms. \"The Flower Field\" directly addresses resilience through the use of hair from cancer patients, aiming to convey hope. While their approaches differ\u2014one abstract, the other symbolic\u2014they connect through underlying themes of human strength.",
+            "source": "Peripheral Ritual I\u2013III",
+            "target": "The Flower Field"
+        },
+        {
+            "visual_connectivity_score": 3,
+            "visual_reasoning": "While both artworks employ non-traditional surfaces (aeronautical fabric and recycled medication packaging), their visual presentations differ. Tan's work is abstract, focusing on fluid forms and subtle hues, whereas Kugan's pieces feature striking, dramatic figures against bold red backgrounds. The materials and application techniques are visually distinct between the two.",
+            "narrative_connectivity_score": 5,
+            "narrative_reasoning": "Both artworks engage with themes of the body, endurance, and personal narrative. Tan's work evokes physicality and the body's capacity to endure through abstract forms that suggest bruising. Kugan's series reflects on personal and mythical stories, intertwining his life with the fates of Greek mythological figures. While differing in specific subjects, both explore personal and bodily narratives.",
+            "source": "Peripheral Ritual I\u2013III",
+            "target": "The Internalised Self series (Atlas, Apollo, Icarus, Ganymede)"
+        },
+        {
+            "visual_connectivity_score": 4,
+            "visual_reasoning": "The visual elements of both artworks use color contrasts and unconventional materials to create impact. 'The Flower Field' employs hair on an illuminated backdrop to create delicate flower patterns, while 'The Internalised Self series' utilizes vibrant red backgrounds against androgynous figures. Both works explore unique substrates, like bed frames and medication packaging, but their visual styles differ significantly in tone and composition.",
+            "narrative_connectivity_score": 6,
+            "narrative_reasoning": "Both artworks are deeply personal, using materials and symbolism to convey messages related to human resilience in the face of challenges. 'The Flower Field' focuses on hope and tribute using donated hair, highlighting cancer journeys. 'The Internalised Self series' is autobiographical, referencing the artist's HIV status and Greek mythology to explore identity and struggle. The shared use of personal and societal narratives links them, though each tells a unique story.",
+            "source": "The Flower Field",
+            "target": "The Internalised Self series (Atlas, Apollo, Icarus, Ganymede)"
+        }
+    ]
+}
