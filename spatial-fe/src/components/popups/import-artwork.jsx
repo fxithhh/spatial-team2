@@ -140,28 +140,29 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                 });
                 dataToSend.image = base64Image;
             }
-
-            // Create a JSON file from the dataToSend object
-            const jsonFile = new Blob([JSON.stringify(dataToSend)], { type: 'application/json' });
-            const formPayload = new FormData();
-            formPayload.append("jsonFile", jsonFile, "artwork.json");
-
-            // Send the JSON file as part of FormData
+    
+            // Send the JSON object directly in the request body
             const response = await fetch('http://localhost:5000/upload_json', {
                 method: 'POST',
-                body: formPayload,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend),
             });
     
+            // Handle the response
             if (response.ok) {
                 toast.success("Artwork saved successfully!");
             } else {
-                toast.error("Failed to save artwork. Please try again.");
+                const errorData = await response.json();
+                toast.error(`Failed to save artwork: ${errorData.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error("Submission Error:", error);
             toast.error("An error occurred while submitting the form.");
         }
     };
+    
 
     return (
         <div>
