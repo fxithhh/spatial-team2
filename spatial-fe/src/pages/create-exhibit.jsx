@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import Popup from 'reactjs-popup';
+import "react-toastify/dist/ReactToastify.css";
+import Button from '../components/buttons';
 import 'reactjs-popup/dist/index.css'; // Import styles
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import ImportArtWork from '../components/popups/import-artwork';
 
 import { ImCross } from 'react-icons/im';
 import { FaAngleDown } from "react-icons/fa6";
 import { FaAngleUp } from "react-icons/fa6";
 
-function CreateExhibit({ isOpen, closeAddExhibit }) {
+
+function CreateExhibit() {
+
+    const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // add artwork popup
+
     // Style popup
     const contentStyle = {
         borderRadius: '0.5em',
@@ -48,6 +53,20 @@ function CreateExhibit({ isOpen, closeAddExhibit }) {
             return {
                 ...prevFormData,
                 subsections: updatedSubsections,
+            };
+        });
+    };
+
+    // Handle multi-select dropdown for material
+    const handleMaterialSelect = (option) => {
+        setFormData((prevFormData) => {
+            // Check if option is already selected, if so, remove it; otherwise, add it
+            const updatedMaterials = prevFormData.material.includes(option)
+                ? prevFormData.material.filter(item => item !== option)
+                : [...prevFormData.material, option];
+            return {
+                ...prevFormData,
+                material: updatedMaterials,
             };
         });
     };
@@ -93,23 +112,43 @@ function CreateExhibit({ isOpen, closeAddExhibit }) {
         }
     };
 
+    const materialOptions = ["Painting", "Sculpture", "Photography", "Digital Art", "Mixed Media", "Canvas"];
+    const [isMaterialDropdownOpen, setIsMaterialDropdownOpen] = useState(false);
+
+    // Handle multi-select dropdown toggle for material
+    const toggleMaterialDropdown = () => {
+        setIsMaterialDropdownOpen((prevState) => !prevState);
+    };
+
+    // Handle tag removal for material
+    const handleRemoveMaterialTag = (option) => {
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            material: prevFormData.material.filter(item => item !== option),
+        }));
+    };
+
+    // open and close add artwork popup
+    const openAddArtwork = () => {
+        setIsAddArtworkOpen(true);
+    };
+
+    const closeAddArtwork = () => {
+        setIsAddArtworkOpen(false);
+    };
+
     return (
-        <div>
-            <Popup open={isOpen} onClose={closeAddExhibit} contentStyle={contentStyle} overlayStyle={overlayStyle}>
-                {/* Close button inside the popup */}
-                <ImCross
-                    className="text-brand-gray1 ml-auto mr-8 mt-6 cursor-pointer"
-                    onClick={closeAddExhibit} // Close the popup when the icon is clicked
-                />
+        <div className="my-12 mx-auto w-1/2 font-['Roboto_Condensed']">
+            <div>
                 <div className="px-12 py-2 mb-8 font-['Roboto_Condensed']">
-                    <h2 className="font-semibold text-3xl">Create New Exhibition</h2>
+                    <h1 className="text-5xl font-semibold mb-4">Create New Exhibition</h1>
 
                     {/* form */}
                     <div className="my-8">
                         <form onSubmit={handleSubmit} className="">
 
                             {/* Exhibit Title Input */}
-                            <div className='my-8 pb-4 grid grid-cols-6'>
+                            <div className='my-8 pb-4 grid grid-row-6'>
                                 <label className="font-semibold text-gray-400 text-xl col-span-2">Title of Exhibition <span className='text-brand'>*</span></label>
                                 <textarea
                                     type="text"
@@ -123,7 +162,7 @@ function CreateExhibit({ isOpen, closeAddExhibit }) {
                             </div>
 
                             {/* Concept Input */}
-                            <div className='my-8 pb-4 grid grid-cols-6'>
+                            <div className='my-8 pb-4 grid grid-row-6'>
                                 <label className="font-semibold text-gray-400 text-xl col-span-2 pr-4">What is your conceptual design in exhibition is about? <span className='text-brand'>*</span></label>
                                 <textarea
                                     type="text"
@@ -140,11 +179,11 @@ function CreateExhibit({ isOpen, closeAddExhibit }) {
                             <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Exhibition Subsections <span className='text-brand'>*</span></label>
                                 <div className="border-b-2 outline-none py-2 flex items-center gap-2">
-                                    {formData.subsections.map((option) => (
+                                    {formData.material && formData.material.map((option) => (
                                         <span key={option} className="bg-brand text-white px-2 py-1 flex items-center">
                                             {option}
                                             <ImCross
-                                                onClick={() => handleRemoveSubsectionsTag(option)}
+                                                onClick={() => handleRemoveMaterialTag(option)}
                                                 className="ml-2 text-sm cursor-pointer"
                                             />
                                         </span>
@@ -175,6 +214,23 @@ function CreateExhibit({ isOpen, closeAddExhibit }) {
                                 )}
                             </div>
 
+                            {/* Artwork Input */}
+                            <div className='pb-4'>
+                                <div className="flex items-center justify-between">
+                                    <label className="font-semibold text-gray-400 text-xl">
+                                        Artworks Used in Exhibition <span className="text-brand">*</span>
+                                    </label>
+                                    <Button
+                                        size={{ width: '10em', height: '2em' }}
+                                        text="+ Add Artwork"
+                                        onClick={openAddArtwork}
+                                    />
+                                </div>
+                                <div className="mt-8 h-[200px] border-2 border-gray-400 overflow-y-auto outline-none px-1">
+
+                                </div>
+                            </div>
+
                             {/* Floor Plan Upload */}
                             <div className='my-8 pb-4'>
                                 <label className="font-semibold text-gray-400 text-xl">Floor Plan <span className='text-brand'>*</span></label>
@@ -201,7 +257,7 @@ function CreateExhibit({ isOpen, closeAddExhibit }) {
                                     type="submit"
                                     className="bg-brand text-white py-2 px-8 rounded hover:bg-brandhover"
                                 >
-                                    Save Exhibit
+                                    Create Exhibit
                                 </button>
                             </div>
                         </form>
@@ -209,7 +265,26 @@ function CreateExhibit({ isOpen, closeAddExhibit }) {
                     </div>
 
                 </div>
-            </Popup>
+            </div>
+            {isMaterialDropdownOpen && (
+                <div className="relative w-full bg-white border rounded-md shadow-md z-10">
+                    {materialOptions.map((option) => (
+                        <div
+                            key={option}
+                            className="p-2 cursor-pointer hover:bg-gray-200"
+                            onClick={() => handleMaterialSelect(option)}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={formData.material.includes(option)}
+                                readOnly
+                            />
+                            <span className="ml-2">{option}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+            {isAddArtworkOpen && (<ImportArtWork isOpen={isAddArtworkOpen} closeAddArtwork={closeAddArtwork} />)}
         </div>
     );
 }

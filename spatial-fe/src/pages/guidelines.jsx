@@ -61,16 +61,16 @@ function Guidelines() {
 
                     {/* Choose Exhibit Dropdown */}
                     <div className="my-8 w-1/2">
-                        <button
+                        {/* <button
                             onClick={toggleDropdown}
                             className="px-4 py-2 border-2 border-black font-semibold focus:outline-none flex items-center"
                             type="button"
                         >
                             {values.selectedExhibit ? values.selectedExhibit.title : "Select an Exhibit"} <FaAngleDown className='ml-2'/>
-                        </button>
+                        </button> */}
 
                         {/* Dropdown menu */}
-                        {isOpen && (
+                        {/* {isOpen && (
                             <div className="absolute z-10 mt-2 bg-white border border-gray-300 rounded-md shadow-lg">
                                 <ul className="max-h-60 overflow-y-auto">
                                     {config.exhibits.map((exhibit) => (
@@ -87,8 +87,9 @@ function Guidelines() {
                                     ))}
                                 </ul>
                             </div>
-                        )}
+                        )} */}
                     </div>
+
                     {/* Safety Travel Distance Slider */}
                     <div className='my-4'>
                         <div className='grid grid-cols-2'>
