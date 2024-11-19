@@ -101,67 +101,78 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         }));
     };
 
-    // handle image upload
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFormData((prevFormData) => ({
-                ...prevFormData,
-                image: file,
-            }));
-            setPreviewImage(URL.createObjectURL(file)); // Generate preview URL
-        }
-    };
-
-    // Handle input changes dynamically
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
+ // handle image upload
+const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
         setFormData((prevFormData) => ({
             ...prevFormData,
-            [name]: value,
+            image: file, // Store the File object
         }));
-    };
+        setPreviewImage(URL.createObjectURL(file)); // Generate preview URL
+    }
+};
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-    
-        try {
-            // Create a copy of formData
-            const dataToSend = { ...formData };
-    
-            // Convert the image file to Base64 if it exists
-            if (formData.image) {
-                const file = formData.image;
-                const base64Image = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = (error) => reject(error);
-                    reader.readAsDataURL(file);
-                });
-                dataToSend.image = base64Image;
-            }
-    
-            // Send the JSON object directly in the request body
-            const response = await fetch('http://localhost:5000/upload_json', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(dataToSend),
-            });
-    
-            // Handle the response
-            if (response.ok) {
-                toast.success("Artwork saved successfully!");
-            } else {
-                const errorData = await response.json();
-                toast.error(`Failed to save artwork: ${errorData.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error("Submission Error:", error);
-            toast.error("An error occurred while submitting the form.");
+// Handle input changes dynamically
+const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevFormData) => ({
+        ...prevFormData,
+        [name]: value,
+    }));
+};
+
+// Function to convert image to Base64
+const encodeImage = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result); // Base64 string
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file); // Convert the File object to Base64
+    });
+};
+
+// Handle form submission
+const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+        const dataToSend = { ...formData };
+
+        // Convert the image file to Base64 if it exists
+        if (formData.image && formData.image instanceof File) {
+            console.log("Processing image as File object:", formData.image);
+            const base64Image = await encodeImage(formData.image);
+            dataToSend.image = base64Image; // Store the Base64-encoded image in formData
+        } else {
+            console.error("No valid image file selected.");
+            return;
         }
-    };
+
+        console.log("Data to send:", dataToSend);
+
+        // Send the data to the backend
+        const response = await fetch("http://localhost:5000/upload_json", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(dataToSend),
+        });
+
+        if (response.ok) {
+            toast.success("Artwork saved successfully!");
+        } else {
+            toast.error("Failed to save artwork. Please try again.");
+        }
+    } catch (error) {
+        console.error("Submission Error:", error);
+        toast.error("An error occurred while submitting the form.");
+    }
+};
+
+    
+    
     
 
     return (
