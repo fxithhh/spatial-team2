@@ -101,67 +101,74 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         }));
     };
 
-    // handle image upload
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFormData((prevFormData) => ({
-                ...prevFormData,
-                image: file,
-            }));
-            setPreviewImage(URL.createObjectURL(file)); // Generate preview URL
-        }
-    };
-
-    // Handle input changes dynamically
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
+ // handle image upload
+const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
         setFormData((prevFormData) => ({
             ...prevFormData,
-            [name]: value,
+            image: file, // Store the File object
         }));
-    };
+        setPreviewImage(URL.createObjectURL(file)); // Generate preview URL
+    }
+};
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-    
-        try {
-            // Create a copy of formData
-            const dataToSend = { ...formData };
-    
-            // Convert the image file to Base64 if it exists
-            if (formData.image) {
-                const file = formData.image;
-                const base64Image = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = (error) => reject(error);
-                    reader.readAsDataURL(file);
-                });
-                dataToSend.image = base64Image;
-            }
-    
-            // Send the JSON object directly in the request body
-            const response = await fetch('http://localhost:5000/upload_json', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(dataToSend),
-            });
-    
-            // Handle the response
-            if (response.ok) {
-                toast.success("Artwork saved successfully!");
-            } else {
-                const errorData = await response.json();
-                toast.error(`Failed to save artwork: ${errorData.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error("Submission Error:", error);
-            toast.error("An error occurred while submitting the form.");
+// Function to convert image to Base64 and strip MIME type
+const encodeImage = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result.split(",")[1]; // Remove MIME type prefix
+            resolve(base64String);
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file); // Encodes the File object
+    });
+};
+
+// Handle input changes dynamically
+const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevFormData) => ({
+        ...prevFormData,
+        [name]: value,
+    }));
+};
+
+
+// Handle form submission
+const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+        const dataToSend = { ...formData };
+
+        // Convert the image file to raw Base64 if it exists
+        if (formData.image && formData.image instanceof File) {
+            console.log("Processing image as File object:", formData.image);
+            const base64Image = await encodeImage(formData.image); // Raw Base64 string
+            dataToSend.image = base64Image; // Send only the raw Base64 string
         }
-    };
+
+        // Submit the JSON data to the backend
+        const response = await fetch("http://localhost:5000/upload_json", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataToSend),
+        });
+
+        if (response.ok) {
+            console.log("Image uploaded successfully");
+        } else {
+            console.error("Failed to upload image");
+        }
+    } catch (error) {
+        console.error("Submission Error:", error);
+    }
+};
+
+    
+    
     
 
     return (
