@@ -1,5 +1,3 @@
-<!-- templates/artworks_graph_with_sliders.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,6 +30,12 @@
         }
         .sliders-section {
             max-width: 800px;
+        }
+        /* Optional: Add a tooltip or instruction for fixing nodes */
+        #instructions {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
         }
     </style>
 </head>
@@ -72,6 +76,11 @@
         </div>
     </div>
 
+    <!-- Instructions for fixing nodes -->
+    <div id="instructions">
+        <strong>Instructions:</strong> Click on a node to select it, then press the <strong>F</strong> key to fix/unfix its position. You can drag fixed nodes by clicking and dragging; they will be temporarily unfixed during the drag and fixed again once you release.
+    </div>
+
     <!-- Network Graph Container -->
     <div id="network"></div>
 
@@ -88,6 +97,12 @@
         let min_narrative = 0;
         let max_narrative = 10;
 
+        // Variables to track selected node
+        let selectedNodeId = null;
+
+        // Variable to track nodes that were fixed before dragging
+        let draggingFixedNodes = new Set();
+
         // Fetch graph data from the backend
         fetch('/get_graph')
             .then(response => response.json())
@@ -102,7 +117,8 @@
                     title: `<b>${node.name}</b><br>Artist: ${node.artist}<br>Description: ${node.description}`,
                     color: 'lightgreen',
                     value: 10,
-                    shape: 'dot' // Set shape to 'dot' to make nodes circular
+                    shape: 'dot', // Set shape to 'dot' to make nodes circular
+                    fixed: false // Initialize as not fixed
                 }));
 
                 allEdges = data.links.map(link => ({
@@ -199,20 +215,27 @@
                 },
                 interaction: {
                     hover: true,
-                    tooltipDelay: 200
+                    tooltipDelay: 200,
+                    multiselect: false, // Optional: Prevent multiple selections
+                    selectConnectedEdges: false
                 },
                 nodes: {
                     font: {
                         size: 12
-                    }
+                    },
+                    borderWidth: 1 // Default border width
                 }
             };
 
             network = new vis.Network(container, data, options);
+
             // Add event listeners for sliders after network initialization
             addSliderEventListeners();
             // Initial update
             filterAndUpdateEdges();
+
+            // Add event listeners for node selection and key presses
+            addNetworkEventListeners(nodes);
         }
 
         // Function to add event listeners after network initialization
@@ -319,6 +342,102 @@
             // Restart the physics simulation
             network.stopSimulation();
             network.startSimulation();
+        }
+
+        // Function to add event listeners for node selection and key presses
+        function addNetworkEventListeners(nodes) {
+            // Listen for node selection
+            network.on("click", function (params) {
+                if (params.nodes.length > 0) {
+                    selectedNodeId = params.nodes[0];
+                    highlightSelectedNode(selectedNodeId);
+                } else {
+                    selectedNodeId = null;
+                    clearNodeHighlights();
+                }
+            });
+
+            // Listen for keydown events
+            document.addEventListener('keydown', function(event) {
+                // Check if the "F" key is pressed
+                if (event.key === 'f' || event.key === 'F') {
+                    if (selectedNodeId !== null) {
+                        toggleNodeFixed(selectedNodeId, nodes);
+                    }
+                }
+            });
+
+            // Listen for dragStart to temporarily unfix nodes
+            network.on("dragStart", function (params) {
+                if (params.nodes.length > 0) {
+                    params.nodes.forEach(nodeId => {
+                        const node = network.body.data.nodes.get(nodeId);
+                        if (node.fixed && (node.fixed.x || node.fixed.y)) {
+                            // Unfix the node temporarily
+                            nodes.update({ id: nodeId, fixed: false });
+                            // Add to draggingFixedNodes to remember to refix after drag
+                            draggingFixedNodes.add(nodeId);
+                        }
+                    });
+                }
+            });
+
+            // Listen for dragEnd to refix nodes that were fixed before drag
+            network.on("dragEnd", function (params) {
+                if (params.nodes.length > 0) {
+                    params.nodes.forEach(nodeId => {
+                        if (draggingFixedNodes.has(nodeId)) {
+                            // Fix the node again after dragging
+                            nodes.update({ 
+                                id: nodeId, 
+                                fixed: { x: true, y: true },
+                                color: 'orange' // Optional: Update color to indicate fixed state
+                            });
+                            draggingFixedNodes.delete(nodeId);
+                        }
+                    });
+                }
+            });
+        }
+
+        // Function to highlight the selected node
+        function highlightSelectedNode(nodeId) {
+            // Optional: Change the border color or other styling to indicate selection
+            network.body.data.nodes.update({ id: nodeId, borderWidth: 3, borderColor: 'orange' });
+        }
+
+        // Function to clear highlights from all nodes
+        function clearNodeHighlights() {
+            network.body.data.nodes.forEach(node => {
+                network.body.data.nodes.update({ id: node.id, borderWidth: 1, borderColor: undefined });
+            });
+        }
+
+        // Function to toggle the fixed state of a node
+        function toggleNodeFixed(nodeId, nodes) {
+            // Get the current node data
+            const node = nodes.get(nodeId);
+            if (node) {
+                const isFixed = node.fixed || false;
+                // Determine if the node is currently fixed on both x and y
+                const isFullyFixed = (typeof isFixed === 'object') ? (isFixed.x && isFixed.y) : isFixed;
+
+                if (isFullyFixed) {
+                    // Unfix the node
+                    nodes.update({
+                        id: nodeId,
+                        fixed: false,
+                        color: 'lightgreen' // Optional: Change color to indicate unfixed state
+                    });
+                } else {
+                    // Fix the node
+                    nodes.update({
+                        id: nodeId,
+                        fixed: { x: true, y: true },
+                        color: 'orange' // Optional: Change color to indicate fixed state
+                    });
+                }
+            }
         }
     </script>
 </body>
