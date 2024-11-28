@@ -66,3 +66,27 @@ def delete_json(id):
         return jsonify({"message": "Data deleted successfully"})
     else:
         return jsonify({"error": "Data with specified ID not found"}), 404
+
+@app.route("/view_graph")
+def view_graph():
+    """
+    Serves the interactive graph visualization HTML page.
+    """
+    return render_template("artworks_graph_with_sliders.html")
+
+# New Route to Get Graph Data (if not already added)
+@app.route("/get_graph", methods=["GET"])
+def get_graph():
+    """
+    Retrieves the latest graph data from MongoDB and returns it as JSON.
+    """
+    graph_data = db['ArtworksGraph'].find_one(sort=[('created_at', -1)])
+    if graph_data:
+        graph_data["_id"] = str(graph_data["_id"])  # Convert ObjectId to string
+        return jsonify(graph_data["graph"])
+    else:
+        return jsonify({"error": "Graph data not found"}), 404
+
+# Ensure that the Flask app runs only when executed directly
+if __name__ == "__main__":
+    app.run(debug=True)

@@ -1,0 +1,325 @@
+<!-- templates/artworks_graph_with_sliders.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Artworks Connectivity Graph</title>
+    <!-- Include vis.js CDN -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+    <link href="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
+    <!-- Optional: Add your custom CSS here -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #network {
+            width: 100%;
+            height: 750px;
+            border: 1px solid lightgray;
+        }
+        .slider-container {
+            margin: 20px 0;
+        }
+        .slider-label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .slider-value {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        .sliders-section {
+            max-width: 800px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Artworks Connectivity Graph</h1>
+
+    <!-- Sliders for interactivity -->
+    <div class="sliders-section">
+        <div class="slider-container">
+            <label for="visualThreshold" class="slider-label">Visual Connectivity Threshold:</label>
+            <input type="range" id="visualThreshold" name="visualThreshold" min="0" max="10" value="4.0" step="0.1" style="width: 300px;">
+            <span id="visualThresholdValue" class="slider-value">4.0</span>
+        </div>
+
+        <div class="slider-container">
+            <label for="narrativeThreshold" class="slider-label">Narrative Connectivity Threshold:</label>
+            <input type="range" id="narrativeThreshold" name="narrativeThreshold" min="0" max="10" value="6.0" step="0.1" style="width: 300px;">
+            <span id="narrativeThresholdValue" class="slider-value">6.0</span>
+        </div>
+
+        <!-- New Sliders -->
+        <div class="slider-container">
+            <label for="springLengthModulator" class="slider-label">Spring Length Modulator:</label>
+            <input type="range" id="springLengthModulator" name="springLengthModulator" min="0.5" max="3.0" value="1.0" step="0.1" style="width: 300px;">
+            <span id="springLengthModulatorValue" class="slider-value">1.0</span>
+        </div>
+
+        <div class="slider-container">
+            <label for="springStiffnessModulator" class="slider-label">Spring Stiffness Modulator:</label>
+            <input type="range" id="springStiffnessModulator" name="springStiffnessModulator" min="0.5" max="3.0" value="1.0" step="0.1" style="width: 300px;">
+            <span id="springStiffnessModulatorValue" class="slider-value">1.0</span>
+        </div>
+
+        <div class="slider-container">
+            <label for="repulsionStrength" class="slider-label">Repulsion Strength:</label>
+            <input type="range" id="repulsionStrength" name="repulsionStrength" min="0" max="200" value="50" step="1" style="width: 300px;">
+            <span id="repulsionStrengthValue" class="slider-value">50</span>
+        </div>
+    </div>
+
+    <!-- Network Graph Container -->
+    <div id="network"></div>
+
+    <!-- JavaScript for Graph Visualization and Interactivity -->
+    <script type="text/javascript">
+        // Initialize variables
+        let allEdges = [];
+        let allNodes = [];
+        let network;
+        let originalVisualWeight = 0.5;
+        let originalNarrativeWeight = 0.5;
+        let min_visual = 0;
+        let max_visual = 10;
+        let min_narrative = 0;
+        let max_narrative = 10;
+
+        // Fetch graph data from the backend
+        fetch('/get_graph')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                allNodes = data.nodes.map(node => ({
+                    id: node.id,
+                    label: node.id, 
+                    title: `<b>${node.name}</b><br>Artist: ${node.artist}<br>Description: ${node.description}`,
+                    color: 'lightgreen',
+                    value: 10,
+                    shape: 'dot' // Set shape to 'dot' to make nodes circular
+                }));
+
+                allEdges = data.links.map(link => ({
+                    from: link.source,
+                    to: link.target,
+                    visual_connectivity_score: link.visual_connectivity_score,
+                    narrative_connectivity_score: link.narrative_connectivity_score,
+                    color: getColorFromScore(0), // Initial color based on default score
+                    width: 1, // Initial width
+                    title: `Visual Score: ${link.visual_connectivity_score}<br>Narrative Score: ${link.narrative_connectivity_score}`
+                }));
+
+                // Determine min and max scores for normalization
+                if (allEdges.length > 0) {
+                    min_visual = Math.min(...allEdges.map(e => e.visual_connectivity_score));
+                    max_visual = Math.max(...allEdges.map(e => e.visual_connectivity_score));
+                    min_narrative = Math.min(...allEdges.map(e => e.narrative_connectivity_score));
+                    max_narrative = Math.max(...allEdges.map(e => e.narrative_connectivity_score));
+                }
+
+                initializeNetwork();
+            })
+            .catch(error => {
+                console.error('Error fetching graph data:', error);
+                alert('Failed to load graph data.');
+            });
+
+        // Function to compute overall score
+        function computeOverallScore(visualScore, narrativeScore) {
+            return (originalVisualWeight * visualScore) + (originalNarrativeWeight * narrativeScore);
+        }
+
+        // Function to get color based on overall score
+        function getColorFromScore(score) {
+            // Simple interpolation from blue (low) to red (high)
+            const red = Math.round(255 * score);
+            const blue = Math.round(255 * (1 - score));
+            return `rgb(${red}, 0, ${blue})`;
+        }
+
+        // Slider Elements
+        const visualThresholdSlider = document.getElementById('visualThreshold');
+        const narrativeThresholdSlider = document.getElementById('narrativeThreshold');
+
+        // New Sliders
+        const springLengthModulatorSlider = document.getElementById('springLengthModulator');
+        const springStiffnessModulatorSlider = document.getElementById('springStiffnessModulator');
+        const repulsionStrengthSlider = document.getElementById('repulsionStrength');
+
+        const visualThresholdValue = document.getElementById('visualThresholdValue');
+        const narrativeThresholdValue = document.getElementById('narrativeThresholdValue');
+        const springLengthModulatorValue = document.getElementById('springLengthModulatorValue');
+        const springStiffnessModulatorValue = document.getElementById('springStiffnessModulatorValue');
+        const repulsionStrengthValue = document.getElementById('repulsionStrengthValue');
+
+        // Update slider display values
+        function updateSliderValues() {
+            visualThresholdValue.textContent = parseFloat(visualThresholdSlider.value).toFixed(1);
+            narrativeThresholdValue.textContent = parseFloat(narrativeThresholdSlider.value).toFixed(1);
+            springLengthModulatorValue.textContent = parseFloat(springLengthModulatorSlider.value).toFixed(1);
+            springStiffnessModulatorValue.textContent = parseFloat(springStiffnessModulatorSlider.value).toFixed(1);
+            repulsionStrengthValue.textContent = parseFloat(repulsionStrengthSlider.value).toFixed(0);
+        }
+
+        // Function to initialize the network graph
+        function initializeNetwork() {
+            const nodes = new vis.DataSet(allNodes);
+            const edges = new vis.DataSet();
+
+            const container = document.getElementById('network');
+
+            const data = {
+                nodes: nodes,
+                edges: edges
+            };
+
+            const options = {
+                physics: {
+                    enabled: true,
+                    forceAtlas2Based: {
+                        gravitationalConstant: -parseFloat(repulsionStrengthSlider.value),
+                        centralGravity: 0.0005,
+                        springLength: 100, // Neutralize global springLength
+                        springConstant: 0.1 * parseFloat(springStiffnessModulatorSlider.value),
+                        damping: 0.4
+                    },
+                    solver: 'forceAtlas2Based',
+                    stabilization: {
+                        iterations: 50
+                    }
+                },
+                edges: {
+                    smooth: false
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 200
+                },
+                nodes: {
+                    font: {
+                        size: 12
+                    }
+                }
+            };
+
+            network = new vis.Network(container, data, options);
+            // Add event listeners for sliders after network initialization
+            addSliderEventListeners();
+            // Initial update
+            filterAndUpdateEdges();
+        }
+
+        // Function to add event listeners after network initialization
+        function addSliderEventListeners() {
+            // Event Listeners for Sliders
+            visualThresholdSlider.addEventListener('input', () => {
+                updateSliderValues();
+                filterAndUpdateEdges();
+            });
+
+            narrativeThresholdSlider.addEventListener('input', () => {
+                updateSliderValues();
+                filterAndUpdateEdges();
+            });
+
+            // New Sliders Event Listeners
+            springLengthModulatorSlider.addEventListener('input', () => {
+                updateSliderValues();
+                filterAndUpdateEdges(); // Since spring length is per edge
+            });
+
+            springStiffnessModulatorSlider.addEventListener('input', () => {
+                updateSliderValues();
+                updatePhysicsSettings();
+            });
+
+            repulsionStrengthSlider.addEventListener('input', () => {
+                updateSliderValues();
+                updatePhysicsSettings();
+            });
+
+            // Initial slider value update
+            updateSliderValues();
+            // Initial physics settings update
+            updatePhysicsSettings();
+        }
+
+        // Function to filter and update edges based on slider values
+        function filterAndUpdateEdges() {
+            const visualThreshold = parseFloat(visualThresholdSlider.value);
+            const narrativeThreshold = parseFloat(narrativeThresholdSlider.value);
+            const springLengthModulator = parseFloat(springLengthModulatorSlider.value);
+
+            // Filter edges based on thresholds
+            const filteredEdges = allEdges.filter(edge => 
+                edge.visual_connectivity_score >= visualThreshold &&
+                edge.narrative_connectivity_score >= narrativeThreshold
+            );
+
+            // Clear existing edges
+            network.body.data.edges.clear();
+
+            // Add filtered edges with updated attributes
+            filteredEdges.forEach(edge => {
+                const overall_score = computeOverallScore(
+                    (edge.visual_connectivity_score - min_visual) / (max_visual - min_visual || 1),
+                    (edge.narrative_connectivity_score - min_narrative) / (max_narrative - min_narrative || 1)
+                );
+
+                const capped_score = Math.min(overall_score, 1.0); // Ensure score doesn't exceed 1.0
+
+                const newWidth = 1 + capped_score * 5;
+                const newColor = getColorFromScore(capped_score);
+                const baseLength = 300 * (1 - capped_score) + 100; // Between 100 and 400
+                const newLength = baseLength * springLengthModulator; // Modulate length per edge
+
+                network.body.data.edges.add({
+                    from: edge.from,
+                    to: edge.to,
+                    width: newWidth,
+                    color: newColor,
+                    title: edge.title,
+                    length: newLength // Set length per edge
+                });
+            });
+
+            // Restart the physics simulation
+            network.stopSimulation();
+            network.startSimulation();
+        }
+
+        // Function to update physics settings based on new sliders
+        function updatePhysicsSettings() {
+            const springStiffnessModulator = parseFloat(springStiffnessModulatorSlider.value);
+            const repulsionStrength = parseFloat(repulsionStrengthSlider.value);
+
+            const newPhysicsOptions = {
+                physics: {
+                    enabled: true,
+                    forceAtlas2Based: {
+                        gravitationalConstant: -repulsionStrength, // Adjust gravitationalConstant to simulate repulsion
+                        centralGravity: 0.0005,
+                        springConstant: 0.1 * springStiffnessModulator, // Scale spring strength
+                        damping: 0.4
+                    },
+                    solver: 'forceAtlas2Based',
+                    stabilization: {
+                        iterations: 50
+                    }
+                }
+            };
+
+            network.setOptions(newPhysicsOptions);
+            // Restart the physics simulation
+            network.stopSimulation();
+            network.startSimulation();
+        }
+    </script>
+</body>
+</html>
