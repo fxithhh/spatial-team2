@@ -17,9 +17,6 @@ function NavBar({ onSidebarToggle }) {
         <Link to="/" className="text-white text-xl font-medium cursor-pointer transition-colors duration-300 hover:text-linkhover">
           Home
         </Link>
-        <Link to="/guidelines" className="text-white text-xl font-medium cursor-pointer transition-colors duration-300 hover:text-linkhover">
-          Guidelines
-        </Link>
         <div className="text-white text-xl font-medium cursor-pointer transition-colors duration-300 hover:text-linkhover">
           Profile
         </div>
