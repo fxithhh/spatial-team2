@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 //components
-import Canvas from '../components/canvas'; // Ensure the correct import path
+import Graph from '../components/Graph'; // Adjust the path if necessary
 import ArtworkCard from '../components/artwork_card';
 import Breadcrumb from '../components/breadcrumb';
 import ImportArtWork from '../components/popups/import-artwork';
 import FullArtworkDetails from '../components/popups/full-artwork-details';
+import Canvas from '../components/canvas.jsx';
 
 // data
 import config from '../data/config.json';
@@ -87,7 +88,7 @@ function ExhibitDetail() {
         <div className='mx-20 my-12'>
             <Breadcrumb />
             {/* Choose Exhibit Dropdown */}
-            <div className="my-8 flex">
+            <div className="my-1 flex">
                 <h1 className="font-['Roboto_Condensed'] font-bold text-4xl mr-8">Viewing Mode</h1>
                 <div>
                     <button
@@ -124,12 +125,12 @@ function ExhibitDetail() {
             <div className="grid grid-cols-3 gap-6">
                 {/* canvas div */}
                 <div className="col-span-2">
-                    <Canvas floorplanImage={floorplanImage} />
+                    <Graph />
                 </div>
 
                 {/* sandbox div */}
                 <div>
-                    <h2 className="text-2xl font-['Roboto_Condensed'] font-semibold -mt-8 text-center">Museum Sandbox</h2>
+                    <Canvas />
                     <div className="border-2 border-black py-4 px-8">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-2xl font-['Roboto_Condensed'] font-semibold">List of Artworks</h3>
@@ -191,6 +192,7 @@ function ExhibitDetail() {
             </div>
             {isAddArtworkOpen && (<ImportArtWork isOpen={isAddArtworkOpen} closeAddArtwork={closeAddArtwork} />)}
             {isArtworkDetailsOpen && (<FullArtworkDetails isOpen={isArtworkDetailsOpen} closeArtworkDetails={closeArtworkDetails} artwork={selectedArtwork} />)}
+
         </div>
     );
 }
