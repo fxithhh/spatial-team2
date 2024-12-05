@@ -19,6 +19,10 @@ db = mongo_client.spatial
 artworks_collection = db.Artworks
 taxonomy_artworks_collection = db.TaxonomyArtworks
 
+# Home route to render the HTML form
+@app.route("/")
+def home():
+    return render_template("layout.html")
 
 # Route to handle JSON file upload and store it in MongoDB
 @app.route("/upload_json", methods=["POST"])
