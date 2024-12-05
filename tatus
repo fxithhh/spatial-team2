@@ -1,0 +1,346 @@
+[33mcommit d02420165853f372558a04b8cc169c7e8f91adec[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Merge: 976b2fd e52cc78
+Author: btonyip <brightonyip@gmail.com>
+Date:   Thu Dec 5 16:33:48 2024 +0800
+
+    Merge branch 'main' of https://github.com/fxithhh/spatial-team2
+
+[33mcommit e52cc780935279b526f56d0de6658303d8aa75a3[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Thu Dec 5 15:44:16 2024 +0800
+
+    fix create new exhibit navigation on homepage
+
+[33mcommit 9e1ff4ecdda8fb72748b216753aee1b13b11e462[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Thu Dec 5 15:41:55 2024 +0800
+
+    edit typo
+
+[33mcommit 1399bf662e08a44db4663c235c5372ae314a0447[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Thu Dec 5 15:41:09 2024 +0800
+
+    minor fixes on input field
+
+[33mcommit 39922fcbb0da1cae8f018a942f3a8e6e0cc28074[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Thu Dec 5 15:38:54 2024 +0800
+
+    update create exhibit page and exhibit design page to new hi-fi
+
+[33mcommit 2401da192ecc0469aeaf899eb55760c07b45e539[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Thu Dec 5 15:38:26 2024 +0800
+
+    make navbar sticky
+
+[33mcommit 976b2fde20a8e6c03716a3d43569c6cf06b06eb3[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Thu Dec 5 12:07:35 2024 +0800
+
+    LLM Code
+
+[33mcommit 0531e57e000d924854f4557670d56e751dc4fff1[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Thu Dec 5 12:00:33 2024 +0800
+
+    LLM code without API Key
+
+[33mcommit 80faa65d8329d3749aad39df736db15e67545db8[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Thu Dec 5 09:55:33 2024 +0800
+
+    non tracked LLM code in github
+
+[33mcommit 1c1236b2ffe2cfac2e58813cd9a0e1c3a96c22f9[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Wed Dec 4 00:01:26 2024 +0800
+
+    edit navbar and change exhibit page layout
+
+[33mcommit 2a09686d560a87e58a3e5fbfbfe9871f4620857a[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Thu Nov 28 15:59:10 2024 +0800
+
+    minor updates to values
+
+[33mcommit 350a45863100005c2762b7b283bfa63f8ca833ee[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Thu Nov 28 15:15:22 2024 +0800
+
+    added fixing of nodes feature
+
+[33mcommit 552702eb5c9478b30cc55edb89927399c28671a7[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Thu Nov 28 14:00:06 2024 +0800
+
+    added interactive graph to flask backend
+
+[33mcommit b025f0475f411193b1a5dbc65250afbee74f6363[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Wed Nov 27 15:10:21 2024 +0800
+
+    physics graph
+
+[33mcommit 50af1e42f3bb5bee5bcea376e6879589eb6867ef[m
+Merge: 5828bb5 419b5ae
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Mon Nov 25 06:00:16 2024 +0800
+
+    Merge branch 'main' of https://github.com/fxithhh/spatial-team2
+
+[33mcommit 5828bb555d589a3f9870bde98cdf11a36f60a6a0[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Mon Nov 25 05:59:34 2024 +0800
+
+    updates to connectivity mvp
+
+[33mcommit 419b5ae66dfe64700f85c0954f34374eb20b743e[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Thu Nov 21 13:52:51 2024 +0800
+
+    Refactor vectorstore code and added secrets file
+
+[33mcommit a556de8b9fa012a915b71c6cd11cd7b5d38cf0ca[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Tue Nov 19 16:46:22 2024 +0800
+
+    call openai api with image upload
+
+[33mcommit 343254b85fddc3361a69a33da5693d1cae6fbe3e[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Mon Nov 18 19:25:46 2024 +0800
+
+    minor fixes and add create exhibit page
+
+[33mcommit 19f7b18cffac553a3f6da882a9420f27a5915aa5[m
+Merge: 312453d b8179ed
+Author: btonyip <104675634+btonyip@users.noreply.github.com>
+Date:   Sun Nov 17 16:44:10 2024 +0800
+
+    Merge pull request #4 from fxithhh/Taxonamy-system
+    
+    Taxonomy system implemented on Add Artworks without img
+
+[33mcommit b8179edff3d77a0b2f8fbba80430296377061eb6[m[33m ([m[1;31morigin/Taxonamy-system[m[33m, [m[1;32mTaxonamy-system[m[33m)[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Sun Nov 17 16:40:37 2024 +0800
+
+    Taxonomy system implemented on Add Artworks without img
+
+[33mcommit 312453df9b7033b46cbe20eba841e21aba5822a1[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Sat Nov 16 23:50:27 2024 +0800
+
+    added initial testing for connectivity optimising system
+
+[33mcommit 3f1f33481e30822a43c90fa8996498414a3f9582[m
+Merge: 1e74445 58e9ed8
+Author: btonyip <104675634+btonyip@users.noreply.github.com>
+Date:   Sat Nov 16 14:24:32 2024 +0800
+
+    Merge pull request #3 from fxithhh/FE-BE-interaction
+    
+    saves artwork and image in DB
+
+[33mcommit 58e9ed862f33922833ecb2d0e933be5c03667d8b[m[33m ([m[1;31morigin/FE-BE-interaction[m[33m)[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Sat Nov 16 14:22:17 2024 +0800
+
+    saves artwork and image in DB
+
+[33mcommit 1e744452071247cbce250e57e2e4bfc5d8481ace[m
+Merge: 411094a a21e0e5
+Author: btonyip <104675634+btonyip@users.noreply.github.com>
+Date:   Sat Nov 16 12:56:53 2024 +0800
+
+    Merge pull request #2 from fxithhh/Start-FE-and-BE-tgt
+    
+    npm starts both FE BE tgt
+
+[33mcommit a21e0e5fe0701828bda89cf5d29f8c10f0e1ae7a[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Sat Nov 16 12:54:35 2024 +0800
+
+    npm starts both FE BE tgt
+
+[33mcommit 411094ac390d9d4086ee455995991e6f3250bfc8[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Thu Nov 14 23:26:44 2024 +0800
+
+    finish up mvp of web app
+
+[33mcommit 1efd6c13b4675ea771789a8b420c79e3c79bb23d[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Mon Nov 11 20:57:44 2024 +0800
+
+    form for importing artwork
+
+[33mcommit dce3d9e73000693ba68a826c1cb03a8883356277[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Mon Nov 11 17:53:19 2024 +0800
+
+    artwork details popup done
+
+[33mcommit aa68199ee38ea68c90e9204e2bdb6e2662a09315[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Mon Nov 11 17:26:31 2024 +0800
+
+    set up add artwork and artwork details popup
+
+[33mcommit 27eb0ec331ce1b6a840c427f220426c0b0d646ff[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Mon Nov 11 16:40:57 2024 +0800
+
+    complete exhibit detail page
+
+[33mcommit a5075d03e30c478232438406113fd32396b7b54a[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Mon Nov 11 16:25:53 2024 +0800
+
+    functional exhibit details page
+
+[33mcommit 4961916566be30970463d9bb7a2c3a8a6a7af7b3[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Mon Nov 11 14:39:43 2024 +0800
+
+    exhibit detail dropdown for paths
+
+[33mcommit 7f4fd5830bdec11f44fffa0119362512a1a537cc[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Mon Nov 11 13:44:59 2024 +0800
+
+    breadcrumb in exhibit details page
+
+[33mcommit 5d3c55ca7152a4b55ae1b0d731a733dfe08bfb48[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Mon Nov 11 13:23:15 2024 +0800
+
+    fixed images and added logo
+
+[33mcommit 54e9efaf4cddcd1506c0180306ae5b8e8a2b1998[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Sun Nov 3 19:17:53 2024 +0800
+
+    added corridor width checker
+
+[33mcommit 539a58529207e5010cdd04835ad403e84ab88ff9[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Sat Nov 2 23:13:53 2024 +0800
+
+    minor change to detect wall
+
+[33mcommit 2aeb3f5cc6bf6c131871eafd4ce7823b9276c965[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Sat Nov 2 18:33:14 2024 +0800
+
+    added path finding for fire escape
+
+[33mcommit b020c3e80522b29ba0c6a07eb0470ff085451c36[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Wed Oct 30 14:08:01 2024 +0800
+
+    updated resizing handles size
+
+[33mcommit 422a71962624ebac09e4a3d0145a9daf81380c43[m
+Author: jordanleewei <jordanleewei@gmail.com>
+Date:   Wed Oct 30 14:03:11 2024 +0800
+
+    added grid based wall making system to canvas
+
+[33mcommit 3d3ec4f28d8efa050ad72e2fc89b47293b81b58a[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Tue Oct 29 22:59:37 2024 +0800
+
+    Connect & CRUD operations on DB
+
+[33mcommit dbf928b1684169c9f52e07c067985e1830e9f32d[m
+Author: btonyip <brightonyip@gmail.com>
+Date:   Mon Oct 28 17:25:19 2024 +0800
+
+    Flask BE with mongoDB connection without CRUD
+
+[33mcommit fc420579bac7f6e1e8fa7a3a36954b6cbfd29b54[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Sun Oct 27 00:53:02 2024 +0800
+
+    add artwork data, do fixes
+
+[33mcommit 0b164f43b12369f195cf44653e9c66b5ad4bcc61[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Sat Oct 26 23:01:43 2024 +0800
+
+    refined guidelines and transferred data into config json
+
+[33mcommit c7cf9b36ab1255fa126b2d8d5e22042033483f78[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Sat Oct 26 22:37:32 2024 +0800
+
+    minor organising
+
+[33mcommit e8dd757b4ca10c52f427a0120ca2c7a1fda52650[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Sat Oct 26 22:26:09 2024 +0800
+
+    guidelines page
+
+[33mcommit ebc743112dc275420cf86344aec761f8ebad5807[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Sat Oct 26 21:51:27 2024 +0800
+
+    add ArtworkCard and Sidebar component
+
+[33mcommit 4e80b6920b0f249c67c7a09723b95dd65ee331f1[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Sat Oct 26 21:51:00 2024 +0800
+
+    minor fixes to buttons, navbar, exhibit list page
+
+[33mcommit 5d23e558913b2eded27bd29b9130cc0093388ea8[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Sat Oct 26 21:49:55 2024 +0800
+
+    merge app.js
+
+[33mcommit 6fa9ee26f96484fb656b8a1ca57aa75147761498[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Sat Oct 26 21:41:32 2024 +0800
+
+    minor edits to nav bar
+
+[33mcommit ab2872383a22ff0eda427bf52bbe699d0470cbaa[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Sat Oct 26 18:17:18 2024 +0800
+
+    add guidelines page, layout page for navbar
+
+[33mcommit 836959c37d24613427955cff9ce2b1d5af40db0d[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Sat Oct 26 18:15:44 2024 +0800
+
+    add exhibit sample images
+
+[33mcommit f13e0a5058cca905a365a4dd0776bab159c54a45[m
+Author: Janice <janiceyohana@gmail.com>
+Date:   Sat Oct 26 11:05:27 2024 +0800
+
+    add navbar, button component + edit exhibit list page + add font and icon library
+
+[33mcommit ce511f44747ef32373f95c71d12b8e7619ebd228[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Wed Oct 23 18:48:57 2024 +0800
+
+    setting up app basic structure
+
+[33mcommit 9b7bdaf8dfa918989b854312ac087f6ec0fbfab6[m
+Author: fxithhh <fxithhh@gmail.com>
+Date:   Wed Oct 23 17:09:57 2024 +0800
+
+    initial setup
+
+[33mcommit 5f844779ff99b0574398ad9fac2a9238aea0402a[m
+Author: Faith Lim <85132790+fxithhh@users.noreply.github.com>
+Date:   Wed Oct 23 16:51:18 2024 +0800
+
+    Initial commit

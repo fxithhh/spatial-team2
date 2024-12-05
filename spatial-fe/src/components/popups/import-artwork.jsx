@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { ImCross } from 'react-icons/im';
 import { FaAngleDown } from "react-icons/fa6";
 import { FaAngleUp } from "react-icons/fa6";
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 function ImportArtWork({ isOpen, closeAddArtwork }) {
     // Style popup
@@ -151,7 +152,7 @@ const handleSubmit = async (e) => {
         }
 
         // Submit the JSON data to the backend
-        const response = await fetch("http://localhost:8000/upload_json", {
+        const response = await fetch("http://localhost:5000/upload_json", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dataToSend),
@@ -167,16 +168,16 @@ const handleSubmit = async (e) => {
     }
 };
 
-    
-    
-    
+
+
+
 
     return (
         <div>
             <Popup open={isOpen} onClose={closeAddArtwork} contentStyle={contentStyle} overlayStyle={overlayStyle}>
                 {/* Close button inside the popup */}
-                <ImCross
-                    className="text-brand-gray1 ml-auto mr-8 mt-6 cursor-pointer"
+                <XMarkIcon
+                    className="text-brand-gray1 ml-auto mr-8 mt-6 h-6 w-6 cursor-pointer"
                     onClick={closeAddArtwork} // Close the popup when the icon is clicked
                 />
                 <div className="px-12 py-2 mb-8 font-['Roboto_Condensed']">
@@ -188,7 +189,7 @@ const handleSubmit = async (e) => {
 
                             {/* Artwork Title Input */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Title of Artwork <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Title of Artwork <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
                                     id="title"
@@ -202,7 +203,7 @@ const handleSubmit = async (e) => {
 
                             {/* Artwork Description Input */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Artwork Description <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl  font-['Roboto']">Artwork Description <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
                                     id="description"
@@ -216,7 +217,7 @@ const handleSubmit = async (e) => {
 
                             {/* Artist Name Input */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Artist Name <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl  font-['Roboto']">Artist Name <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
                                     id="artist_name"
@@ -230,7 +231,7 @@ const handleSubmit = async (e) => {
 
                             {/* Date of Creation Input */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Date of Creation <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Date of Creation <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
                                     id="date_of_creation"
@@ -244,7 +245,7 @@ const handleSubmit = async (e) => {
 
                             {/* Material of Artwork Input */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Material of Artwork <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Material of Artwork <span className='text-brand'>*</span></label>
                                 <div className="border-b-2 outline-none py-2 flex items-center gap-2">
                                     {formData.material.map((option) => (
                                         <span key={option} className="bg-brand text-white px-2 py-1 flex items-center">
@@ -283,7 +284,7 @@ const handleSubmit = async (e) => {
 
                             {/* Dimensions of Artwork */}
                             <div className='my-8 pb-4'>
-                                <label className="w-full font-semibold text-gray-400 text-xl">Dimensions of Artwork <span className='text-brand'>*</span></label>
+                                <label className="w-full font-medium text-gray-400 text-xl font-['Roboto']">Dimensions of Artwork <span className='text-brand'>*</span></label>
                                 <br></br> <br></br>
                                 {/* Width Input */}
                                 <input
@@ -330,7 +331,7 @@ const handleSubmit = async (e) => {
 
                             {/* Display Type Input */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Display Type <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Display Type <span className='text-brand'>*</span></label>
                                 <div className="border-b-2 outline-none py-2 flex items-center gap-2">
                                     {formData.display_type.map((option) => (
                                         <span key={option} className="bg-brand text-white px-2 py-1 flex items-center">
@@ -369,7 +370,7 @@ const handleSubmit = async (e) => {
 
                             {/* Geographical Association */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Geographical Association <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Geographical Association <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
                                     id="geographical_association"
@@ -383,7 +384,7 @@ const handleSubmit = async (e) => {
 
                             {/* Acquisition Type */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Acquisition Type <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Acquisition Type <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
                                     id="acquisition_type"
@@ -397,7 +398,7 @@ const handleSubmit = async (e) => {
 
                             {/* Historical Significance */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Historical Significance <span className='text-sm text-gray-300'>(Optional)</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Historical Significance <span className='text-sm text-gray-300'>(Optional)</span></label>
                                 <input
                                     type="text"
                                     id="historical_significance"
@@ -410,7 +411,7 @@ const handleSubmit = async (e) => {
 
                             {/* Style Significance */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Style Significance <span className='text-sm text-gray-300'>(Optional)</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Style Significance <span className='text-sm text-gray-300'>(Optional)</span></label>
                                 <input
                                     type="text"
                                     id="style_significance"
@@ -423,7 +424,7 @@ const handleSubmit = async (e) => {
 
                             {/* Exhibition Utilisation */}
                             <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Exhibition Utilisation <span className='text-brand'>*</span></label>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Exhibition Utilisation <span className='text-brand'>*</span></label>
                                 <input
                                     type="text"
                                     id="exhibition_utilisation"
@@ -436,19 +437,26 @@ const handleSubmit = async (e) => {
                             </div>
 
                             {/* Artwork Image Upload */}
-                            <div className='my-8 pb-4'>
-                                <label className="font-semibold text-gray-400 text-xl">Artwork Image <span className='text-brand'>*</span></label>
+                            <div className='my-8 pb-4 flex flex-col'>
+                                <label className="font-medium text-gray-400 text-xl font-['Roboto']">Artwork Image <span className='text-brand'>*</span></label>
+                                <label
+                                        htmlFor="artwork-image"
+                                        className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit"
+                                    >
+                                        Upload Artwork Image
+                                    </label>
                                 <input
+                                    id='artwork-image'
                                     type="file"
                                     onChange={handleImageUpload}
                                     accept="image/*"
-                                    className="w-full mt-2"
+                                    className="hidden"
                                 />
 
                                 {/* Image Preview */}
                                 {previewImage && (
                                     <div className="my-4">
-                                        <p className="font-semibold text-brand text-lg">Image Preview:</p>
+                                        <p className="font-medium text-brand text-lg">Image Preview:</p>
                                         <img src={previewImage} alt="Preview" className="w-full h-auto mt-2" />
                                     </div>
                                 )}
