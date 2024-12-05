@@ -12,7 +12,7 @@ function ExhibitsList() {
   const handleCreateExhibit = () => {
     try {
       console.log("a");
-      navigate(CreateExhibit);
+      navigate("/create-exhibit");
     } catch (error) {
       console.error("Navigation Error:", error);
     }
