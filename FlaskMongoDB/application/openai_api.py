@@ -12,6 +12,7 @@ load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
 API_KEY = os.getenv("API_KEY")
+print(f"API_KEY: {'Set' if API_KEY else 'Not Set'}: {API_KEY[:4]}****{API_KEY[-4:]}" if API_KEY else "API_KEY is Not Set")
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 client = OpenAI(api_key=API_KEY)
@@ -20,12 +21,6 @@ COLLECTION_NAME = "Vectorstore"
 
 # Function to load vectorstore from MongoDB
 def load_vectorstore_from_mongo(collection_name=COLLECTION_NAME):
-    """
-    Load the vectorstore from MongoDB and reconstruct it.
-    
-    :param collection_name: The MongoDB collection name where the vectorstore is stored.
-    :return: Reconstructed InMemoryVectorStore.
-    """
     # Connect to MongoDB
     mongo_client = MongoClient(MONGO_URI)
     db = mongo_client[DB_NAME]

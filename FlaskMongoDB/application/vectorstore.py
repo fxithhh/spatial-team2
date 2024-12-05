@@ -9,6 +9,7 @@ load_dotenv()
 
 # MongoDB connection settings
 MONGO_URI = os.getenv("MONGO_URI")
+API_KEY = os.getenv("API_KEY")
 DB_NAME = "spatial"
 COLLECTION_NAME = "Vectorstore"
 
@@ -24,15 +25,11 @@ embeddings = OpenAIEmbeddings(
     model="text-embedding-3-large",
     api_key="APIKEY") 
 
+    api_key=apikey
+)
 
 # Function to save vectorstore to MongoDB
 def save_vectorstore_to_mongo(pdf_paths, collection_name=COLLECTION_NAME):
-    """
-    Load PDF documents, create a vectorstore, and save it to MongoDB.
-    
-    :param pdf_paths: List of paths to the PDF files.
-    :param collection_name: The MongoDB collection name for storing the vectorstore.
-    """
     # Load documents from PDF files
     documents = []
     for pdf_path in pdf_paths:

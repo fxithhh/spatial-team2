@@ -8,6 +8,7 @@ from pymongo import MongoClient
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
+API_KEY = os.getenv("API_KEY")
 #import the func from openai_api.py
 from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags, convert_image_to_jpeg, load_vectorstore_from_mongo
 
@@ -24,80 +25,97 @@ taxonomy_artworks_collection = db.TaxonomyArtworks
 def upload_json():
     # Check if the request is JSON
     if not request.is_json:
+        print("Debug: Request is not JSON.")
         return jsonify({"error": "Request must be a JSON object"}), 400
 
     try:
+        # Parse the incoming JSON
         original_metadata = request.get_json()
-        print("Received JSON data !!")
+        print("Debug: Received JSON data:", original_metadata)
 
+        # Extract and process image data
         image_data = original_metadata.get("image")
         if image_data:
             try:
+                print("Debug: Processing image data.")
                 base64_data = image_data.split(",")[1] if "," in image_data else image_data
                 image_binary = base64.b64decode(base64_data, validate=True)
+                print("Debug: Image data decoded successfully.")
 
                 # Convert to JPEG
                 compressed_image = convert_image_to_jpeg(image_binary)
                 if compressed_image is None:
                     raise ValueError("Image conversion failed.")
+                print("Debug: Image successfully converted to JPEG.")
 
                 # Encode back to Base64
                 compressed_image_base64 = base64.b64encode(compressed_image).decode("utf-8")
-                print("Image successfully converted and encoded.")
+                print("Debug: Image re-encoded to Base64.")
             except Exception as e:
-                print(f"Image processing error: {e}")
+                print(f"Debug: Image processing error: {e}")
                 return jsonify({"error": "Invalid image data or conversion failed"}), 400
         else:
+            print("Debug: No image data provided.")
             compressed_image_base64 = None
 
-        # Prepare metadata without the image for conservation feedback
+        # Prepare metadata without the image
         metadata_without_image = {key: value for key, value in original_metadata.items() if key != "image"}
+        print("Debug: Metadata without image:", metadata_without_image)
+        print(f"API_KEY: {'Set' if API_KEY else 'Not Set'}: {API_KEY[:4]}****{API_KEY[-4:]}" if API_KEY else "API_KEY is Not Set")
 
-        # Call the OpenAI function for conservation feedback
+        # Generate conservation feedback
         try:
+            print("Debug: Generating conservation feedback.")
+            vectorstore = load_vectorstore_from_mongo()
+            print("Debug: Vectorstore loaded successfully.")
             openai_feedback = generate_response_conservation(
                 metadata=metadata_without_image,
-                vectorstore=load_vectorstore_from_mongo(),
+                vectorstore=vectorstore,
                 model="gpt-4o-mini"
             )
-            print("OpenAI conservation feedback:", openai_feedback)
+            print("Debug: OpenAI conservation feedback received:", openai_feedback)
         except Exception as e:
-            print(f"OpenAI API error (conservation): {e}")
+            print(f"Debug: OpenAI API error (conservation): {e}")
             return jsonify({"error": "Failed to process data with OpenAI for conservation feedback"}), 500
 
-        # Call the OpenAI function for taxonomy tagging with raw Base64 string
+        # Generate taxonomy feedback if image data is present
         if image_data:
             try:
+                print("Debug: Generating taxonomy feedback.")
                 taxonomy_feedback = generate_taxonomy_tags(
                     metadata=metadata_without_image,
                     image_data=compressed_image_base64,
                     tax_template=tax_template,
                     model="gpt-4o-mini"
                 )
-                print("OpenAI taxonomy feedback:", taxonomy_feedback)
+                print("Debug: OpenAI taxonomy feedback received:", taxonomy_feedback)
             except Exception as e:
-                print(f"OpenAI API error (taxonomy): {e}")
+                print(f"Debug: OpenAI API error (taxonomy): {e}")
                 return jsonify({"error": "Failed to process data with OpenAI for taxonomy feedback"}), 500
         else:
+            print("Debug: Skipping taxonomy feedback generation (no image data).")
             taxonomy_feedback = None
 
-        # Prepare the combined data with both OpenAI feedbacks
+        # Combine data for MongoDB insertion
         combined_data = {
             **original_metadata,
             "openai_feedback": openai_feedback,
             "taxonomy_feedback": taxonomy_feedback
         }
+        print("Debug: Combined data prepared for MongoDB:", combined_data)
 
-        # Insert the combined data into the Artworks collection
+        # Insert into MongoDB
         try:
+            print("Debug: Inserting data into MongoDB.")
             insertion_result = artworks_collection.insert_one(combined_data)
             inserted_id = str(insertion_result.inserted_id)
-            print("Inserted data with ID:", inserted_id)
+            print("Debug: Data inserted successfully with ID:", inserted_id)
         except Exception as e:
-            print(f"MongoDB insertion error: {e}")
+            print(f"Debug: MongoDB insertion error: {e}")
             return jsonify({"error": "Failed to insert data into MongoDB"}), 500
 
-        # Return the response with the inserted document ID, OpenAI feedback, and taxonomy feedback
+        # Return success response
+        print("Debug: Returning success response.")
         return jsonify({
             "message": "Artwork uploaded and processed successfully",
             "artwork_id": inserted_id,
@@ -106,8 +124,9 @@ def upload_json():
         }), 200
 
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        print(f"Debug: Unexpected error: {e}")
         return jsonify({"error": "Failed to process JSON object"}), 500
+
 
 # # CRUD Operations
 
