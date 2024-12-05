@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+
+//components
+import Graph from '../components/Graph'; // Adjust the path if necessary
 import Breadcrumb from '../components/breadcrumb';
 import { ArrowsRightLeftIcon, ListBulletIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Canvas from '../components/canvas';

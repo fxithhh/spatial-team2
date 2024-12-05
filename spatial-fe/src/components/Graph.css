@@ -1,0 +1,30 @@
+/* src/components/Graph.css */
+
+.sliders-section {
+    max-width: 800px;
+    margin-bottom: 20px;
+  }
+  
+  .slider-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .slider-label {
+    width: 250px;
+    font-weight: bold;
+  }
+  
+  .slider-value {
+    margin-left: 10px;
+    font-weight: bold;
+  }
+  
+  #instructions {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #555;
+    max-width: 800px;
+  }
+  
