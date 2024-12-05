@@ -29,7 +29,7 @@ function Sidebar() {
   const hasMoreExhibits = visibleExhibits < config.exhibits.length;
 
   return (
-    <div className="p-8 bg-[#FFFFFF] h-[calc(100vh-64px)] w-[355px] font-roboto ease-in-out duration-300 overflow-y-auto">
+    <div className="p-8 bg-white h-[calc(100vh-64px)] w-[355px] font-roboto ease-in-out duration-300 overflow-y-auto">
       <Button
         size={{ width: '20em', height: '3em' }}
         text="Create New Exhibit"
