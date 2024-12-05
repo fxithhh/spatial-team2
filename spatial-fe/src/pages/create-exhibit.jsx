@@ -92,12 +92,7 @@ function CreateExhibit() {
                                     <label className="font-semibold font-['Roboto'] text-black text-xl">Exhibition Title <span className='text-brand'>*</span></label>
                                     <label className="font-normal text-gray-400 text-m">Provide the name of your exhibition</label>
                                 </div>
-                            <div className='my-8 pb-4'>
-                                <div className='flex flex-col'>
-                                    <label className="font-semibold font-['Roboto'] text-black text-xl">Exhibition Title <span className='text-brand'>*</span></label>
-                                    <label className="font-normal text-gray-400 text-m">Provide the name of your exhibition</label>
-                                </div>
-                                <textarea
+                                <input
                                     type="text"
                                     id="exhibit_title"
                                     name="exhibit_title"
@@ -177,12 +172,7 @@ function CreateExhibit() {
                                         onChange={handleFileUpload}
                                         accept=".csv, .xlsx, .xls"
                                         className="hidden"
-                                    <input
-                                        id='file-upload'
-                                        type="file"
-                                        onChange={handleFileUpload}
-                                        accept=".csv, .xlsx, .xls"
-                                        className="hidden"
+                                        required
                                     />
                                     {fileName && (
                                         <p className="mt-2 text-gray-700">{fileName}</p>
@@ -210,6 +200,7 @@ function CreateExhibit() {
                                         onChange={handleImageUpload}
                                         accept="image/*"
                                         className="hidden"
+                                        required
                                     />
                                 </div>
                                 <div className='flex flex-col'>
@@ -227,6 +218,7 @@ function CreateExhibit() {
                                         onChange={handleImageUpload}
                                         accept="image/*"
                                         className="hidden"
+                                        required
                                     />
                                 </div>
 
@@ -234,9 +226,7 @@ function CreateExhibit() {
                                 {previewImage && imgFileName && (
                                 {previewImage && imgFileName && (
                                     <div className="my-4">
-                                        {/* <p className="font-semibold text-brand text-lg">Image Preview:</p> */}
-                                        <p className="mt-2 text-gray-700">{imgFileName}</p>
-                                        {/* <p className="font-semibold text-brand text-lg">Image Preview:</p> */}
+                                        <p className="font-semibold text-brand text-lg">Image Preview:</p>
                                         <p className="mt-2 text-gray-700">{imgFileName}</p>
                                         <img src={previewImage} alt="Preview" className="w-full h-auto mt-2" />
                                     </div>

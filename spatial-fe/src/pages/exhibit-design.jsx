@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Breadcrumb from '../components/breadcrumb';
 import { ArrowsRightLeftIcon, ListBulletIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import Canvas from '../components/canvas'; // Ensure the correct import path
+import Canvas from '../components/canvas';
 import ArtworkCard from '../components/artwork_card';
 import ImportArtWork from '../components/popups/import-artwork';
 import config from '../data/config.json';
@@ -43,10 +43,6 @@ const ExhibitDetail = () => {
     };
     const { id } = useParams();
     const exhibit = config.exhibits.find((exhibit) => exhibit.id === parseInt(id));
-    const exhibitPaths = [
-        "Artwork Connections",
-        "Fire & Emergency Plan"
-    ];
 
     const tabs = [
         { id: 1, label: "Path 1" },
@@ -57,11 +53,8 @@ const ExhibitDetail = () => {
     // react use state hooks
     const [floorplanImage, setFloorplanImage] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedPath, setSelectedPath] = useState("Artwork Connections");
-    const [activeTab, setActiveTab] = useState("Path 1");
     const [selectedArtwork, setSelectedArtwork] = useState(null);
     const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // add artwork popup
-    const [isArtworkDetailsOpen, setIsArtworkDetailsOpen] = useState(false); // artwork details popup
 
     if (!exhibit) {
         return <div className="container mx-auto p-4">Exhibit not found.</div>;
@@ -70,17 +63,6 @@ const ExhibitDetail = () => {
     // dropdown stuff
     const toggleDropdown = () => {
         setIsOpen(!isOpen);
-    };
-
-    // function to select path to display
-    const handlePathSelect = (path) => {
-        setSelectedPath(path);
-        setIsOpen(false);
-    };
-
-    // Function to switch between path tabs
-    const handleTabClick = (tab) => {
-        setActiveTab(tab);
     };
 
     // select artwork to display details
@@ -99,7 +81,7 @@ const ExhibitDetail = () => {
     };
 
     return (
-        <div className="flex flex-col m-h-screen my-12 mx-12">
+        <div className="flex flex-col m-h-screen my-8 mx-12">
             {/* Breadcrumb */}
             <div className="flex justify-between items-center mb-4">
                 <Breadcrumb />
@@ -115,7 +97,7 @@ const ExhibitDetail = () => {
             {/* Main Content */}
             <div className="flex flex-grow gap-x-10">
                 {/* Main View Area */}
-                <div className="w-4/5 bg-white relative border-black border-2">
+                <div className="w-3/4 bg-white relative border-black border-2">
                     {/* Main View */}
                     <div className="flex-grow flex justify-center items-center p-4">
                         {view === "connection" ? (
@@ -141,7 +123,7 @@ const ExhibitDetail = () => {
                 </div>
 
                 {/* Side Panel */}
-                <aside className="w-1/5 flex flex-col gap-y-10">
+                <aside className="w-1/4 flex flex-col gap-y-10">
                     {/* Preview Box */}
                     <div className="w-full h-80 border-black border-2 flex justify-center items-center p-2 shadow-sm">
                         {view === "connection" ? (
@@ -155,8 +137,8 @@ const ExhibitDetail = () => {
                     <div className="flex-grow p-4 border-black border-2">
                         {view === "connection" ? (
                             <>
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">Artwork Connections</h2>
-                                <p className="text-sm text-gray-500 mb-4">
+                                <h2 className="text-2xl font-bold text-black mb-2">Artwork Connections</h2>
+                                <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">
                                     Settings to adjust connection graphs.
                                 </p>
                                 <div className="space-y-4">
@@ -253,8 +235,8 @@ const ExhibitDetail = () => {
                             </>
                         ) : (
                             <>
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">Fire Safety Guidelines</h2>
-                                <p className="text-sm text-gray-500 mb-4">
+                                <h2 className="text-2xl font-bold text-black mb-2">Fire Safety Guidelines</h2>
+                                <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">
                                     Settings for fire safety & emergency compliance.
                                 </p>
                                 <div className="space-y-4">
@@ -338,8 +320,8 @@ const ExhibitDetail = () => {
 
                 {/* Artwork Library Sidebar */}
                 {isArtworkLibraryOpen && (
-                    <aside className="top-16 right-0 w-1/5 bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
-                        <div className="flex items-center justify-between mb-8 mt-16">
+                    <aside className="top-16 right-0 w-[500px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
+                        <div className="flex items-center justify-between mb-8 mt-12">
                             <h2 className="font-bold">Artwork Library</h2>
                             <button
                                 onClick={toggleArtworkLibrary}
