@@ -152,7 +152,7 @@ const handleSubmit = async (e) => {
         }
 
         // Submit the JSON data to the backend
-        const response = await fetch("http://localhost:8000/upload_json", {
+        const response = await fetch("http://localhost:5000/upload_json", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dataToSend),

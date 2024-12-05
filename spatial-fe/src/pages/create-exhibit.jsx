@@ -21,6 +21,8 @@ function CreateExhibit() {
     });
     const [fileName, setFileName] = useState('');
     const [imgFileName, setImgFileName] = useState('');
+    const [fileName, setFileName] = useState('');
+    const [imgFileName, setImgFileName] = useState('');
     const [previewImage, setPreviewImage] = useState(null);
 
     // handle image upload
@@ -32,6 +34,15 @@ function CreateExhibit() {
                 floor_plan: file,
             }));
             setPreviewImage(URL.createObjectURL(file)); // Generate preview URL
+            setImgFileName(file.name);
+        }
+    };
+
+    // Handle File Upload
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFileName(file.name); // Store the file name in state
             setImgFileName(file.name);
         }
     };
@@ -82,17 +93,29 @@ function CreateExhibit() {
                                     <label className="font-normal text-gray-400 text-m">Provide the name of your exhibition</label>
                                 </div>
                                 <input
+                            <div className='my-8 pb-4'>
+                                <div className='flex flex-col'>
+                                    <label className="font-semibold font-['Roboto'] text-black text-xl">Exhibition Title <span className='text-brand'>*</span></label>
+                                    <label className="font-normal text-gray-400 text-m">Provide the name of your exhibition</label>
+                                </div>
+                                <input
                                     type="text"
                                     id="exhibit_title"
                                     name="exhibit_title"
                                     value={formData.exhibit_title}
                                     onChange={handleInputChange}
                                     className="w-full h-10 border-b-2 outline-none px-1"
+                                    className="w-full h-10 border-b-2 outline-none px-1"
                                     required
                                 />
                             </div>
 
                             {/* Concept Input */}
+                            <div className='my-8 pb-4'>
+                                <div className='flex flex-col'>
+                                    <label className="font-semibold font-['Roboto'] text-black text-xl">Exhibition Concept <span className='text-brand'>*</span></label>
+                                    <label className="font-normal text-gray-400 text-m">Describe the idea and vision behind your exhibition.</label>
+                                </div>
                             <div className='my-8 pb-4'>
                                 <div className='flex flex-col'>
                                     <label className="font-semibold font-['Roboto'] text-black text-xl">Exhibition Concept <span className='text-brand'>*</span></label>
@@ -105,6 +128,7 @@ function CreateExhibit() {
                                     value={formData.concept}
                                     onChange={handleInputChange}
                                     className="w-full h-20 border-2 outline-none px-1"
+                                    className="w-full h-20 border-2 outline-none px-1"
                                     required
                                 />
                             </div>
@@ -114,7 +138,19 @@ function CreateExhibit() {
                                 <div className='flex flex-col'>
                                     <label className="font-semibold font-['Roboto'] text-black text-xl">Exhibition Subsections <span className='text-brand'>*</span></label>
                                     <label className="font-normal text-gray-400 text-m">Provide the key subthemes of your exhibition.</label>
+                                <div className='flex flex-col'>
+                                    <label className="font-semibold font-['Roboto'] text-black text-xl">Exhibition Subsections <span className='text-brand'>*</span></label>
+                                    <label className="font-normal text-gray-400 text-m">Provide the key subthemes of your exhibition.</label>
                                 </div>
+                                <textarea
+                                    type="text"
+                                    id="subsections"
+                                    name="subsections"
+                                    value={formData.subsections}
+                                    onChange={handleInputChange}
+                                    className="w-full h-20 border-2 outline-none px-1"
+                                    required
+                                />
                                 <textarea
                                     type="text"
                                     id="subsections"
@@ -136,6 +172,14 @@ function CreateExhibit() {
                                         className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit"
                                     >
                                         Upload Artwork List
+                                <div className='flex flex-col'>
+                                    <label className="font-semibold font-['Roboto'] text-black text-xl">Artworks Used in Exhibition <span className='text-brand'>*</span></label>
+                                    <label className="font-normal text-gray-400 text-m">Upload the list of artworks to be featured. Accepted formats: CSV or XLSX.</label>
+                                    <label
+                                        htmlFor="file-upload"
+                                        className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit"
+                                    >
+                                        Upload Artwork List
                                     </label>
                                     <input
                                         id='file-upload'
@@ -144,7 +188,17 @@ function CreateExhibit() {
                                         accept=".csv, .xlsx, .xls"
                                         className="hidden"
                                         required
+                                    <input
+                                        id='file-upload'
+                                        type="file"
+                                        onChange={handleFileUpload}
+                                        accept=".csv, .xlsx, .xls"
+                                        className="hidden"
+                                        required
                                     />
+                                    {fileName && (
+                                        <p className="mt-2 text-gray-700">{fileName}</p>
+                                    )}
                                     {fileName && (
                                         <p className="mt-2 text-gray-700">{fileName}</p>
                                     )}
@@ -171,11 +225,31 @@ function CreateExhibit() {
                                         required
                                     />
                                 </div>
+                                <div className='flex flex-col'>
+                                    <label className="font-semibold font-['Roboto'] text-black text-xl">Floor Plan <span className='text-brand'>*</span></label>
+                                    <label className="font-normal text-gray-400 text-m">Upload the floor plan for your exhibition layout. Accepted format: PNG.</label>
+                                    <label
+                                        htmlFor="floor-plan-upload"
+                                        className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit"
+                                    >
+                                        Upload Floor Plan
+                                    </label>
+                                    <input
+                                        id='floor-plan-upload'
+                                        type="file"
+                                        onChange={handleImageUpload}
+                                        accept="image/*"
+                                        className="hidden"
+                                        required
+                                    />
+                                </div>
 
                                 {/* Image Preview */}
                                 {previewImage && imgFileName && (
+                                {previewImage && imgFileName && (
                                     <div className="my-4">
                                         <p className="font-semibold text-brand text-lg">Image Preview:</p>
+                                        <p className="mt-2 text-gray-700">{imgFileName}</p>
                                         <p className="mt-2 text-gray-700">{imgFileName}</p>
                                         <img src={previewImage} alt="Preview" className="w-full h-auto mt-2" />
                                     </div>
@@ -187,6 +261,7 @@ function CreateExhibit() {
                             <div className='mx-auto flex justify-center'>
                                 <button
                                     type="submit"
+                                    className="bg-brand text-white py-2 px-8 hover:bg-brandhover"
                                     className="bg-brand text-white py-2 px-8 hover:bg-brandhover"
                                 >
                                     Create Exhibit
