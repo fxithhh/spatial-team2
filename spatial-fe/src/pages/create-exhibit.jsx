@@ -117,9 +117,9 @@ function CreateExhibit() {
                                 </div>
                                 <textarea
                                     type="text"
-                                    id="concept"
-                                    name="concept"
-                                    value={formData.concept}
+                                    id="subsections"
+                                    name="subsections"
+                                    value={formData.sebsections}
                                     onChange={handleInputChange}
                                     className="w-full h-20 border-2 outline-none px-1"
                                     required
