@@ -145,7 +145,7 @@ function CreateExhibit() {
                                     type="text"
                                     id="subsections"
                                     name="subsections"
-                                    value={formData.sebsections}
+                                    value={formData.subsections}
                                     onChange={handleInputChange}
                                     className="w-full h-20 border-2 outline-none px-1"
                                     required
