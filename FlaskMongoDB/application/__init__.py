@@ -1,17 +1,27 @@
-from flask import Flask
 import os
+from pathlib import Path
 from dotenv import load_dotenv
+from flask import Flask
 from flask_pymongo import PyMongo
 
-load_dotenv()
+# Define the base directory (root of the project)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Construct the full path to the .env.local file
+dotenv_path = BASE_DIR / '.env.local'
+
+# Load environment variables from .env.local
+load_dotenv(dotenv_path=dotenv_path)
+
+# Initialize Flask app
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
+# Set configuration variables from environment
+app.config["API_KEY"] = os.getenv("API_KEY")
 app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 
-#setup MongoDB
-
-mongo= PyMongo(app)
+# Setup MongoDB
+mongo = PyMongo(app)
 db = mongo.db
 
 try:
