@@ -104,7 +104,7 @@ const ExhibitDetail = () => {
                     {/* Main View */}
                     <div className="flex-grow flex justify-center items-center p-4">
                         {view === "connection" ? (
-                            <div>artwork connection</div>
+                            <Graph/>
                         ) : (
                             <div>
                                 floorplan w safety guidelines

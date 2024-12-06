@@ -1,0 +1,76 @@
+{
+    "artwork_taxonomy": {
+        "Genre": [
+            "Abstract",
+            "Realism",
+            "Surrealism",
+            "Impressionism",
+            "Cubism",
+            "Expressionism",
+            "Minimalism",
+            "Conceptual Art",
+            "Figurative Art",
+            "Landscape",
+            "Portraiture",
+            "Political & Social Commentary",
+            "Religious",
+            "Still Life",
+            "Narrative",
+            "Others"
+        ],
+    
+        "Theme_Subject_Matter": [
+            "Mythology",
+            "Religion",
+            "Nature",
+            "Social Issues",
+            "Social Commentary",
+            "Politics",
+            "Technology",
+            "War",
+            "Love",
+            "Identity",
+            "Environment",
+            "Urban Life",
+            "Time and Memory",
+            "Everyday Life"
+        ],
+     
+        "Technique": [
+            "Brushwork",
+            "Chiaroscuro",
+            "Impasto",
+            "Sfumato",
+            "Pointillism",
+            "Collage",
+            "Assemblage",
+            "Engraving",
+            "Stippling",
+            "Others"
+        ],
+        "Function": [
+            "Ceremonial",
+            "Religious Artifact",
+            "Funerary Item",
+            "Ornament",
+            "Jewelry",
+            "Tapestry",
+            "Propaganda",
+            "Theatrical Prop",
+            "Symbolic",
+            "Documentation",
+            "Economic",
+            "Emblem",
+            "Memorial",
+            "Others"
+        ],
+        "Scale": [
+            "Miniature",
+            "Small Scale",
+            "Medium Scale",
+            "Large Scale",
+            "Monumental"
+        ]
+    
+    }
+}
