@@ -1,0 +1,10 @@
+Flask==3.1.0
+Flask_Cors==5.0.0
+Flask_PyMongo==2.3.0
+langchain==0.3.9
+langchain_core==0.3.21
+langchain_openai==0.2.11
+openai==1.57.0
+Pillow==11.0.0
+pymongo==4.10.1
+python-dotenv==1.0.1
