@@ -10,7 +10,7 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 API_KEY = os.getenv("API_KEY")
 #import the func from openai_api.py
-from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags, convert_image_to_jpeg, load_vectorstore_from_mongo
+from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags,generate_visual_context, convert_image_to_jpeg, load_vectorstore_from_mongo
 
 api = Blueprint('api', __name__)
 mongo_client = MongoClient(MONGO_URI)
@@ -79,7 +79,7 @@ def upload_json():
             openai_feedback = generate_response_conservation(
                 metadata=metadata_without_image,
                 vectorstore=vectorstore,
-                model="gpt-4o-mini"
+                model="gpt-4o"
             )
             print("Debug: OpenAI conservation feedback received:", openai_feedback)
         except Exception as e:
@@ -94,7 +94,7 @@ def upload_json():
                     metadata=metadata_without_image,
                     image_data=compressed_image_base64,
                     tax_template=tax_template,
-                    model="gpt-4o-mini"
+                    model="gpt-4o"
                 )
                 print("Debug: OpenAI taxonomy feedback received:", taxonomy_feedback)
             except Exception as e:
@@ -103,12 +103,31 @@ def upload_json():
         else:
             print("Debug: Skipping taxonomy feedback generation (no image data).")
             taxonomy_feedback = None
+        
+          # Generate visual_context if image data is present
+        if image_data:
+            try:
+                print("Debug: Generating Visual Context.")
+                visual_context = generate_visual_context(
+                    metadata=metadata_without_image,
+                    image_data=compressed_image_base64,
+                    tax_template=tax_template,
+                    model="gpt-4o"
+                )
+                print("Debug: OpenAI visual context received:", visual_context)
+            except Exception as e:
+                print(f"Debug: OpenAI API error (taxonomy): {e}")
+                return jsonify({"error": "Failed to process data with OpenAI for visual context"}), 500
+        else:
+            print("Debug: Skipping taxonomy feedback generation (no image data).")
+            taxonomy_feedback = None
 
         # Combine data for MongoDB insertion
         combined_data = {
             **original_metadata,
             "openai_feedback": openai_feedback,
-            "taxonomy_feedback": taxonomy_feedback
+            "taxonomy_feedback": taxonomy_feedback,
+            "visual_context": visual_context
         }
         print("Debug: Combined data prepared for MongoDB:", combined_data)
 
@@ -128,7 +147,8 @@ def upload_json():
             "message": "Artwork uploaded and processed successfully",
             "artwork_id": inserted_id,
             "openai_feedback": openai_feedback,
-            "taxonomy_feedback": taxonomy_feedback
+            "taxonomy_feedback": taxonomy_feedback,
+            "visual_context": visual_context
         }), 200
 
     except Exception as e:

@@ -201,3 +201,68 @@ def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o"):
     tags_temp = taxonomy_response.choices[0].message.content
     tags = json.loads(tags_temp)
     return tags
+
+def generate_visual_context(metadata, image_data, tax_template, model="gpt-4o"):
+     response_1 = client.chat.completions.create(
+        model=model,
+      messages=[
+          {
+      "role": "system",
+     "content": """ You are a visual analysis assistant intended help with visual aid. 
+     Your task is to evaluate  images and provide an objective and concise description of their visible content. 
+     Focus exclusively on describing tangible elements such as color, content, and prominent objects or figures in a specific manner without irrelevant discourse. 
+     Do not mention lighting conditions, inferred visual effects and dynamics created by the object, atmospheric style of descriptions or any language that speculates or interprets the image's context. 
+     Do not include details about the background unless it contains distinct, visible elements relevant to the artwork itself and can be visibly recognized to be beyond an art gallery. 
+     Exclude speculative commentary and any background descriptions if its in a gallery settings. 
+     Provide the description in up to 5 bullet pointers, be concise and succinct to the point with each describing the visual features in a neutral and precise tone. Pointers need not be in complete sentences but ensure formatting is consistent.
+     """    },
+        {
+          "role": "user",
+          "content": [
+
+            {
+              "type": "image_url",
+              "image_url": {
+                "url":  f"data:image/jpeg;base64,{image_data}"
+              },
+            },
+          ],
+        }
+      ],response_format={"type":"text"},
+      max_tokens=300,
+    )
+     initial_des = response_1.choices[0].message.content
+     response_2 = client.chat.completions.create(
+      model="gpt-4o",
+      messages=[
+          {
+      "role": "system",
+     "content": """ You are an objective image analysis assistant. Your task is to generate accurate and concise descriptions based solely on the visual elements present in the image. Follow these principles:
+
+                    1. Focus strictly on the observable features of the image, avoiding any speculative or inferential commentary.
+                    2. Ensure that the description is precise, factual, and directly relevant to the visual output, with no unnecessary elaboration or assumptions.
+                    3. Prioritize clarity and relevance to ensure that the description aligns with the purpose of the analysis.
+                    4. Format the bullet point response into a json object, with the title being "visual_context"and the bullet points in a list template
+                    
+                    **To Evaluate**
+                    {initial_des}
+     """    },
+        {
+          "role": "user",
+          "content": [
+
+            {
+              "type": "image_url",
+              "image_url": {
+                "url":  f"data:image/jpeg;base64,{image_data}"
+              },
+            },
+          ],
+        }
+      ],response_format={"type":"json_object"},
+      max_tokens=300,
+    )
+     
+     viz_temp = response_2.choices[0].message.content
+     viz_info = json.loads(viz_temp)
+     return viz_info["visual_context"]
