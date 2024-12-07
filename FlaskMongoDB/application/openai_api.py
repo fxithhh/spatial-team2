@@ -88,7 +88,7 @@ except json.JSONDecodeError as e:
     print(f"Error decoding JSON from the taxonomy file: {e}")
 
 # Function to generate conservation response
-def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o-mini"):
+def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
     if vectorstore is None:
         vectorstore = load_vectorstore_from_mongo()
     metadata_str = json.dumps(metadata)
@@ -143,7 +143,8 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o-min
     )
 
     # Extract response content
-    answer = guideline_response.choices[0].message.content
+    answer_temp = guideline_response.choices[0].message.content
+    answer = json.loads(answer_temp)
     return answer
 
 # Function to convert image to JPEG
@@ -166,7 +167,7 @@ def convert_image_to_jpeg(image_binary, output_format="JPEG"):
         return None
 
 # Taxonomy Tagging Function
-def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o-mini"):
+def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o"):
 
     # Call OpenAI API for taxonomy tagging
     taxonomy_response = client.chat.completions.create(
@@ -197,5 +198,6 @@ def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o-min
     )
 
     # Extract response content
-    tags = taxonomy_response.choices[0].message.content
+    tags_temp = taxonomy_response.choices[0].message.content
+    tags = json.loads(tags_temp)
     return tags
