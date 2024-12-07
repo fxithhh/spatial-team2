@@ -23,7 +23,7 @@ PDF_PATHS = [
 # Initialize OpenAI Embeddings globally
 embeddings = OpenAIEmbeddings(
     model="text-embedding-3-large",
-    api_key="APIKEY")
+    api_key=API_KEY)
 
 # Function to save vectorstore to MongoDB
 def save_vectorstore_to_mongo(pdf_paths, collection_name=COLLECTION_NAME):
