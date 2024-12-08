@@ -39,37 +39,15 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         image: null
     });
 
-    const materialOptions = ["Painting", "Sculpture", "Photography", "Digital Art", "Mixed Media", "Canvas"];
-    const [isMaterialDropdownOpen, setIsMaterialDropdownOpen] = useState(false);
-
     const displayOptions = ["Wall Hanging", "Floor", "Ceiling Hanging", "Screen",];
     const [isDisplayDropdownOpen, setIsDisplayDropdownOpen] = useState(false);
 
     // preview uploaded image
     const [previewImage, setPreviewImage] = useState(null);
 
-    // Handle multi-select dropdown toggle for material
-    const toggleMaterialDropdown = () => {
-        setIsMaterialDropdownOpen((prevState) => !prevState);
-    };
-
     // Handle multi-select dropdown toggle for display type
     const toggleDisplayDropdown = () => {
         setIsDisplayDropdownOpen((prevState) => !prevState);
-    };
-
-    // Handle multi-select dropdown for material
-    const handleMaterialSelect = (option) => {
-        setFormData((prevFormData) => {
-            // Check if option is already selected, if so, remove it; otherwise, add it
-            const updatedMaterials = prevFormData.material.includes(option)
-                ? prevFormData.material.filter(item => item !== option)
-                : [...prevFormData.material, option];
-            return {
-                ...prevFormData,
-                material: updatedMaterials,
-            };
-        });
     };
 
     // Handle multi-select dropdown for display type
@@ -86,14 +64,6 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         });
     };
 
-    // Handle tag removal for material
-    const handleRemoveMaterialTag = (option) => {
-        setFormData((prevFormData) => ({
-            ...prevFormData,
-            material: prevFormData.material.filter(item => item !== option),
-        }));
-    };
-
     // Handle tag removal for display
     const handleRemoveDisplayTag = (option) => {
         setFormData((prevFormData) => ({
@@ -102,75 +72,77 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         }));
     };
 
- // handle image upload
-const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    // Handle image upload with PNG validation
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.type === "image/png") {
+                setFormData((prevFormData) => ({
+                    ...prevFormData,
+                    image: file,
+                }));
+                setPreviewImage(URL.createObjectURL(file));
+            } else {
+                // Show toast error for non-PNG files
+                toast.error("Only PNG files are allowed.");
+                e.target.value = "";  // Clear the input field
+            }
+        }
+    };
+
+    // Function to convert image to Base64 and strip MIME type
+    const encodeImage = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result.split(",")[1]; // Remove MIME type prefix
+                resolve(base64String);
+            };
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file); // Encodes the File object
+        });
+    };
+
+    // Handle input changes dynamically
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
         setFormData((prevFormData) => ({
             ...prevFormData,
-            image: file, // Store the File object
+            [name]: value,
         }));
-        setPreviewImage(URL.createObjectURL(file)); // Generate preview URL
-    }
-};
-
-// Function to convert image to Base64 and strip MIME type
-const encodeImage = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64String = reader.result.split(",")[1]; // Remove MIME type prefix
-            resolve(base64String);
-        };
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(file); // Encodes the File object
-    });
-};
-
-// Handle input changes dynamically
-const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevFormData) => ({
-        ...prevFormData,
-        [name]: value,
-    }));
-};
+    };
 
 
-// Handle form submission
-const handleSubmit = async (e) => {
-    e.preventDefault();
+    // Handle form submission
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    try {
-        const dataToSend = { ...formData };
+        try {
+            const dataToSend = { ...formData };
 
-        // Convert the image file to raw Base64 if it exists
-        if (formData.image && formData.image instanceof File) {
-            console.log("Processing image as File object:", formData.image);
-            const base64Image = await encodeImage(formData.image); // Raw Base64 string
-            dataToSend.image = base64Image; // Send only the raw Base64 string
+            // Convert the image file to raw Base64 if it exists
+            if (formData.image && formData.image instanceof File) {
+                console.log("Processing image as File object:", formData.image);
+                const base64Image = await encodeImage(formData.image); // Raw Base64 string
+                dataToSend.image = base64Image; // Send only the raw Base64 string
+            }
+
+            // Submit the JSON data to the backend
+            const response = await fetch("http://localhost:5000/upload_json", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dataToSend),
+            });
+
+            if (response.ok) {
+                console.log("Image uploaded successfully");
+            } else {
+                console.error("Failed to upload image");
+            }
+        } catch (error) {
+            console.error("Submission Error:", error);
         }
-
-        // Submit the JSON data to the backend
-        const response = await fetch("http://localhost:5000/upload_json", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dataToSend),
-        });
-
-        if (response.ok) {
-            console.log("Image uploaded successfully");
-        } else {
-            console.error("Failed to upload image");
-        }
-    } catch (error) {
-        console.error("Submission Error:", error);
-    }
-};
-
-
-
-
+    };
 
     return (
         <div>
@@ -246,40 +218,15 @@ const handleSubmit = async (e) => {
                             {/* Material of Artwork Input */}
                             <div className='my-8 pb-4'>
                                 <label className="font-medium text-gray-400 text-xl font-['Roboto']">Material of Artwork <span className='text-brand'>*</span></label>
-                                <div className="border-b-2 outline-none py-2 flex items-center gap-2">
-                                    {formData.material.map((option) => (
-                                        <span key={option} className="bg-brand text-white px-2 py-1 flex items-center">
-                                            {option}
-                                            <ImCross
-                                                onClick={() => handleRemoveMaterialTag(option)}
-                                                className="ml-2 text-sm cursor-pointer"
-                                            />
-                                        </span>
-                                    ))}
-                                    <span className="ml-auto text-gray-400 cursor-pointer pr-2 pl-20" onClick={toggleMaterialDropdown}>
-                                        {isMaterialDropdownOpen ? <FaAngleUp className='text-xl' /> : <FaAngleDown className='text-xl' n />}
-
-                                    </span>
-
-                                </div>
-                                {isMaterialDropdownOpen && (
-                                    <div className="relative w-full bg-white border rounded-md shadow-md z-10">
-                                        {materialOptions.map((option) => (
-                                            <div
-                                                key={option}
-                                                className="p-2 cursor-pointer hover:bg-gray-200"
-                                                onClick={() => handleMaterialSelect(option)}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.material.includes(option)}
-                                                    readOnly
-                                                />
-                                                <span className="ml-2">{option}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                <input
+                                    type="text"
+                                    id="material"
+                                    name="material"
+                                    value={formData.material}
+                                    onChange={handleInputChange}
+                                    className="w-full mt-2 border-b-2 outline-none"
+                                    required
+                                />
                             </div>
 
                             {/* Dimensions of Artwork */}
@@ -439,17 +386,20 @@ const handleSubmit = async (e) => {
                             {/* Artwork Image Upload */}
                             <div className='my-8 pb-4 flex flex-col'>
                                 <label className="font-medium text-gray-400 text-xl font-['Roboto']">Artwork Image <span className='text-brand'>*</span></label>
+                                <span className="font-normal text-gray-400 text-m">
+                                    Upload the artwork image. Accepted format: PNG.
+                                </span>
                                 <label
-                                        htmlFor="artwork-image"
-                                        className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit"
-                                    >
-                                        Upload Artwork Image
-                                    </label>
+                                    htmlFor="artwork-image"
+                                    className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit"
+                                >
+                                    Upload Artwork Image
+                                </label>
                                 <input
                                     id='artwork-image'
                                     type="file"
                                     onChange={handleImageUpload}
-                                    accept="image/*"
+                                    accept="image/png"
                                     className="hidden"
                                 />
 
