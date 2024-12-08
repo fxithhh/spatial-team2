@@ -92,6 +92,7 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
     if vectorstore is None:
         vectorstore = load_vectorstore_from_mongo()
     metadata_str = json.dumps(metadata)
+    
     query = f"""Given the metadata of the artwork \n
     - Use the material information of the artwork and retrieve relevant information towards conservation guidelines of the artwork
     - Use the dimensions and material of the artwork and retrieve relevant information that should be considered for fire safety guidelines
@@ -101,45 +102,89 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
     query_embedding = embeddings.embed_query(query)
     relevant_docs = vectorstore.similarity_search_by_vector(query_embedding, k=3)
     retrieved_context = ""
-
+    doc_count = 0
     # Retrieve context from relevant documents
     for i, doc in enumerate(relevant_docs):
-        retrieved_context += f"{i+1}. {doc.page_content}\n"
+        doc_count +=1
+        retrieved_context += f" <<< DOCUMENT {doc_count} >>> \n {doc.metadata} - {doc.page_content}\n <<<END OF DOCUMENT {doc_count}>>>\n\n "
+    # Process Retrieved Context from Embedding Query
+    format_context = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+      {
+          "role": "system",
+          "content": """ 
+            You are a document processing assistant. 
+            Your task is to extract and reformat information from retrieved documents to create a structured, concise, and readable format for use as context in a large language model (LLM). 
+            Ensure the restructured output is well-organized and highlights key details for comprehension.
+            
+            **Instructions:**
+            - Input Format: There are multiple documents, with each of the retrieved documents will start with a format like this as a header: {'source': 'file name.pdf', 'page': integer}. 
+            - Preserve Critical Details: Extract relevant details like headings, subheadings, tables, and core information without altering the meaning.
+            - Use Markdown Formatting: Format text in a clear structure with appropriate headers, lists, and tables where applicable.
+            - Include Metadata: At the start of each document, include the source file path and page number in this format:
+            Source: <file_path>
+            Structure Information: Organize content with:
+            Headers (#, ##, etc.) for sections or chapters.
+            Bullets/Numbered Lists for enumerations.
+            Tables for structured data.
+            Ensure Readability: Avoid overly long sentences. Keep the content concise and focus on key points.
+            
+            **Output Format**
+            *Document* : Document Number
+            *Source*: File Name
+            *Content* : Formatted Information
+            REPEAT THIS FOR ALL DOCUMENTS PROVIDED 
+            """
+      },
+       {
+          "role": "user",
+          "content": [
+        {"type": "text", "text": f""" Document Retrieved: {retrieved_context} Total Documents: {doc_count}
+        
+        """},
+       
+          ],
+        }
+      ],response_format={"type":"text"},
+      max_tokens=1000,
+    )
+    context = format_context.choices[0].message.content
+
+
 
     # Call OpenAI API for conservation guidelines
     guideline_response = client.chat.completions.create(
         model=model,
         messages=[
-            {
-                "role": "system",
-                "content": """ 
-                You are an artwork conservation specialist and fire safety expert.\n
-                Your role is to analyze provided artwork metadata, leveraging your expertise in conservation and fire safety. 
-                """
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"""Given the fire safety and conservation guidelines in the image: {retrieved_context} \n 
-                        together with material information and dimensions from the artwork metadata {metadata}\n
-                        ***Format***
-                        Your response should be formatted in JSON with the key "Conservation_Guidelines," containing a python list of 3 to 5 actionable recommendations that are coherent, specific, and tailored to the context provided.\n
-
-                              "Conservation_Guidelines": [
-                                "Ensure the artwork is stored in a climate-controlled environment with humidity levels between 45-55% to prevent degradation.",
-                                "Install non-reactive fire suppression systems like water mist or inert gas to minimize potential damage to the artwork.",
-                                "Conduct regular inspections for signs of wear, including discoloration or cracking, and implement immediate conservation measures if identified.",
-                                "Keep the artwork away from direct sunlight and UV light exposure to prevent fading of pigments."
-                              ]
-                             \n"""
-                    },
-                ],
-            }
-        ],
-        response_format={"type": "json_object"},
-        max_tokens=500
+      {
+          "role": "system",
+          "content": """ 
+          You are an artwork conservation specialist and fire safety expert.\n
+          Your role is to analyze provided artwork metadata, leveraging the context provided and your existing understanding in conservation and fire safety. 
+          
+          **Instructions**
+          - Generate concise guidelines to ensure the safe preservation and protection of the artwork using the provided context that is relevant to the artwork. 
+          - If information is insufficent, use the general knowledge you possess along with the metadata of the artwork and general knowledge of artwork conservation and come up with plausible conservation guidelines
+          - Account for the nature of the installation, dimensions of the artwork in the generated fire safety guidelines
+          - Do not mention the classification alphabets in the guidelines. If required for referencing, cite the relevant materials to the classification 
+          - Synthesise the reccomendations in a readable, succint manner such that it can be easily understood by a museum curator.\n
+          **Output Format**
+          - Your response should be formatted in JSON with the key "Conservation_Guidelines," containing a python list of 3 to 5 actionable recommendations 
+          - Reccomendations must be concise, coherent, specific, and tailored to the context provided.\n
+          """
+      },
+       {
+          "role": "user",
+          "content": [
+        {"type": "text", "text": f"Fire safety and conservation guidelines in the image: {context} \n "
+        f"Artwork metadata {metadata}\n"
+        },
+       
+          ],
+        }
+      ],response_format={"type":"json_object"},
+      max_tokens=500
     )
 
     # Extract response content
@@ -244,12 +289,12 @@ def generate_visual_context(metadata, image_data, tax_template, model="gpt-4o"):
                     3. Prioritize clarity and relevance to ensure that the description aligns with the purpose of the analysis.
                     4. Format the bullet point response into a json object, with the title being "visual_context"and the bullet points in a list template
                     
-                    **To Evaluate**
-                    {initial_des}
+            
      """    },
         {
           "role": "user",
           "content": [
+            {"type": "text", "text": f"To Evaluate: {initial_des} "},
 
             {
               "type": "image_url",
