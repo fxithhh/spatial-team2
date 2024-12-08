@@ -19,10 +19,12 @@ function CreateExhibit() {
     const [fileName, setFileName] = useState('');
     const [imgFileName, setImgFileName] = useState('');
     const [previewImage, setPreviewImage] = useState(null);
-
+    const [uploadStatus, setUploadStatus] = useState(null);
+    const [metadata, setMetadata] = useState(null);
+    
     // Handle image upload
     const handleImageUpload = (e) => {
-        const file = e.target.files[0];
+        const file= e.target.files[0];
         if (file) {
             setFormData((prevFormData) => ({
                 ...prevFormData,
@@ -33,13 +35,58 @@ function CreateExhibit() {
         }
     };
 
-    // Handle file upload
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
             setFileName(file.name); // Store the file name in state
         }
     };
+
+    const submitArtworkList = async () => {
+        if (!fileName) {
+            toast.error("Please upload a file first!");
+            return;
+        }
+    
+        const fileInput = document.getElementById('file-upload');
+        const file = fileInput.files[0]; // Get the uploaded file
+    
+        if (file) {
+            const formData = new FormData();
+            formData.append("file", file);
+    
+            try {
+                const response = await fetch("http://localhost:5000/bulk_upload", {
+                    method: "POST",
+                    body: formData,
+                });
+    
+                if (response.ok) {
+                    const result = await response.json();
+                    toast.success(`File uploaded successfully! Rows saved: ${result.rows_saved}`);
+                    setUploadStatus({
+                        success: true,
+                        message: `File uploaded successfully! Rows saved: ${result.rows_saved}`,
+                    });
+                    setMetadata(result.metadata); // Store metadata from API response
+                } else {
+                    const error = await response.json();
+                    toast.error(`Error: ${error.error}`);
+                    setUploadStatus({
+                        success: false,
+                        message: `Error: ${error.error}`,
+                    });
+                }
+            } catch (err) {
+                toast.error(`Unexpected error occurred: ${err.message}`);
+                setUploadStatus({
+                    success: false,
+                    message: `Unexpected error occurred: ${err.message}`,
+                });
+            }
+        }
+    };
+    
 
     // Handle input changes dynamically
     const handleInputChange = (e) => {
@@ -160,6 +207,18 @@ function CreateExhibit() {
                                 )}
                             </div>
                         </div>
+
+                            {/* New Submit Artwork Button */}
+                                {fileName && (
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={submitArtworkList}
+                                            className="bg-brand text-white px-4 py-2 hover:bg-brand-dark transition"
+                                        >
+                                            Submit Artwork List
+                                        </button>
+                                    </div>
+                                )}
 
                         {/* Floor Plan Upload */}
                         <div className='my-8 pb-4'>

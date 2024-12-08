@@ -20,8 +20,6 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 API_KEY = os.getenv("API_KEY")
 
-print(f"API_KEY: {'Set' if API_KEY else 'Not Set'}: {API_KEY[:4]}****{API_KEY[-4:]}" if API_KEY else "API_KEY is Not Set")
-
 # Initialize OpenAI client
 client = OpenAI(api_key=API_KEY)
 

@@ -6,11 +6,13 @@ import json, base64
 from bson import ObjectId
 from pymongo import MongoClient
 load_dotenv()
+from io import BytesIO
 
 MONGO_URI = os.getenv("MONGO_URI")
 API_KEY = os.getenv("API_KEY")
 #import the func from openai_api.py
 from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags,generate_visual_context, convert_image_to_jpeg, load_vectorstore_from_mongo
+from .read_excel import process_excel_file
 
 api = Blueprint('api', __name__)
 mongo_client = MongoClient(MONGO_URI)
@@ -154,6 +156,40 @@ def upload_json():
     except Exception as e:
         print(f"Debug: Unexpected error: {e}")
         return jsonify({"error": "Failed to process JSON object"}), 500
+
+@app.route("/bulk_upload", methods=["POST"])
+def upload_bulk():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    try:
+        file_stream = BytesIO(file.read())  # Read file directly into memory
+        result = process_excel_file(file_stream)
+
+        # Check if result is valid
+        if result is None or "data" not in result or result["data"] is None:
+            raise ValueError("Processing failed: No data returned from process_excel_file.")
+
+        rows_saved = len(result["data"])
+
+        # Convert metadata or data containing ObjectId to JSON-serializable format
+        metadata = result.get("metadata", {})
+        metadata["_id"] = str(metadata.get("_id")) if "_id" in metadata else None
+
+        return jsonify({
+            "message": "File processed successfully",
+            "metadata": metadata,
+            "rows_saved": rows_saved,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 @app.route("/view_graph")
 def view_graph():
