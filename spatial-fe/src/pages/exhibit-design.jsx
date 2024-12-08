@@ -358,7 +358,7 @@ const ExhibitDetail = () => {
                             ))}
                         </div>
 
-                        <div className="mt-4 border-2 border-black py-4 px-8">
+                        <div className="mt-4 border-2 border-black py-4 px-8 mb-8 h-auto">
                             {/* <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-2xl font-['Roboto_Condensed'] text-gray-600 font-semibold">Artwork Details</h3>
                             </div> */}
