@@ -98,9 +98,9 @@ const ExhibitDetail = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex flex-grow gap-x-10">
+            <div className="flex flex-grow gap-x-10 z-0">
                 {/* Main View Area */}
-                <div className="w-3/4 bg-white relative border-black border-2">
+                <div className="flex w-3/4 bg-white relative border-black border-2">
                     {/* Main View */}
                     <div className="flex-grow flex justify-center items-center p-4">
                         {view === "connection" ? (
@@ -323,7 +323,7 @@ const ExhibitDetail = () => {
 
                 {/* Artwork Library Sidebar */}
                 {isArtworkLibraryOpen && (
-                    <aside className="top-16 right-0 w-[500px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
+                    <aside className="top-16 right-0  max-w-1/3 w-[500px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
                         <div className="flex items-center justify-between mb-8 mt-12">
                             <h2 className="font-bold">Artwork Library</h2>
                             <button
@@ -359,9 +359,9 @@ const ExhibitDetail = () => {
                         </div>
 
                         <div className="mt-4 border-2 border-black py-4 px-8">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-2xl font-['Roboto_Condensed'] font-semibold">Artwork Details</h3>
-                            </div>
+                            {/* <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-2xl font-['Roboto_Condensed'] text-gray-600 font-semibold">Artwork Details</h3>
+                            </div> */}
                             {selectedArtwork ? (
                                 <ArtworkCard artwork={selectedArtwork} /> // Pass the selected artwork as a prop
                             ) : <p className='text-lg text-red-500'>Select an artwork to display its information.</p>}

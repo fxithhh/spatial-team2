@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 function NavBar({ onSidebarToggle }) {
   return (
-    <div className="w-full bg-brand flex justify-between items-center px-8 py-4 font-['Roboto'] sticky top-0 z-10">
+    <div className="w-full bg-brand flex justify-between items-center px-8 py-4 font-['Roboto'] sticky top-0 z-50">
       <div className="flex items-center">
         <div className="w-8 h-8 text-white cursor-pointer" onClick={onSidebarToggle}>
           <Bars3Icon />

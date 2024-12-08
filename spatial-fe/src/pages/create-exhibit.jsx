@@ -1,29 +1,35 @@
 import React, { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
-import Button from '../components/buttons';
-import 'reactjs-popup/dist/index.css'; // Import styles
+import 'reactjs-popup/dist/index.css';
 import { toast, ToastContainer } from "react-toastify";
-import ImportArtWork from '../components/popups/import-artwork';
-
-import { ImCross } from 'react-icons/im';
-import { FaAngleDown, FaAngleUp } from "react-icons/fa6";
+import config from "../data/config.json";
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 function CreateExhibit() {
-    const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // add artwork popup
+
     const [formData, setFormData] = useState({
         exhibit_title: "",
         concept: "",
-        subsections: "",
+        subsections: [],
         floor_plan: null
     });
     const [fileName, setFileName] = useState('');
     const [imgFileName, setImgFileName] = useState('');
     const [previewImage, setPreviewImage] = useState(null);
+    const navigate = useNavigate();
+    const [newSubsection, setNewSubsection] = useState("");
 
     // Handle image upload
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
+            const fileExtension = file.name.split(".").pop().toLowerCase();
+            if (fileExtension !== "png") {
+                toast.error("Invalid file type! Please upload a PNG file.");
+                e.target.value = ""; // Clear invalid file input
+                return;
+            }
             setFormData((prevFormData) => ({
                 ...prevFormData,
                 floor_plan: file,
@@ -36,9 +42,43 @@ function CreateExhibit() {
     // Handle file upload
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
+        const validExtensions = ["csv", "xlsx", "xls"]; // Allowed extensions
         if (file) {
-            setFileName(file.name); // Store the file name in state
+            const fileExtension = file.name.split(".").pop().toLowerCase();
+            if (!validExtensions.includes(fileExtension)) {
+                toast.error("Invalid file type! Please upload a CSV, XLSX, or XLS file.");
+                e.target.value = ""; // Clear invalid file input
+                return;
+            }
+            setFileName(file.name); // Store the valid file name in state
         }
+    };
+
+    // Handle new subsection input change
+    const handleNewSubsectionChange = (e) => {
+        setNewSubsection(e.target.value);
+    };
+
+    // Handle adding subsection tags
+    const handleSubsectionKeyPress = (e) => {
+        if (e.key === 'Enter' && newSubsection.trim()) {
+            e.preventDefault(); // Prevent default enter behavior (new line in textarea)
+            if (!formData.subsections.includes(newSubsection)) {
+                setFormData((prevFormData) => ({
+                    ...prevFormData,
+                    subsections: [...prevFormData.subsections, newSubsection], // Add new subsection to array
+                }));
+            }
+            setNewSubsection(""); // Clear the input after adding
+        }
+    };
+
+    // Handle removal of subsection tag
+    const handleRemoveSubsection = (index) => {
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            subsections: prevFormData.subsections.filter((_, i) => i !== index),
+        }));
     };
 
     // Handle input changes dynamically
@@ -53,12 +93,38 @@ function CreateExhibit() {
     // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // Generate a new ID for the exhibit
+        const newId = config.exhibits.length > 0
+            ? Math.max(...config.exhibits.map((exhibit) => exhibit.id)) + 1
+            : 1;
+
+        // Create the new exhibit
+        const newExhibit = {
+            id: newId,
+            title: formData.exhibit_title,
+            description: formData.concept,
+            image: "assets/childish.jpg",
+        };
+
         try {
-            console.log('Form Data:', formData);
-            toast.success("Form submitted successfully!");
+            // Add the new exhibit to the config file
+            const updatedExhibits = [...config.exhibits, newExhibit];
+            config.exhibits = updatedExhibits;
+
+            // Simulate saving updated config to the file (this part works only in memory)
+            // For actual persistence, you'd need a backend or localStorage
+            console.log("Updated Exhibits:", config.exhibits);
+
+            // Notify success and navigate to the new Exhibit Design page
+            toast.success("Exhibit created successfully!");
+
+            setTimeout(() => {
+                navigate(`/exhibitions/${newId}`);
+            }, 1000);
         } catch (error) {
-            console.error("Submission Error:", error);
-            toast.error("An error occurred while submitting the form. Please try again.");
+            console.error("Error creating exhibit:", error);
+            toast.error("An error occurred. Please try again.");
         }
     };
 
@@ -115,20 +181,32 @@ function CreateExhibit() {
                         {/* Exhibition Subsections Input */}
                         <div className='my-8 pb-4'>
                             <div className='flex flex-col'>
-                                <label className="font-semibold text-black text-xl">
-                                    Exhibition Subsections <span className='text-brand'>*</span>
-                                </label>
-                                <span className="font-normal text-gray-400 text-m">
-                                    Provide the key subthemes of your exhibition.
-                                </span>
+                                <label className="font-semibold font-['Roboto'] text-black text-xl">Exhibition Subsections <span className='text-brand'>*</span></label>
+                                <label className="font-normal text-gray-400 text-m">Provide the key subthemes of your exhibition.</label>
+                            </div>
+                            <div className="mb-2 flex flex-wrap gap-2">
+                                {formData.subsections.map((subsection, index) => (
+                                    <div key={index} className="bg-brand text-white py-1 px-3 rounded-0 flex items-center">
+                                        <span className="text-sm">{subsection}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveSubsection(index)}
+                                            className="ml-2 text-white"
+                                        >
+                                            <XMarkIcon className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                             <textarea
+                                type="text"
                                 id="subsections"
                                 name="subsections"
-                                value={formData.subsections}
-                                onChange={handleInputChange}
+                                value={newSubsection}
+                                onChange={handleNewSubsectionChange}
+                                onKeyPress={handleSubsectionKeyPress}
                                 className="w-full h-20 border-2 outline-none px-1"
-                                required
+                                placeholder="Press Enter to add subsection"
                             />
                         </div>
 
@@ -141,6 +219,13 @@ function CreateExhibit() {
                                 <span className="font-normal text-gray-400 text-m">
                                     Upload the list of artworks to be featured. Accepted formats: CSV or XLSX.
                                 </span>
+                                <a
+                                    href={`${process.env.PUBLIC_URL}/assets/Artworks_Bulk_Upload_Template.xlsx`}
+                                    download="Artworks_Bulk_Upload_Template.xlsx"
+                                    className="font-normal text-brand text-m underline cursor-pointer hover:text-black"
+                                >
+                                    Click here to download template file.
+                                </a>
                                 <label
                                     htmlFor="file-upload"
                                     className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit"
@@ -172,8 +257,7 @@ function CreateExhibit() {
                                 </span>
                                 <label
                                     htmlFor="floor-plan-upload"
-                                    className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit"
-                                >
+                                    className="mt-2 cursor-pointer bg-brand text-white px-4 py-2 hover:bg-brand-dark transition w-fit">
                                     Upload Floor Plan
                                 </label>
                                 <input
