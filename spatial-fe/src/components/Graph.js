@@ -69,8 +69,8 @@ useEffect(() => {
 
         const nodesData = data.nodes.map(node => ({
           id: node.id,
-          label: node.id.toString(),
-          title: `<b>${node.name}</b><br>Artist: ${node.artist}<br>Description: ${node.description}`,
+          label: `${node.artist}\n ${node.id.toString()}`,
+          title: `Artist: ${node.artist}\nDescription: ${node.description}`,
           color: 'lightgreen',
           value: 10,
           shape: 'dot',
