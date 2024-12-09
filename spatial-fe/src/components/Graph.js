@@ -5,9 +5,10 @@ import { Network, DataSet } from 'vis-network/standalone/esm/vis-network';
 import 'vis-network/styles/vis-network.css';
 import './Graph.css'; // Optional: Create this file for additional styling
 
-function Graph() {
+function Graph({ width = '100%', height = '100%' }) {
   const networkRef = useRef(null);
-  const networkInstanceRef = useRef(null); // Use useRef to store the network instance
+  const networkInstanceRef = useRef(null);
+  
   const [allNodes, setAllNodes] = useState([]);
   const [allEdges, setAllEdges] = useState([]);
   const [minVisual, setMinVisual] = useState(0);
@@ -16,16 +17,26 @@ function Graph() {
   const [maxNarrative, setMaxNarrative] = useState(10);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
 
-  // State variables for sliders
+  // Slider states
   const [visualThreshold, setVisualThreshold] = useState(4.0);
   const [narrativeThreshold, setNarrativeThreshold] = useState(6.0);
   const [springLengthModulator, setSpringLengthModulator] = useState(1.0);
   const [springStiffnessModulator, setSpringStiffnessModulator] = useState(1.0);
   const [repulsionStrength, setRepulsionStrength] = useState(50);
 
-  // Fetch graph data on component mount
+  // Manage instructions visibility
+  const containerRef = useRef(null);
+  const [isHeightLarge, setIsHeightLarge] = useState(true);
+  const isHeightLargeRef = useRef(true); // To track previous state
+
+  // Update ref when state changes
   useEffect(() => {
-    fetch('http://localhost:8000/get_graph') // Adjust the URL if your backend is hosted elsewhere
+    isHeightLargeRef.current = isHeightLarge;
+  }, [isHeightLarge]);
+
+  // Fetch graph data on mount
+  useEffect(() => {
+    fetch('http://localhost:5000/get_graph') // Adjust as needed
       .then(response => response.json())
       .then(data => {
         if (data.error) {
@@ -53,7 +64,7 @@ function Graph() {
           title: `Visual Score: ${link.visual_connectivity_score}<br>Narrative Score: ${link.narrative_connectivity_score}`
         }));
 
-        // Determine min and max scores
+        // Set min and max scores
         if (edgesData.length > 0) {
           setMinVisual(Math.min(...edgesData.map(e => e.visual_connectivity_score)));
           setMaxVisual(Math.max(...edgesData.map(e => e.visual_connectivity_score)));
@@ -69,16 +80,13 @@ function Graph() {
       });
   }, []);
 
-  // Initialize the network when nodes are loaded
+  // Initialize network
   useEffect(() => {
     if (networkRef.current && allNodes.length > 0 && !networkInstanceRef.current) {
       const nodes = new DataSet(allNodes);
       const edges = new DataSet();
 
-      const data = {
-        nodes,
-        edges
-      };
+      const data = { nodes, edges };
 
       const options = {
         physics: {
@@ -91,30 +99,21 @@ function Graph() {
             damping: 0.4
           },
           solver: 'forceAtlas2Based',
-          stabilization: {
-            iterations: 50
-          }
+          stabilization: { iterations: 50 }
         },
-        edges: {
-          smooth: false
-        },
+        edges: { smooth: false },
         interaction: {
           hover: true,
           tooltipDelay: 200,
           multiselect: false,
           selectConnectedEdges: false
         },
-        nodes: {
-          font: {
-            size: 12
-          },
-          borderWidth: 1
-        }
+        nodes: { font: { size: 12 }, borderWidth: 1 }
       };
 
       networkInstanceRef.current = new Network(networkRef.current, data, options);
 
-      // Add event listeners
+      // Click event
       networkInstanceRef.current.on('click', params => {
         if (params.nodes.length > 0) {
           setSelectedNodeId(params.nodes[0]);
@@ -125,7 +124,7 @@ function Graph() {
         }
       });
 
-      // Keydown event listener
+      // Keydown event
       const handleKeyDown = event => {
         if ((event.key === 'f' || event.key === 'F') && selectedNodeId !== null) {
           toggleNodeFixed(selectedNodeId, networkInstanceRef.current);
@@ -134,16 +133,18 @@ function Graph() {
 
       document.addEventListener('keydown', handleKeyDown);
 
-      // Clean up event listeners on unmount
+      // Cleanup
       return () => {
         document.removeEventListener('keydown', handleKeyDown);
-        networkInstanceRef.current.destroy();
-        networkInstanceRef.current = null;
+        if (networkInstanceRef.current) {
+          networkInstanceRef.current.destroy();
+          networkInstanceRef.current = null;
+        }
       };
     }
-  }, [allNodes]); // Only run this effect when allNodes change
+  }, [allNodes, repulsionStrength, springStiffnessModulator, selectedNodeId]);
 
-  // Update network when sliders change
+  // Update edges based on sliders
   useEffect(() => {
     if (networkInstanceRef.current && allEdges.length > 0) {
       filterAndUpdateEdges();
@@ -151,7 +152,7 @@ function Graph() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visualThreshold, narrativeThreshold, springLengthModulator, allEdges]);
 
-  // Update physics settings when sliders change
+  // Update physics based on sliders
   useEffect(() => {
     if (networkInstanceRef.current) {
       updatePhysicsSettings();
@@ -159,38 +160,79 @@ function Graph() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [springStiffnessModulator, repulsionStrength]);
 
-  // Function to compute overall score
+  // ResizeObserver setup
+  useEffect(() => {
+    const handleResize = entries => {
+      for (let entry of entries) {
+        const currentHeight = entry.contentRect.height;
+        const shouldBeLarge = currentHeight >= 600;
+
+        // Only update if there's a change
+        if (shouldBeLarge !== isHeightLargeRef.current) {
+          isHeightLargeRef.current = shouldBeLarge;
+
+          // Schedule state update to prevent immediate layout changes
+          setTimeout(() => setIsHeightLarge(shouldBeLarge), 0);
+        }
+      }
+    };
+
+    const observer = new ResizeObserver(handleResize);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    // Initial height check
+    if (containerRef.current) {
+      const height = containerRef.current.getBoundingClientRect().height;
+      const shouldBeLarge = height >= 600;
+      if (shouldBeLarge !== isHeightLargeRef.current) {
+        isHeightLargeRef.current = shouldBeLarge;
+        setIsHeightLarge(shouldBeLarge);
+      }
+    }
+
+    // Cleanup
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+      observer.disconnect();
+    };
+  }, []); // Empty dependency array to run only once
+
+  // Compute overall score
   function computeOverallScore(visualScore, narrativeScore) {
     const visualWeight = 0.5;
     const narrativeWeight = 0.5;
     return (visualWeight * visualScore) + (narrativeWeight * narrativeScore);
   }
 
-  // Function to get color based on overall score
+  // Determine color based on score
   function getColorFromScore(score) {
     const red = Math.round(255 * score);
     const blue = Math.round(255 * (1 - score));
     return `rgb(${red}, 0, ${blue})`;
   }
 
-  // Function to highlight the selected node
+  // Highlight selected node
   function highlightSelectedNode(network, nodeId) {
     network.body.data.nodes.update({ id: nodeId, borderWidth: 3, borderColor: 'orange' });
   }
 
-  // Function to clear highlights from all nodes
+  // Clear all node highlights
   function clearNodeHighlights(network) {
     network.body.data.nodes.forEach(node => {
       network.body.data.nodes.update({ id: node.id, borderWidth: 1, borderColor: undefined });
     });
   }
 
-  // Function to toggle the fixed state of a node
+  // Toggle node fixed state
   function toggleNodeFixed(nodeId, network) {
     const node = network.body.data.nodes.get(nodeId);
     if (node) {
       const isFixed = node.fixed || false;
-      const isFullyFixed = (typeof isFixed === 'object') ? (node.fixed.x && node.fixed.y) : isFixed;
+      const isFullyFixed = typeof isFixed === 'object' ? (node.fixed.x && node.fixed.y) : isFixed;
 
       network.body.data.nodes.update({
         id: nodeId,
@@ -200,7 +242,7 @@ function Graph() {
     }
   }
 
-  // Function to filter and update edges based on slider values
+  // Filter and update edges based on slider values
   function filterAndUpdateEdges() {
     const edges = new DataSet();
     const filteredEdges = allEdges.filter(edge =>
@@ -236,7 +278,7 @@ function Graph() {
     networkInstanceRef.current.startSimulation();
   }
 
-  // Function to update physics settings based on slider values
+  // Update physics settings based on slider values
   function updatePhysicsSettings() {
     const newPhysicsOptions = {
       physics: {
@@ -248,9 +290,7 @@ function Graph() {
           damping: 0.4
         },
         solver: 'forceAtlas2Based',
-        stabilization: {
-          iterations: 50
-        }
+        stabilization: { iterations: 50 }
       }
     };
     networkInstanceRef.current.setOptions(newPhysicsOptions);
@@ -259,21 +299,41 @@ function Graph() {
   }
 
   return (
-    <div>
-      {/* Instructions */}
-      <div id="instructions">
-        <strong>Instructions:</strong> Click on a node to select it, then press the <strong>F</strong> key to fix/unfix its position. You can drag fixed nodes by clicking and dragging; they will be temporarily unfixed during the drag and fixed again once you release.
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+      <div ref={containerRef} style={{ width, height, position: 'relative' }}>
+        {/* Conditionally Render Instructions */}
+        {isHeightLarge && (
+          <div
+            id="instructions"
+            className="absolute top-0 left-0 right-0 p-4 bg-yellow-100 border border-yellow-300 rounded-b shadow-md z-10"
+            style={{ pointerEvents: 'none' }} // Allows interactions with underlying elements
+          >
+            <strong>Instructions:</strong> Click on a node to select it, then press the <strong>F</strong> key to fix/unfix its position. You can drag fixed nodes by clicking and dragging; they will be temporarily unfixed during the drag and fixed again once you release.
+          </div>
+        )}
+
+        {/* Network Graph Container */}
+        <div
+          id="network"
+          ref={networkRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            border: '1px solid lightgray',
+            overflow: 'hidden'
+          }}
+        ></div>
       </div>
 
-      {/* Network Graph Container */}
-      <div id="network" ref={networkRef} style={{ width: '100%', height: '750px', border: '1px solid lightgray' }}></div>
-
-      <h2>Artworks Connectivity Graph</h2>
+      <h2 className="text-xl font-semibold mt-4">Artworks Connectivity Graph</h2>
 
       {/* Sliders for interactivity */}
-      <div className="sliders-section">
-        <div className="slider-container">
-          <label htmlFor="visualThreshold" className="slider-label">Visual Connectivity Threshold:</label>
+      <div className="sliders-section space-y-4">
+        {/* Visual Connectivity Threshold */}
+        <div className="slider-container flex items-center">
+          <label htmlFor="visualThreshold" className="w-1/3 font-medium">
+            Visual Connectivity Threshold:
+          </label>
           <input
             type="range"
             id="visualThreshold"
@@ -283,13 +343,16 @@ function Graph() {
             value={visualThreshold}
             step="0.1"
             onChange={e => setVisualThreshold(parseFloat(e.target.value))}
-            style={{ width: '300px' }}
+            className="w-2/3 accent-brand"
           />
-          <span className="slider-value">{visualThreshold.toFixed(1)}</span>
+          <span className="ml-2 font-medium">{visualThreshold.toFixed(1)}</span>
         </div>
 
-        <div className="slider-container">
-          <label htmlFor="narrativeThreshold" className="slider-label">Narrative Connectivity Threshold:</label>
+        {/* Narrative Connectivity Threshold */}
+        <div className="slider-container flex items-center">
+          <label htmlFor="narrativeThreshold" className="w-1/3 font-medium">
+            Narrative Connectivity Threshold:
+          </label>
           <input
             type="range"
             id="narrativeThreshold"
@@ -299,13 +362,16 @@ function Graph() {
             value={narrativeThreshold}
             step="0.1"
             onChange={e => setNarrativeThreshold(parseFloat(e.target.value))}
-            style={{ width: '300px' }}
+            className="w-2/3 accent-brand"
           />
-          <span className="slider-value">{narrativeThreshold.toFixed(1)}</span>
+          <span className="ml-2 font-medium">{narrativeThreshold.toFixed(1)}</span>
         </div>
 
-        <div className="slider-container">
-          <label htmlFor="springLengthModulator" className="slider-label">Spring Length Modulator:</label>
+        {/* Spring Length Modulator */}
+        <div className="slider-container flex items-center">
+          <label htmlFor="springLengthModulator" className="w-1/3 font-medium">
+            Spring Length Modulator:
+          </label>
           <input
             type="range"
             id="springLengthModulator"
@@ -315,29 +381,35 @@ function Graph() {
             value={springLengthModulator}
             step="0.1"
             onChange={e => setSpringLengthModulator(parseFloat(e.target.value))}
-            style={{ width: '300px' }}
+            className="w-2/3 accent-brand"
           />
-          <span className="slider-value">{springLengthModulator.toFixed(1)}</span>
+          <span className="ml-2 font-medium">{springLengthModulator.toFixed(1)}</span>
         </div>
 
-        <div className="slider-container">
-          <label htmlFor="springStiffnessModulator" className="slider-label">Spring Stiffness Modulator:</label>
+        {/* Spring Stiffness Modulator */}
+        <div className="slider-container flex items-center">
+          <label htmlFor="springStiffnessModulator" className="w-1/3 font-medium">
+            Spring Stiffness Modulator:
+          </label>
           <input
             type="range"
             id="springStiffnessModulator"
             name="springStiffnessModulator"
-            min="0.01"
-            max="3.01"
+            min="0.1"
+            max="3.0"
             value={springStiffnessModulator}
             step="0.1"
             onChange={e => setSpringStiffnessModulator(parseFloat(e.target.value))}
-            style={{ width: '300px' }}
+            className="w-2/3 accent-brand"
           />
-          <span className="slider-value">{springStiffnessModulator.toFixed(1)}</span>
+          <span className="ml-2 font-medium">{springStiffnessModulator.toFixed(1)}</span>
         </div>
 
-        <div className="slider-container">
-          <label htmlFor="repulsionStrength" className="slider-label">Repulsion Strength:</label>
+        {/* Repulsion Strength */}
+        <div className="slider-container flex items-center">
+          <label htmlFor="repulsionStrength" className="w-1/3 font-medium">
+            Repulsion Strength:
+          </label>
           <input
             type="range"
             id="repulsionStrength"
@@ -347,9 +419,9 @@ function Graph() {
             value={repulsionStrength}
             step="1"
             onChange={e => setRepulsionStrength(parseInt(e.target.value))}
-            style={{ width: '300px' }}
+            className="w-2/3 accent-brand"
           />
-          <span className="slider-value">{repulsionStrength}</span>
+          <span className="ml-2 font-medium">{repulsionStrength}</span>
         </div>
       </div>
     </div>

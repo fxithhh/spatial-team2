@@ -1,12 +1,37 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import p5 from 'p5';
 
-function Canvas({ floorplanImage }) {
+function Canvas({ floorplanImage: propFloorplanImage }) {
+    // State to manage the uploaded image
+    const [uploadedImage, setUploadedImage] = useState(propFloorplanImage || null);
     const sketchRef = useRef();
     const p5InstanceRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    // Handle image upload via file input
+    const handleImageUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setUploadedImage(e.target.result); // Set the image as a Data URL
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Trigger the hidden file input
+    const triggerFileInput = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
 
     useEffect(() => {
-        if (!floorplanImage) {
+        const currentImage = uploadedImage;
+
+        if (!currentImage) {
+            // Remove p5 instance if no image is present
             if (p5InstanceRef.current) {
                 p5InstanceRef.current.remove();
                 p5InstanceRef.current = null;
@@ -14,6 +39,7 @@ function Canvas({ floorplanImage }) {
             return;
         }
 
+        // Remove existing p5 instance before creating a new one
         if (p5InstanceRef.current) {
             p5InstanceRef.current.remove();
             p5InstanceRef.current = null;
@@ -25,7 +51,7 @@ function Canvas({ floorplanImage }) {
             let rectangles = [];
             let walls = [];
             let pixelsPerCm;
-            let cellSize = 20;
+            let cellSize = 10;
             let cellSizePx;
             let isScaleDefined = false;
             let minX, minY, maxX, maxY;
@@ -36,7 +62,6 @@ function Canvas({ floorplanImage }) {
             let isDrawing = false;
             let offsetX, offsetY;
             let mostSquareRect;
-            let currentTool = 'wall';
             let findSecludedAreaButton;
             let secludedCells = [];
             let paths = []; // Stores paths from secluded cells to exits
@@ -46,13 +71,14 @@ function Canvas({ floorplanImage }) {
             let mainRegionId = -1;
             let narrowCorridorCells = []; // Cells to be marked as narrow corridors
             let wallsChanged = false; // Flag to indicate walls have changed
+            let currentTool = 'wall'; // Initialize currentTool
 
             p.preload = function () {
-                floorplanImg = p.loadImage(floorplanImage);
+                floorplanImg = p.loadImage(currentImage);
             };
 
             p.setup = function () {
-                floorplanImg = p.loadImage(floorplanImage, () => {
+                floorplanImg = p.loadImage(currentImage, () => {
                     let aspectRatio = floorplanImg.width / floorplanImg.height;
 
                     let containerWidth = sketchRef.current.clientWidth;
@@ -72,9 +98,11 @@ function Canvas({ floorplanImage }) {
 
                     floorplanImg.resize(imgWidth, imgHeight);
 
-                    traceBlackRectangles();
+                    // Improved rectangle tracing
+                    findRectangles();
+
                     calculateExtremeEdges();
-                    findMostSquareRectangle();
+                    findLargestSquareRectangle();
 
                     // Create the button after canvas is created
                     findSecludedAreaButton = p.createButton('Find Most Secluded Area');
@@ -122,14 +150,14 @@ function Canvas({ floorplanImage }) {
                     // Draw the floorplan image
                     p.image(floorplanImg, 0, 0, imgWidth, imgHeight);
 
-                    // Draw traced black rectangles over the image
+                    // Draw extracted black rectangles
                     p.fill(0);
                     p.noStroke();
                     for (let rectData of rectangles) {
                         p.rect(rectData.x, rectData.y, rectData.w, rectData.h);
                     }
 
-                    // Highlight the most square rectangle
+                    // Highlight the chosen square-like rectangle
                     if (mostSquareRect) {
                         p.fill(0, 255, 0, 100); // Highlight the rectangle in green
                         p.rect(
@@ -152,7 +180,7 @@ function Canvas({ floorplanImage }) {
                 if (isScaleDefined) {
                     if (wallsChanged) {
                         processGridCells();
-                        wallsChanged = false;
+                        wallsChanged = false; // Reset the flag
                     }
 
                     drawGrid();
@@ -286,72 +314,137 @@ function Canvas({ floorplanImage }) {
                 }
             };
 
-            function traceBlackRectangles() {
+            // ====================
+            // Improved Rectangle Detection
+            // ====================
+
+            function findRectangles() {
                 floorplanImg.loadPixels();
-                let visited = new Array(floorplanImg.width)
-                    .fill(null)
-                    .map(() => new Array(floorplanImg.height).fill(false));
+                let visited = Array.from({ length: floorplanImg.width }, () =>
+                    new Array(floorplanImg.height).fill(false)
+                );
 
                 for (let y = 0; y < floorplanImg.height; y++) {
                     for (let x = 0; x < floorplanImg.width; x++) {
                         if (!visited[x][y]) {
-                            let color = floorplanImg.get(x, y);
-                            if (color[0] === 0 && color[1] === 0 && color[2] === 0) {
-                                let rectData = findRectangle(x, y, visited);
+                            let c = floorplanImg.get(x, y);
+                            if (isBlackPixel(c)) {
+                                let component = floodFillComponent(x, y, visited);
+                                let rectData = validateRectangle(component);
                                 if (rectData) {
                                     rectangles.push(rectData);
                                 }
+                            } else {
+                                visited[x][y] = true;
                             }
-                            visited[x][y] = true;
                         }
                     }
                 }
             }
 
-            function findRectangle(startX, startY, visited) {
-                let width = 0,
-                    height = 0;
+            function isBlackPixel(color) {
+                // Define threshold for black pixels (can be adjusted as needed)
+                return color[0] < 50 && color[1] < 50 && color[2] < 50;
+            }
 
-                for (
-                    let x = startX;
-                    x < floorplanImg.width && !visited[x][startY];
-                    x++
-                ) {
-                    let color = floorplanImg.get(x, startY);
-                    if (color[0] === 0 && color[1] === 0 && color[2] === 0) width++;
-                    else break;
-                }
-
-                for (
-                    let y = startY;
-                    y < floorplanImg.height && !visited[startX][y];
-                    y++
-                ) {
-                    let color = floorplanImg.get(startX, y);
-                    if (color[0] === 0 && color[1] === 0 && color[2] === 0) height++;
-                    else break;
-                }
-
-                for (let y = startY; y < startY + height; y++) {
-                    for (let x = startX; x < startX + width; x++) {
+            function floodFillComponent(sx, sy, visited) {
+                let stack = [{ x: sx, y: sy }];
+                let pixels = [];
+                while (stack.length > 0) {
+                    let { x, y } = stack.pop();
+                    if (
+                        x < 0 ||
+                        x >= floorplanImg.width ||
+                        y < 0 ||
+                        y >= floorplanImg.height ||
+                        visited[x][y]
+                    )
+                        continue;
+                    let c = floorplanImg.get(x, y);
+                    if (isBlackPixel(c)) {
+                        visited[x][y] = true;
+                        pixels.push({ x, y });
+                        // Push neighboring pixels (4-connectivity)
+                        stack.push({ x: x + 1, y });
+                        stack.push({ x: x - 1, y });
+                        stack.push({ x, y: y + 1 });
+                        stack.push({ x, y: y - 1 });
+                    } else {
                         visited[x][y] = true;
                     }
                 }
-
-                return { x: startX, y: startY, w: width, h: height };
+                return pixels;
             }
 
-            function findMostSquareRectangle() {
-                let minAspectRatioDiff = Infinity;
-
-                for (let rect of rectangles) {
-                    let aspectRatioDiff = Math.abs(rect.w / rect.h - 1);
-                    if (aspectRatioDiff < minAspectRatioDiff) {
-                        minAspectRatioDiff = aspectRatioDiff;
-                        mostSquareRect = rect;
+            function validateRectangle(pixels) {
+                if (pixels.length === 0) return null;
+            
+                // Find bounding box
+                let minX = Infinity,
+                    minY = Infinity,
+                    maxX = -Infinity,
+                    maxY = -Infinity;
+                for (let px of pixels) {
+                    if (px.x < minX) minX = px.x;
+                    if (px.x > maxX) maxX = px.x;
+                    if (px.y < minY) minY = px.y;
+                    if (px.y > maxY) maxY = px.y;
+                }
+            
+                let w = maxX - minX + 1;
+                let h = maxY - minY + 1;
+                let area = w * h;
+            
+                // Calculate black pixels in bounding box
+                let blackPixels = 0;
+                for (let yy = minY; yy <= maxY; yy++) {
+                    for (let xx = minX; xx <= maxX; xx++) {
+                        let c = floorplanImg.get(xx, yy);
+                        if (isBlackPixel(c)) {
+                            blackPixels++;
+                        }
                     }
                 }
+            
+                let blackPercentage = (blackPixels / area) * 100;
+            
+                // Set a tolerance threshold (e.g., 90% black pixels)
+                const tolerancePercentage = 90;
+            
+                if (blackPercentage < tolerancePercentage) {
+                    // Not a valid rectangle within tolerance
+                    return null;
+                }
+            
+                // Return rectangle data
+                return { x: minX, y: minY, w: w, h: h };
             }
+            
+
+            function findLargestSquareRectangle() {
+                // Select the rectangle that is closest to a square and has the largest area
+                let bestRect = null;
+                let bestScore = Infinity; // lower is better (aspect ratio closer to 1)
+                let bestArea = -1;
+
+                for (let rect of rectangles) {
+                    let aspectRatio = rect.w / rect.h;
+                    let diff = Math.abs(aspectRatio - 1);
+                    let area = rect.w * rect.h;
+                    // Prioritize square-likeness first, then area
+                    if (diff < bestScore || (diff === bestScore && area > bestArea)) {
+                        bestScore = diff;
+                        bestArea = area;
+                        bestRect = rect;
+                    }
+                }
+
+                mostSquareRect = bestRect;
+            }
+
+            // ====================
+            // Existing Functions (Unchanged)
+            // ====================
 
             function calculateExtremeEdges() {
                 minX = 0;
@@ -581,7 +674,10 @@ function Canvas({ floorplanImage }) {
                 return null;
             }
 
-            // Modified processGridCells function to create the grid
+            // ====================
+            // Grid Processing Functions
+            // ====================
+
             function processGridCells() {
                 // Initialize grid
                 grid = [];
@@ -830,22 +926,14 @@ function Canvas({ floorplanImage }) {
                 }
             }
 
-            // Function to draw narrow corridors
-            function drawNarrowCorridors() {
-                if (narrowCorridorCells.length > 0) {
-                    p.fill(255, 0, 0, 100); // Red color with transparency
-                    p.noStroke();
-                    for (let cell of narrowCorridorCells) {
-                        let x = minX + cell.x * cellSizePx;
-                        let y = minY + cell.y * cellSizePx;
-                        p.rect(x, y, cellSizePx, cellSizePx);
-                    }
-                }
-            }
+            // ====================
+            // Pathfinding and Secluded Area Functions
+            // ====================
+
             // Implementing Theta* algorithm with optimizations
             function isCornerCell(grid, col, row) {
                 if (grid[col][row].isWall) return false;
-            
+
                 let walls = 0;
                 let openSpaces = 0;
                 let adjacentPositions = [
@@ -854,7 +942,7 @@ function Canvas({ floorplanImage }) {
                     { x: col, y: row - 1 },
                     { x: col, y: row + 1 },
                 ];
-            
+
                 for (let pos of adjacentPositions) {
                     if (pos.x < 0 || pos.x >= cols || pos.y < 0 || pos.y >= rows) {
                         walls++;
@@ -864,10 +952,11 @@ function Canvas({ floorplanImage }) {
                         openSpaces++;
                     }
                 }
-            
+
                 // A corner cell will have exactly two walls and two open spaces adjacent to it
                 return walls === 2 && openSpaces === 2;
             }
+
             function heuristicToClosestExit(x, y, exits) {
                 let minDistance = Infinity;
                 for (let exit of exits) {
@@ -878,26 +967,26 @@ function Canvas({ floorplanImage }) {
                 }
                 return minDistance;
             }
-            
+
             function findMostSecludedArea() {
                 if (!isScaleDefined) {
                     alert('Please define the scale first.');
                     return;
                 }
-            
+
                 // Reset paths and secluded cells
                 paths = [];
                 secludedCells = [];
                 checkedCorners = []; // Reset the checkedCorners array
-            
+
                 // Prepare the grid with walls and accessible cells
-                let grid = [];
+                let gridCopy = [];
                 for (let i = 0; i < cols; i++) {
-                    grid[i] = [];
+                    gridCopy[i] = [];
                     for (let j = 0; j < rows; j++) {
-                        grid[i][j] = {
-                            isWall: false,
-                            isExit: false,
+                        gridCopy[i][j] = {
+                            isWall: grid[i][j].isWall,
+                            isExit: grid[i][j].isExit,
                             g: Infinity,
                             f: Infinity,
                             parent: null,
@@ -907,134 +996,128 @@ function Canvas({ floorplanImage }) {
                         };
                     }
                 }
-            
-                // Mark walls and exits
+
+                // Identify exits
                 let exits = [];
-            
                 for (let wall of walls) {
-                    if (wall.type === 'wall' || wall.type === 'autoWall') {
+                    if (wall.type === 'fireEscape' || wall.type === 'entrance') {
                         for (let i = wall.x; i < wall.x + wall.w; i++) {
                             for (let j = wall.y; j < wall.y + wall.h; j++) {
-                                grid[i][j].isWall = true;
-                            }
-                        }
-                    } else if (wall.type === 'fireEscape' || wall.type === 'entrance') {
-                        for (let i = wall.x; i < wall.x + wall.w; i++) {
-                            for (let j = wall.y; j < wall.y + wall.h; j++) {
-                                grid[i][j].isExit = true;
-                                exits.push({ x: i, y: j });
+                                if (i >= 0 && i < cols && j >= 0 && j < rows) {
+                                    gridCopy[i][j].isExit = true;
+                                    exits.push({ x: i, y: j });
+                                }
                             }
                         }
                     }
                 }
-            
+
                 // Identify corner cells
-                let startingCells = findCornerCells(grid);
-            
+                let startingCells = findCornerCells(gridCopy);
+
                 if (startingCells.length === 0) {
                     alert('No suitable corner cells found.');
                     return;
                 }
-            
+
                 let maxDistance = -1;
-            
+
                 // Run Theta* from each corner cell
                 for (let startCell of startingCells) {
                     // Reset grid nodes
                     for (let x = 0; x < cols; x++) {
                         for (let y = 0; y < rows; y++) {
-                            grid[x][y].g = Infinity;
-                            grid[x][y].f = Infinity;
-                            grid[x][y].parent = null;
-                            grid[x][y].closed = false;
+                            gridCopy[x][y].g = Infinity;
+                            gridCopy[x][y].f = Infinity;
+                            gridCopy[x][y].parent = null;
+                            gridCopy[x][y].closed = false;
                         }
                     }
-            
+
                     let openSet = new MinHeap();
-            
+
                     let i = startCell.x;
                     let j = startCell.y;
-            
-                    grid[i][j].g = 0;
-                    grid[i][j].f = heuristicToClosestExit(i, j, exits);
-                    openSet.insert({ x: i, y: j, f: grid[i][j].f });
-            
+
+                    gridCopy[i][j].g = 0;
+                    gridCopy[i][j].f = heuristicToClosestExit(i, j, exits);
+                    openSet.insert({ x: i, y: j, f: gridCopy[i][j].f });
+
                     let foundPath = false;
                     let bestExit = null;
                     let bestG = Infinity;
-            
+
                     while (!openSet.isEmpty()) {
                         const current = openSet.extractMin();
                         const x = current.x;
                         const y = current.y;
-            
-                        if (grid[x][y].closed) continue;
-                        grid[x][y].closed = true;
-            
-                        if (grid[x][y].isExit) {
+
+                        if (gridCopy[x][y].closed) continue;
+                        gridCopy[x][y].closed = true;
+
+                        if (gridCopy[x][y].isExit) {
                             foundPath = true;
-                            if (grid[x][y].g < bestG) {
-                                bestG = grid[x][y].g;
+                            if (gridCopy[x][y].g < bestG) {
+                                bestG = gridCopy[x][y].g;
                                 bestExit = { x: x, y: y };
                             }
                             continue; // Continue to explore other paths
                         }
-            
-                        const neighbors = getNeighbors(grid, x, y);
+
+                        const neighbors = getNeighbors(gridCopy, x, y);
                         for (let neighbor of neighbors) {
-                            if (grid[neighbor.x][neighbor.y].closed) continue;
-            
-                            let gNew = grid[x][y].g + euclideanDistance(x, y, neighbor.x, neighbor.y);
-                            let parent = grid[x][y].parent;
-            
-                            if (parent && lineOfSight(grid, parent.x, parent.y, neighbor.x, neighbor.y)) {
-                                let gPotential = grid[parent.x][parent.y].g + euclideanDistance(parent.x, parent.y, neighbor.x, neighbor.y);
-                                if (gPotential < grid[neighbor.x][neighbor.y].g) {
-                                    grid[neighbor.x][neighbor.y].g = gPotential;
-                                    grid[neighbor.x][neighbor.y].parent = grid[parent.x][parent.y];
-                                    grid[neighbor.x][neighbor.y].f = gPotential + heuristicToClosestExit(neighbor.x, neighbor.y, exits);
-                                    openSet.insert({ x: neighbor.x, y: neighbor.y, f: grid[neighbor.x][neighbor.y].f });
+                            if (gridCopy[neighbor.x][neighbor.y].closed) continue;
+
+                            let gNew = gridCopy[x][y].g + euclideanDistance(x, y, neighbor.x, neighbor.y);
+                            let parent = gridCopy[x][y].parent;
+
+                            if (parent && lineOfSight(gridCopy, parent.x, parent.y, neighbor.x, neighbor.y)) {
+                                let gPotential = gridCopy[parent.x][parent.y].g + euclideanDistance(parent.x, parent.y, neighbor.x, neighbor.y);
+                                if (gPotential < gridCopy[neighbor.x][neighbor.y].g) {
+                                    gridCopy[neighbor.x][neighbor.y].g = gPotential;
+                                    gridCopy[neighbor.x][neighbor.y].parent = gridCopy[parent.x][parent.y];
+                                    gridCopy[neighbor.x][neighbor.y].f = gPotential + heuristicToClosestExit(neighbor.x, neighbor.y, exits);
+                                    openSet.insert({ x: neighbor.x, y: neighbor.y, f: gridCopy[neighbor.x][neighbor.y].f });
                                 }
                             } else {
-                                if (gNew < grid[neighbor.x][neighbor.y].g) {
-                                    grid[neighbor.x][neighbor.y].g = gNew;
-                                    grid[neighbor.x][neighbor.y].parent = grid[x][y];
-                                    grid[neighbor.x][neighbor.y].f = gNew + heuristicToClosestExit(neighbor.x, neighbor.y, exits);
-                                    openSet.insert({ x: neighbor.x, y: neighbor.y, f: grid[neighbor.x][neighbor.y].f });
+                                if (gNew < gridCopy[neighbor.x][neighbor.y].g) {
+                                    gridCopy[neighbor.x][neighbor.y].g = gNew;
+                                    gridCopy[neighbor.x][neighbor.y].parent = gridCopy[x][y];
+                                    gridCopy[neighbor.x][neighbor.y].f = gNew + heuristicToClosestExit(neighbor.x, neighbor.y, exits);
+                                    openSet.insert({ x: neighbor.x, y: neighbor.y, f: gridCopy[neighbor.x][neighbor.y].f });
                                 }
                             }
                         }
                     }
-            
+
                     if (foundPath && bestG > maxDistance) {
                         maxDistance = bestG;
                         secludedCells = [startCell];
-                        paths = [reconstructPath(grid, i, j, bestExit.x, bestExit.y)];
+                        paths = [reconstructPath(gridCopy, i, j, bestExit.x, bestExit.y)];
                     } else if (foundPath && bestG === maxDistance) {
                         secludedCells.push(startCell);
-                        paths.push(reconstructPath(grid, i, j, bestExit.x, bestExit.y));
+                        paths.push(reconstructPath(gridCopy, i, j, bestExit.x, bestExit.y));
                     }
                 }
-            
+
                 if (maxDistance === -1) {
                     alert('No path found to exits from corner cells.');
                 } else {
                     alert(
-                        `The furthest corner from an exit is approximately ${Math.round(maxDistance * cellSize)/100} m away.`
+                        `The furthest corner from an exit is approximately ${Math.round((maxDistance * cellSize) / 100)} m away.`
                     );
                 }
-            
+
                 p.redraw();
             }
-            
 
-            function findCornerCells(grid) {
+            function findCornerCells(gridCopy) {
                 let startingCells = [];
                 checkedCorners = []; // Clear previous checked corners
-            
+
                 for (let col = 0; col < cols; col++) {
                     for (let row = 0; row < rows; row++) {
-                        if (isCornerCell(grid, col, row)) {
+                        if (isCornerCell(gridCopy, col, row)) {
                             startingCells.push({ x: col, y: row });
                             checkedCorners.push({ x: col, y: row }); // For highlighting
                         }
@@ -1042,10 +1125,8 @@ function Canvas({ floorplanImage }) {
                 }
                 return startingCells;
             }
-            
 
-
-            function lineOfSight(grid, x0, y0, x1, y1) {
+            function lineOfSight(gridCopy, x0, y0, x1, y1) {
                 let sx, sy, dx, dy, err, e2;
                 dx = Math.abs(x1 - x0);
                 dy = Math.abs(y1 - y0);
@@ -1054,7 +1135,7 @@ function Canvas({ floorplanImage }) {
                 err = dx - dy;
 
                 while (true) {
-                    if (grid[x0][y0].isWall) {
+                    if (gridCopy[x0][y0].isWall) {
                         return false;
                     }
                     if (x0 === x1 && y0 === y1) {
@@ -1081,7 +1162,7 @@ function Canvas({ floorplanImage }) {
                 return Math.hypot(x2 - x1, y2 - y1);
             }
 
-            function getNeighbors(grid, x, y) {
+            function getNeighbors(gridCopy, x, y) {
                 let neighbors = [];
                 let directions = [
                     { x: 0, y: -1 },
@@ -1102,7 +1183,7 @@ function Canvas({ floorplanImage }) {
                         nx < cols &&
                         ny >= 0 &&
                         ny < rows &&
-                        !grid[nx][ny].isWall
+                        !gridCopy[nx][ny].isWall
                     ) {
                         neighbors.push({ x: nx, y: ny });
                     }
@@ -1110,9 +1191,9 @@ function Canvas({ floorplanImage }) {
                 return neighbors;
             }
 
-            function reconstructPath(grid, startX, startY, endX, endY) {
+            function reconstructPath(gridCopy, startX, startY, endX, endY) {
                 let path = [];
-                let current = grid[endX][endY];
+                let current = gridCopy[endX][endY];
                 while (current && !(current.x === startX && current.y === startY)) {
                     path.push({ x: current.x, y: current.y });
                     current = current.parent;
@@ -1120,6 +1201,10 @@ function Canvas({ floorplanImage }) {
                 path.push({ x: startX, y: startY });
                 return path.reverse();
             }
+
+            // ====================
+            // Drawing Functions
+            // ====================
 
             function drawSecludedCells() {
                 if (secludedCells.length > 0) {
@@ -1151,6 +1236,23 @@ function Canvas({ floorplanImage }) {
                 }
             }
 
+            function drawNarrowCorridors() {
+                if (narrowCorridorCells.length > 0) {
+                    p.fill(255, 0, 0, 100); // Red with transparency
+                    p.noStroke();
+                    for (let cell of narrowCorridorCells) {
+                        let x = minX + cell.x * cellSizePx;
+                        let y = minY + cell.y * cellSizePx;
+                        p.rect(x, y, cellSizePx, cellSizePx);
+                    }
+                }
+            }
+
+            // ====================
+            // Helper Functions
+            // ====================
+
+            // MinHeap class for priority queue in Theta*
             class MinHeap {
                 constructor() {
                     this.heap = [];
@@ -1220,23 +1322,48 @@ function Canvas({ floorplanImage }) {
             }
         };
 
+        // Initialize p5 instance
         p5InstanceRef.current = new p5(sketch, sketchRef.current);
 
+        // Cleanup on unmount or when image changes
         return () => {
             if (p5InstanceRef.current) {
                 p5InstanceRef.current.remove();
                 p5InstanceRef.current = null;
             }
         };
-    }, [floorplanImage]);
+    }, [uploadedImage]);
 
     return (
-        <div
-            ref={sketchRef}
-            className="w-full h-full border-2 border-gray-300 relative"
-            // style={{position: 'relative' }}
-        ></div>
+        <div className="relative w-full h-full border-2 border-gray-300">
+            {/* p5.js Sketch Container */}
+            <div ref={sketchRef} className="w-full h-full"></div>
+
+            {/* Upload Button Overlay */}
+            {!uploadedImage && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75">
+                    <div className="flex flex-col items-center p-6 bg-white rounded shadow">
+                        <p className="mb-4 text-center">
+                            No floorplan image available. Please upload one.
+                        </p>
+                        <button
+                            onClick={triggerFileInput}
+                            className="px-4 py-2 mb-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            Upload Image
+                        </button>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            className="hidden"
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
 
-export default Canvas; 
+export default Canvas;

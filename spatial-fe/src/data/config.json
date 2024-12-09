@@ -35,11 +35,55 @@
       "style_significance": "Fusion of traditional portrait with contemporary abstraction",
       "exhibition_utilisation": "identity, postcolonial discourse, and memory",
       "image": "../assets/childish.jpg",
-      "conservation_guidelines": {
-        "optimal_temperature": "20–22°C (68–72°F)",
-        "optimal_humidity": "45–55%",
-        "light_levels": "200 lux"
-      }
+      "conservation_guidelines": [
+        "The 'Tapestry of Justice' installation should be exhibited with reduced light levels of 5 footcandles (50 lux) and a duration limit of 6 months within a 5-year period, considering its paper and organic materials mix. It's crucial to limit light exposure due to the fragility of acetate, pigments, and organic elements used in the artwork.",
+        "Maintain an exhibition environment with controlled temperature around 60ºF and relative humidity levels between 40-55% for optimal preservation. Regular monitoring using hygrothermograph data logging is recommended to prevent temperature and humidity fluctuations.",
+        "Ensure 'Tapestry of Justice' is positioned away from direct sunlight and heat-emitting sources to prevent deterioration of organic materials and pigments.",
+        "Implement fire safety measures, including installing smoke detectors and fire dampers in the exhibition space, and maintain an annual inspection routine in compliance with Scheme 1b standards to ensure quick response in case of a fire outbreak.",
+        "Create an emergency response plan for the artwork, including the provision of firefighting equipment like hoses that comply with BS 6391, to address potential risks without causing harm to the fragile acetate materials and organic components in the artwork."
+      ],
+      "taxonomy": [
+        {
+          "heading": "Medium Material",
+          "subHeadings": [
+            {
+              "subHeading": "Painting",
+              "content": "Oil, Acrylic, Watercolor, Tempera, Digital, Fresco, Ink, Others"
+            },
+            {
+              "subHeading": "Drawing",
+              "content": "Charcoal, Pencil, Ink, Pastel, Marker, Others"
+            }
+          ]
+        },
+        {
+          "heading": "Genre",
+          "subHeadings": [
+            {
+              "subHeading": null,
+              "content": "Abstract, Realism, Surrealism, Impressionism, Cubism, Expressionism"
+            }
+          ]
+        },
+        {
+          "heading": "Period Movement",
+          "subHeadings": [
+            {
+              "subHeading": "Art Historical Periods",
+              "content": "Renaissance, Baroque, Romanticism, Modernism, Postmodernism"
+            }
+          ]
+        },
+        {
+          "heading": "Cultural Origin Region",
+          "subHeadings": [
+            {
+              "subHeading": null,
+              "content": "Singapore, Southeast Asia"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 2,
