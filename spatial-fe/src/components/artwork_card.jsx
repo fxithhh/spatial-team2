@@ -33,7 +33,7 @@ const ArtworkCard = ({ artwork }) => {
   // A helper to render sections with common structure
   const renderSection = (title, content) => (
     <div className="mb-4">
-      <span className="font-semibold text-gray-400 mr-8 w-32">{title}</span>
+      <span className="font-bold text-gray-400 mr-8 w-32">{title}</span>
       <p className="text-lg line-clamp-3 overflow-hidden text-ellipsis">{content}</p>
     </div>
   );
@@ -73,7 +73,7 @@ const ArtworkCard = ({ artwork }) => {
         {entry.subHeadings && entry.subHeadings.length > 0 && (
           <button
             onClick={() => toggleSection(`taxonomy-${index}`)}
-            className="w-full flex justify-start items-center text-left font-bold text-gray-600"
+            className="w-full flex justify-start items-center text-left font-bold text-gray-400"
           >
             {/* Triangle toggle symbol */}
             <span
@@ -99,7 +99,7 @@ const ArtworkCard = ({ artwork }) => {
               <div key={subIndex} className="ml-5">
                 {subHeading.subHeading ? (
                   <div className='flex flex-col my-2'>
-                    <span className="font-bold text-gray-400">{subHeading.subHeading}:</span>
+                    <span className="font-semibold text-gray-400">{subHeading.subHeading}:</span>
                     <p className="text-gray-500">{subHeading.content}</p>
                   </div>
                 ) : (
@@ -117,7 +117,16 @@ const ArtworkCard = ({ artwork }) => {
   return (
     <div className="flex flex-col">
       {/* Title and Basic Info */}
-      <span className="font-semibold text-2xl text-black mr-4 font-['Roboto_Condensed']">{artwork.title}</span>
+      <div className='flex justify-between'>
+        <span className="font-semibold text-2xl text-black mr-4 font-['Roboto_Condensed']">{artwork.title}</span>
+        <button
+          onClick={() => alert('Placeholder: Clicked to add to canvas!')}
+          className="flex items-center justify-center w-8 h-8 bg-brand text-white hover:bg-brandhover transition-colors"
+          title="Click to add to canvas"
+        >
+          +
+        </button>
+      </div>
       <span className="font-normal text-lg text-brand mr-4 font-['Roboto']">{artwork.artist_name}</span>
       <span className="font-normal text-lg text-gray-400 mr-4 font-['Roboto']">
         {artwork.date_of_creation}, {artwork.geographical_association}
