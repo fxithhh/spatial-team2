@@ -80,69 +80,101 @@ function Graph({ width = '100%', height = '100%' }) {
       });
   }, []);
 
-  // Initialize network
-  useEffect(() => {
-    if (networkRef.current && allNodes.length > 0 && !networkInstanceRef.current) {
-      const nodes = new DataSet(allNodes);
-      const edges = new DataSet();
+// Replace the existing initialization useEffect with one that only depends on allNodes and allEdges:
 
-      const data = { nodes, edges };
+useEffect(() => {
+  if (networkRef.current && allNodes.length > 0 && allEdges.length > 0 && !networkInstanceRef.current) {
+    const nodes = new DataSet(allNodes);
+    const edges = new DataSet();
+    const data = { nodes, edges };
 
-      const options = {
-        physics: {
-          enabled: true,
-          forceAtlas2Based: {
-            gravitationalConstant: -repulsionStrength,
-            centralGravity: 0.0005,
-            springLength: 100,
-            springConstant: 0.1 * springStiffnessModulator,
-            damping: 0.4
-          },
-          solver: 'forceAtlas2Based',
-          stabilization: { iterations: 50 }
+    const options = {
+      physics: {
+        enabled: true,
+        forceAtlas2Based: {
+          gravitationalConstant: -repulsionStrength,
+          centralGravity: 0.0005,
+          springLength: 100,
+          springConstant: 0.1 * springStiffnessModulator,
+          damping: 0.4
         },
-        edges: { smooth: false },
-        interaction: {
-          hover: true,
-          tooltipDelay: 200,
-          multiselect: false,
-          selectConnectedEdges: false
-        },
-        nodes: { font: { size: 12 }, borderWidth: 1 }
-      };
+        solver: 'forceAtlas2Based',
+        stabilization: { iterations: 50 }
+      },
+      edges: { smooth: false },
+      interaction: {
+        hover: true,
+        tooltipDelay: 200,
+        multiselect: false,
+        selectConnectedEdges: false
+      },
+      nodes: { font: { size: 12 }, borderWidth: 1 }
+    };
 
-      networkInstanceRef.current = new Network(networkRef.current, data, options);
+    networkInstanceRef.current = new Network(networkRef.current, data, options);
 
-      // Click event
-      networkInstanceRef.current.on('click', params => {
-        if (params.nodes.length > 0) {
-          setSelectedNodeId(params.nodes[0]);
-          highlightSelectedNode(networkInstanceRef.current, params.nodes[0]);
-        } else {
-          setSelectedNodeId(null);
-          clearNodeHighlights(networkInstanceRef.current);
-        }
-      });
+    networkInstanceRef.current.on('click', params => {
+      if (params.nodes.length > 0) {
+        setSelectedNodeId(params.nodes[0]);
+        highlightSelectedNode(networkInstanceRef.current, params.nodes[0]);
+      } else {
+        setSelectedNodeId(null);
+        clearNodeHighlights(networkInstanceRef.current);
+      }
+    });
 
-      // Keydown event
-      const handleKeyDown = event => {
-        if ((event.key === 'f' || event.key === 'F') && selectedNodeId !== null) {
-          toggleNodeFixed(selectedNodeId, networkInstanceRef.current);
-        }
-      };
+    const handleKeyDown = event => {
+      if ((event.key === 'f' || event.key === 'F') && selectedNodeId !== null) {
+        toggleNodeFixed(selectedNodeId, networkInstanceRef.current);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
 
-      document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (networkInstanceRef.current) {
+        networkInstanceRef.current.destroy();
+        networkInstanceRef.current = null;
+      }
+    };
+  }
+}, [allNodes, allEdges]);
 
-      // Cleanup
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown);
-        if (networkInstanceRef.current) {
-          networkInstanceRef.current.destroy();
-          networkInstanceRef.current = null;
-        }
-      };
+// Keep other effects for updating physics and edges separate and do not include all initialization dependencies there.
+
+useEffect(() => {
+  const handleKeyDown = event => {
+    if ((event.key === 'f' || event.key === 'F') && selectedNodeId !== null) {
+      toggleNodeFixed(selectedNodeId, networkInstanceRef.current);
     }
-  }, [allNodes, repulsionStrength, springStiffnessModulator, selectedNodeId]);
+  };
+
+  document.addEventListener('keydown', handleKeyDown);
+
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+  };
+}, [selectedNodeId]);
+useEffect(() => {
+  if (networkInstanceRef.current) {
+    networkInstanceRef.current.on('dragStart', params => {
+      if (params.nodes.length === 1) {
+        networkInstanceRef.current.body.data.nodes.update({ id: params.nodes[0], fixed: false });
+      }
+    });
+
+    networkInstanceRef.current.on('dragEnd', params => {
+      if (params.nodes.length === 1) {
+        const nodeId = params.nodes[0];
+        const node = networkInstanceRef.current.body.data.nodes.get(nodeId);
+        // If node was fixed (orange), refix it after drag
+        if (node && node.color === 'orange') {
+          networkInstanceRef.current.body.data.nodes.update({ id: nodeId, fixed: { x: true, y: true } });
+        }
+      }
+    });
+  }
+}, [selectedNodeId]);
 
   // Update edges based on sliders
   useEffect(() => {

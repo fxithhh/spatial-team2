@@ -19,6 +19,7 @@ function CreateExhibit() {
     const [previewImage, setPreviewImage] = useState(null);
     const navigate = useNavigate();
     const [newSubsection, setNewSubsection] = useState("");
+    const [loading, setLoading] = useState(false);
 
     // Handle image upload
     const handleImageUpload = (e) => {
@@ -91,42 +92,61 @@ function CreateExhibit() {
     };
 
     // Handle form submission
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Generate a new ID for the exhibit
-        const newId = config.exhibits.length > 0
-            ? Math.max(...config.exhibits.map((exhibit) => exhibit.id)) + 1
-            : 1;
-
-        // Create the new exhibit
-        const newExhibit = {
-            id: newId,
-            title: formData.exhibit_title,
-            description: formData.concept,
-            image: "assets/childish.jpg",
-        };
-
+        // Form validation
+        if (!formData.exhibit_title || !formData.concept || !formData.floor_plan || !fileName) {
+            toast.error("Please fill in all required fields and upload necessary files.");
+            return;
+        }
         try {
-            // Add the new exhibit to the config file
-            const updatedExhibits = [...config.exhibits, newExhibit];
-            config.exhibits = updatedExhibits;
+            const formDataToSend = new FormData();
+            formDataToSend.append("exhibit_title", formData.exhibit_title);
+            formDataToSend.append("concept", formData.concept);
 
-            // Simulate saving updated config to the file (this part works only in memory)
-            // For actual persistence, you'd need a backend or localStorage
-            console.log("Updated Exhibits:", config.exhibits);
+            formData.subsections.forEach((subsection, index) => {
+                formDataToSend.append(`subsections[${index}]`, subsection);
+            });
 
-            // Notify success and navigate to the new Exhibit Design page
-            toast.success("Exhibit created successfully!");
+            formDataToSend.append("floor_plan", formData.floor_plan);
 
-            setTimeout(() => {
-                navigate(`/exhibitions/${newId}`);
-            }, 1000);
+            const artworkInput = document.getElementById("file-upload");
+            if (artworkInput && artworkInput.files[0]) {
+                formDataToSend.append("artwork_list", artworkInput.files[0]);
+            }
+
+            const response = await fetch("http://localhost:5000/bulk_upload", {
+                method: "POST",
+                body: formDataToSend,
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                toast.success("Exhibit created successfully!");
+                setLoading(true);
+                setTimeout(() => {
+                    setLoading(false);
+                    navigate(`/exhibitions/${result.exhibitId}`);
+                }, 1000);
+            } else {
+                const errorText = await response.text();
+                console.error("Failed to create exhibit:", errorText);
+                toast.error("Failed to create exhibit. Please try again.");
+            }
         } catch (error) {
-            console.error("Error creating exhibit:", error);
-            toast.error("An error occurred. Please try again.");
+            console.error("Error submitting form:", error);
+            toast.error("An unexpected error occurred. Please try again.");
         }
     };
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div className="spinner-border animate-spin inline-block w-12 h-12 border-4 rounded-full text-brand"></div>
+                <p className="ml-4 text-lg font-semibold text-gray-700">Loading... Please wait.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="my-12 mx-auto w-1/2 font-['Roboto_Condensed']">
@@ -284,11 +304,12 @@ function CreateExhibit() {
                         <div className='mx-auto flex justify-center'>
                             <button
                                 type="submit"
-                                className="bg-brand text-white py-2 px-8 hover:bg-brandhover"
+                                className="bg-brand text-white py-2 px-8 hover:bg-brandhover flex items-center"
                             >
-                                Create Exhibit
+                                "Create Exhibit"
                             </button>
                         </div>
+
                     </form>
                     <ToastContainer position="bottom-right" autoClose={3000} />
                 </div>
