@@ -6,6 +6,7 @@ import Graph from '../components/Graph'; // Adjust the path if necessary
 import Breadcrumb from '../components/breadcrumb';
 import { ArrowsRightLeftIcon, ListBulletIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Canvas from '../components/canvas';
+import OverlayComponent from '../components/OverlayComponent';
 import ArtworkCard from '../components/artwork_card';
 import ImportArtWork from '../components/popups/import-artwork';
 import config from '../data/config.json';
@@ -107,7 +108,7 @@ const ExhibitDetail = () => {
                     {/* Main View */}
                     <div className="flex-grow flex justify-center items-center p-4">
                         {view === "connection" ? (
-                            <Graph />
+                            <OverlayComponent />
                         ) : (
                             <Canvas floorplanImage={floorplanImage} />
                         )}
