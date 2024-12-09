@@ -30,6 +30,31 @@ function Graph({ width = '100%', height = '100%' }) {
   const isHeightLargeRef = useRef(true); // To track previous state
   const [hiddenNodes, setHiddenNodes] = useState([]);
 
+  //toggle for node shape to become image
+  const [useImageNodes, setUseImageNodes] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = event => {
+      if ((event.key === 'i' || event.key === 'I')) {
+        setUseImageNodes(prev => !prev);
+  
+        const updatedNodes = networkInstanceRef.current.body.data.nodes.getIds().map(id => {
+          const node = networkInstanceRef.current.body.data.nodes.get(id);
+          return {
+            id: node.id,
+            shape: !useImageNodes ? 'image' : 'dot',
+            image: !useImageNodes ? node.imageurl : undefined
+          };
+        });
+        networkInstanceRef.current.body.data.nodes.update(updatedNodes);
+      }
+    };
+  
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [useImageNodes]);
+  
+
 useEffect(() => {
   const handleKeyDown = event => {
     if ((event.key === 'h' || event.key === 'H') && selectedNodeId !== null) {
@@ -74,6 +99,7 @@ useEffect(() => {
           color: 'lightgreen',
           value: 10,
           shape: 'dot',
+          imageurl: node.imageurl, // Make sure backend provides this
           fixed: false
         }));
 
