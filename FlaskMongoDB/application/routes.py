@@ -20,6 +20,7 @@ db = mongo_client.spatial
 
 artworks_collection = db.Artworks
 taxonomy_artworks_collection = db.TaxonomyArtworks
+create_exhibits = db.Bulkuploads
 
 # Home route to render the HTML form
 @app.route("/")
@@ -159,36 +160,62 @@ def upload_json():
 
 @app.route("/bulk_upload", methods=["POST"])
 def upload_bulk():
+    # Check for form data
     if 'file' not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
 
+    # Extract the Excel file
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
+    # Check for floor plan
+    floor_plan_file = request.files.get('floor_plan')
+    floor_plan = None
+    if floor_plan_file and floor_plan_file.filename != '':
+        floor_plan = BytesIO(floor_plan_file.read())
+
     try:
-        file_stream = BytesIO(file.read())  # Read file directly into memory
+        # Extract additional form data
+        exhibit_title = request.form.get("exhibit_title")
+        concept = request.form.get("concept")
+        subsections = request.form.get("subsections")
+
+        # Validate required form data
+        if not exhibit_title or not concept or not subsections:
+            return jsonify({"error": "Missing required form data"}), 400
+
+        # Process the Excel file (replace with your .read_excel logic)
+        file_stream = BytesIO(file.read())
         result = process_excel_file(file_stream)
 
-        # Check if result is valid
+        # Validate the result of Excel processing
         if result is None or "data" not in result or result["data"] is None:
             raise ValueError("Processing failed: No data returned from process_excel_file.")
 
-        rows_saved = len(result["data"])
+        excel_data = result["data"]  # Extract processed Excel data
+        rows_saved = len(excel_data)
 
-        # Convert metadata or data containing ObjectId to JSON-serializable format
-        metadata = result.get("metadata", {})
-        metadata["_id"] = str(metadata.get("_id")) if "_id" in metadata else None
+        # Prepare the data to be stored in MongoDB
+        form_data = {
+            "exhibit_title": exhibit_title,
+            "concept": concept,
+            "subsections": subsections,
+            "artworks": excel_data,  # Store processed Excel data under 'artworks'
+            "floor_plan": floor_plan.getvalue() if floor_plan else None,  # Store floor plan as binary data
+        }
 
+        # Insert the form data into MongoDB
+        form_data_result = create_exhibits.insert_one(form_data)
+
+        # Combine form data and Excel metadata in the response
         return jsonify({
             "message": "File processed successfully",
-            "metadata": metadata,
+            "metadata": form_data,  # Return stored form data directly
             "rows_saved": rows_saved,
-        })
+        }), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 
 
 @app.route("/view_graph")

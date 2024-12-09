@@ -29,12 +29,17 @@ def process_excel_file(file_stream):
         # Save to MongoDB
         save_to_mongo(metadata, data)
 
-        return {"metadata": metadata, "data": data, "data_count": len(data)}
+        return {
+            "metadata": metadata,  # Metadata now includes a stringified `_id`
+            "data": data,          # Data now includes stringified `_id` for rows
+            "data_count": len(data),
+        }
 
     except Exception as e:
         print(f"Error processing file: {e}")
         # Always return a consistent structure
         return {"error": str(e), "metadata": {}, "data": []}
+
 
 
 def extract_metadata(workbook):
@@ -69,9 +74,6 @@ def extract_rows_and_images(workbook):
                 else:
                     img_data = img_obj.ref  # Use directly if it's already in bytes
 
-                # Load the image using Pillow
-                pil_img = PILImage.open(BytesIO(img_data))
-
                 # Append image metadata to data
                 data.append({
                     "image_binary": img_data
@@ -85,7 +87,11 @@ def save_to_mongo(metadata, data):
     """Save metadata and rows to MongoDB."""
     # Insert all rows into MongoDB without specifying `_id`
     if data:
-        collection.insert_many(data)
+        result = collection.insert_many(data)
+        # Update the data with stringified `_id`
+        for i, obj_id in enumerate(result.inserted_ids):
+            data[i]["_id"] = str(obj_id)
 
     # Insert metadata as a separate document
-    collection.insert_one(metadata)
+    metadata_result = collection.insert_one(metadata)
+    metadata["_id"] = str(metadata_result.inserted_id)
