@@ -106,10 +106,7 @@ const ExhibitDetail = () => {
                         {view === "connection" ? (
                             <Graph/>
                         ) : (
-                            <div>
-                                floorplan w safety guidelines
-                                <Canvas floorplanImage={floorplanImage} />
-                            </div>
+                            <Canvas floorplanImage={floorplanImage} />
                         )}
                     </div>
 

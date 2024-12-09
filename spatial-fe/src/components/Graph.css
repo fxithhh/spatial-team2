@@ -28,3 +28,7 @@
     max-width: 800px;
   }
   
+  #network {
+    overflow: hidden;
+  }
+  

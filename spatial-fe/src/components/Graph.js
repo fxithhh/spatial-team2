@@ -25,7 +25,7 @@ function Graph() {
 
   // Fetch graph data on component mount
   useEffect(() => {
-    fetch('http://localhost:8000/get_graph') // Adjust the URL if your backend is hosted elsewhere
+    fetch('http://localhost:5000/get_graph') // Adjust the URL if your backend is hosted elsewhere
       .then(response => response.json())
       .then(data => {
         if (data.error) {
@@ -266,7 +266,7 @@ function Graph() {
       </div>
 
       {/* Network Graph Container */}
-      <div id="network" ref={networkRef} style={{ width: '100%', height: '750px', border: '1px solid lightgray' }}></div>
+      <div id="network" ref={networkRef} style={{ width: '100%', height: '750px', border: '1px solid lightgray', overflow: 'hidden' }}></div>
 
       <h2>Artworks Connectivity Graph</h2>
 
