@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-//components
+// Components
 import Graph from '../components/Graph'; // Adjust the path if necessary
 import Breadcrumb from '../components/breadcrumb';
 import { ArrowsRightLeftIcon, ListBulletIcon, XMarkIcon } from '@heroicons/react/24/outline';
@@ -26,6 +26,10 @@ const ExhibitDetail = () => {
         repelling_strength: 4,
         spring_length: 4,
         spring_strength: 4,
+        safety_distance: 25, // Added to match the settings in the UI
+        corridor_width: 2.5,
+        hose_length: 50,
+        hose_radius: 200,
         selectedExhibit: null,
     });
 
@@ -53,28 +57,27 @@ const ExhibitDetail = () => {
         { id: 3, label: "Path 3" },
     ];
 
-    // react use state hooks
+    // React use state hooks
     const [floorplanImage, setFloorplanImage] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedArtwork, setSelectedArtwork] = useState(null);
-    const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // add artwork popup
+    const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // Add artwork popup
 
     if (!exhibit) {
         return <div className="container mx-auto p-4">Exhibit not found.</div>;
     }
 
-    // dropdown stuff
+    // Dropdown toggle
     const toggleDropdown = () => {
         setIsOpen(!isOpen);
     };
 
-    // select artwork to display details
     // Handle artwork selection
     const handleArtworkSelect = (artwork) => {
         setSelectedArtwork(artwork);
     };
 
-    // open and close add artwork popup
+    // Open and close add artwork popup
     const openAddArtwork = () => {
         setIsAddArtworkOpen(true);
     };
@@ -84,7 +87,7 @@ const ExhibitDetail = () => {
     };
 
     return (
-        <div className="flex flex-col m-h-screen my-8 mx-12">
+        <div className="flex flex-col min-h-screen my-8 mx-12">
             {/* Breadcrumb */}
             <div className="flex justify-between items-center mb-4">
                 <Breadcrumb />
@@ -104,7 +107,7 @@ const ExhibitDetail = () => {
                     {/* Main View */}
                     <div className="flex-grow flex justify-center items-center p-4">
                         {view === "connection" ? (
-                            <Graph/>
+                            <Graph />
                         ) : (
                             <Canvas floorplanImage={floorplanImage} />
                         )}
@@ -126,15 +129,34 @@ const ExhibitDetail = () => {
                 <aside className="w-1/4 flex flex-col gap-y-10">
                     {/* Preview Box */}
                     <div className="w-full h-80 border-black border-2 flex justify-center items-center p-2 shadow-sm">
+                        {/* Option 1: Using Size Props */}
                         {view === "connection" ? (
-                            <div>floorplan w safety guidelines</div>
+                            <Canvas
+                                floorplanImage={floorplanImage}
+                                width="300px"  // Specify desired width
+                                height="200px" // Specify desired height
+                            />
                         ) : (
-                            <div>artwork connection</div>
+                            <Graph
+                                width="300px"  // Specify desired width
+                                height="500px%" // Specify desired height
+                            />
                         )}
+
+                        {/* Option 2: Using CSS Transform Scale */}
+                        {/* 
+                        <div className="transform scale-75 origin-top-left">
+                            {view === "connection" ? (
+                                <Canvas floorplanImage={floorplanImage} />
+                            ) : (
+                                <Graph />
+                            )}
+                        </div>
+                        */}
                     </div>
 
                     {/* Settings Panel */}
-                    <div className="flex-grow p-4 border-black border-2">
+                    <div className="flex-grow p-4 border-black border-2 overflow-y-auto">
                         {view === "connection" ? (
                             <>
                                 <h2 className="text-2xl font-bold text-black mb-2">Artwork Connections</h2>
@@ -142,6 +164,7 @@ const ExhibitDetail = () => {
                                     Settings to adjust connection graphs.
                                 </p>
                                 <div className="space-y-4">
+                                    {/* Narrative Connectivity Passing Score */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
                                             <label className="font-bold text-gray-800 text-xl">Narrative Connectivity Passing Score</label>
@@ -160,6 +183,7 @@ const ExhibitDetail = () => {
                                         />
                                     </div>
 
+                                    {/* Visual Connectivity Passing Score */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
                                             <label className="font-bold text-gray-800 text-xl">Visual Connectivity Passing Score</label>
@@ -178,6 +202,7 @@ const ExhibitDetail = () => {
                                         />
                                     </div>
 
+                                    {/* Repelling Strength */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
                                             <label className="font-bold text-gray-800 text-xl">Repelling Strength</label>
@@ -196,6 +221,7 @@ const ExhibitDetail = () => {
                                         />
                                     </div>
 
+                                    {/* Spring Length Modulator */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
                                             <label className="font-bold text-gray-800 text-xl">Spring Length Modulator</label>
@@ -214,9 +240,10 @@ const ExhibitDetail = () => {
                                         />
                                     </div>
 
+                                    {/* Spring Strength Modulator */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
-                                            <label className="font-bold text-gray-800 text-xl">Spring Length Modulator</label>
+                                            <label className="font-bold text-gray-800 text-xl">Spring Strength Modulator</label>
                                             <p className="font-bold text-gray-800 text-xl text-right">{values.spring_strength}</p>
                                         </div>
                                         <p className="text-gray-500 text-lg">Subtitle.</p>
@@ -320,7 +347,7 @@ const ExhibitDetail = () => {
 
                 {/* Artwork Library Sidebar */}
                 {isArtworkLibraryOpen && (
-                    <aside className="top-16 right-0  max-w-1/3 w-[500px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
+                    <aside className="top-16 right-0 max-w-[500px] w-full bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
                         <div className="flex items-center justify-between mb-8 mt-12">
                             <h2 className="font-bold">Artwork Library</h2>
                             <button
@@ -345,7 +372,6 @@ const ExhibitDetail = () => {
                                     onClick={() => {
                                         handleArtworkSelect(artwork)
                                         console.log(`Selected generated path: ${artwork.title}`)
-
                                     }}
                                     className="grid grid-cols-12 py-1 px-2 my-2 border-b-2 cursor-pointer max-h-60 overflow-y-auto hover:border-2 hover:bg-linkhover hover:border-brand">
                                     <span className='col-span-5 capitalize'>{artwork.id}. {artwork.title}</span>
@@ -356,9 +382,6 @@ const ExhibitDetail = () => {
                         </div>
 
                         <div className="mt-4 border-2 border-black py-4 px-8 mb-8 h-auto">
-                            {/* <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-2xl font-['Roboto_Condensed'] text-gray-600 font-semibold">Artwork Details</h3>
-                            </div> */}
                             {selectedArtwork ? (
                                 <ArtworkCard artwork={selectedArtwork} /> // Pass the selected artwork as a prop
                             ) : <p className='text-lg text-red-500'>Select an artwork to display its information.</p>}

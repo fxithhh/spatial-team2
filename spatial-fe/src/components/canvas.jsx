@@ -51,7 +51,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             let rectangles = [];
             let walls = [];
             let pixelsPerCm;
-            let cellSize = 20;
+            let cellSize = 10;
             let cellSizePx;
             let isScaleDefined = false;
             let minX, minY, maxX, maxY;
@@ -62,7 +62,6 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             let isDrawing = false;
             let offsetX, offsetY;
             let mostSquareRect;
-            let currentTool = 'wall';
             let findSecludedAreaButton;
             let secludedCells = [];
             let paths = []; // Stores paths from secluded cells to exits
@@ -72,6 +71,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             let mainRegionId = -1;
             let narrowCorridorCells = []; // Cells to be marked as narrow corridors
             let wallsChanged = false; // Flag to indicate walls have changed
+            let currentTool = 'wall'; // Initialize currentTool
 
             p.preload = function () {
                 floorplanImg = p.loadImage(currentImage);
@@ -98,9 +98,11 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
 
                     floorplanImg.resize(imgWidth, imgHeight);
 
-                    traceBlackRectangles();
+                    // Improved rectangle tracing
+                    findRectangles();
+
                     calculateExtremeEdges();
-                    findMostSquareRectangle();
+                    findLargestSquareRectangle();
 
                     // Create the button after canvas is created
                     findSecludedAreaButton = p.createButton('Find Most Secluded Area');
@@ -148,14 +150,14 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                     // Draw the floorplan image
                     p.image(floorplanImg, 0, 0, imgWidth, imgHeight);
 
-                    // Draw traced black rectangles over the image
+                    // Draw extracted black rectangles
                     p.fill(0);
                     p.noStroke();
                     for (let rectData of rectangles) {
                         p.rect(rectData.x, rectData.y, rectData.w, rectData.h);
                     }
 
-                    // Highlight the most square rectangle
+                    // Highlight the chosen square-like rectangle
                     if (mostSquareRect) {
                         p.fill(0, 255, 0, 100); // Highlight the rectangle in green
                         p.rect(
@@ -178,7 +180,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 if (isScaleDefined) {
                     if (wallsChanged) {
                         processGridCells();
-                        wallsChanged = false;
+                        wallsChanged = false; // Reset the flag
                     }
 
                     drawGrid();
@@ -312,72 +314,137 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 }
             };
 
-            function traceBlackRectangles() {
+            // ====================
+            // Improved Rectangle Detection
+            // ====================
+
+            function findRectangles() {
                 floorplanImg.loadPixels();
-                let visited = new Array(floorplanImg.width)
-                    .fill(null)
-                    .map(() => new Array(floorplanImg.height).fill(false));
+                let visited = Array.from({ length: floorplanImg.width }, () =>
+                    new Array(floorplanImg.height).fill(false)
+                );
 
                 for (let y = 0; y < floorplanImg.height; y++) {
                     for (let x = 0; x < floorplanImg.width; x++) {
                         if (!visited[x][y]) {
-                            let color = floorplanImg.get(x, y);
-                            if (color[0] === 0 && color[1] === 0 && color[2] === 0) {
-                                let rectData = findRectangle(x, y, visited);
+                            let c = floorplanImg.get(x, y);
+                            if (isBlackPixel(c)) {
+                                let component = floodFillComponent(x, y, visited);
+                                let rectData = validateRectangle(component);
                                 if (rectData) {
                                     rectangles.push(rectData);
                                 }
+                            } else {
+                                visited[x][y] = true;
                             }
-                            visited[x][y] = true;
                         }
                     }
                 }
             }
 
-            function findRectangle(startX, startY, visited) {
-                let width = 0,
-                    height = 0;
+            function isBlackPixel(color) {
+                // Define threshold for black pixels (can be adjusted as needed)
+                return color[0] < 50 && color[1] < 50 && color[2] < 50;
+            }
 
-                for (
-                    let x = startX;
-                    x < floorplanImg.width && !visited[x][startY];
-                    x++
-                ) {
-                    let color = floorplanImg.get(x, startY);
-                    if (color[0] === 0 && color[1] === 0 && color[2] === 0) width++;
-                    else break;
-                }
-
-                for (
-                    let y = startY;
-                    y < floorplanImg.height && !visited[startX][y];
-                    y++
-                ) {
-                    let color = floorplanImg.get(startX, y);
-                    if (color[0] === 0 && color[1] === 0 && color[2] === 0) height++;
-                    else break;
-                }
-
-                for (let y = startY; y < startY + height; y++) {
-                    for (let x = startX; x < startX + width; x++) {
+            function floodFillComponent(sx, sy, visited) {
+                let stack = [{ x: sx, y: sy }];
+                let pixels = [];
+                while (stack.length > 0) {
+                    let { x, y } = stack.pop();
+                    if (
+                        x < 0 ||
+                        x >= floorplanImg.width ||
+                        y < 0 ||
+                        y >= floorplanImg.height ||
+                        visited[x][y]
+                    )
+                        continue;
+                    let c = floorplanImg.get(x, y);
+                    if (isBlackPixel(c)) {
+                        visited[x][y] = true;
+                        pixels.push({ x, y });
+                        // Push neighboring pixels (4-connectivity)
+                        stack.push({ x: x + 1, y });
+                        stack.push({ x: x - 1, y });
+                        stack.push({ x, y: y + 1 });
+                        stack.push({ x, y: y - 1 });
+                    } else {
                         visited[x][y] = true;
                     }
                 }
-
-                return { x: startX, y: startY, w: width, h: height };
+                return pixels;
             }
 
-            function findMostSquareRectangle() {
-                let minAspectRatioDiff = Infinity;
-
-                for (let rect of rectangles) {
-                    let aspectRatioDiff = Math.abs(rect.w / rect.h - 1);
-                    if (aspectRatioDiff < minAspectRatioDiff) {
-                        minAspectRatioDiff = aspectRatioDiff;
-                        mostSquareRect = rect;
+            function validateRectangle(pixels) {
+                if (pixels.length === 0) return null;
+            
+                // Find bounding box
+                let minX = Infinity,
+                    minY = Infinity,
+                    maxX = -Infinity,
+                    maxY = -Infinity;
+                for (let px of pixels) {
+                    if (px.x < minX) minX = px.x;
+                    if (px.x > maxX) maxX = px.x;
+                    if (px.y < minY) minY = px.y;
+                    if (px.y > maxY) maxY = px.y;
+                }
+            
+                let w = maxX - minX + 1;
+                let h = maxY - minY + 1;
+                let area = w * h;
+            
+                // Calculate black pixels in bounding box
+                let blackPixels = 0;
+                for (let yy = minY; yy <= maxY; yy++) {
+                    for (let xx = minX; xx <= maxX; xx++) {
+                        let c = floorplanImg.get(xx, yy);
+                        if (isBlackPixel(c)) {
+                            blackPixels++;
+                        }
                     }
                 }
+            
+                let blackPercentage = (blackPixels / area) * 100;
+            
+                // Set a tolerance threshold (e.g., 90% black pixels)
+                const tolerancePercentage = 90;
+            
+                if (blackPercentage < tolerancePercentage) {
+                    // Not a valid rectangle within tolerance
+                    return null;
+                }
+            
+                // Return rectangle data
+                return { x: minX, y: minY, w: w, h: h };
             }
+            
+
+            function findLargestSquareRectangle() {
+                // Select the rectangle that is closest to a square and has the largest area
+                let bestRect = null;
+                let bestScore = Infinity; // lower is better (aspect ratio closer to 1)
+                let bestArea = -1;
+
+                for (let rect of rectangles) {
+                    let aspectRatio = rect.w / rect.h;
+                    let diff = Math.abs(aspectRatio - 1);
+                    let area = rect.w * rect.h;
+                    // Prioritize square-likeness first, then area
+                    if (diff < bestScore || (diff === bestScore && area > bestArea)) {
+                        bestScore = diff;
+                        bestArea = area;
+                        bestRect = rect;
+                    }
+                }
+
+                mostSquareRect = bestRect;
+            }
+
+            // ====================
+            // Existing Functions (Unchanged)
+            // ====================
 
             function calculateExtremeEdges() {
                 minX = 0;
@@ -607,7 +674,10 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 return null;
             }
 
-            // Modified processGridCells function to create the grid
+            // ====================
+            // Grid Processing Functions
+            // ====================
+
             function processGridCells() {
                 // Initialize grid
                 grid = [];
@@ -856,18 +926,9 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 }
             }
 
-            // Function to draw narrow corridors
-            function drawNarrowCorridors() {
-                if (narrowCorridorCells.length > 0) {
-                    p.fill(255, 0, 0, 100); // Red color with transparency
-                    p.noStroke();
-                    for (let cell of narrowCorridorCells) {
-                        let x = minX + cell.x * cellSizePx;
-                        let y = minY + cell.y * cellSizePx;
-                        p.rect(x, y, cellSizePx, cellSizePx);
-                    }
-                }
-            }
+            // ====================
+            // Pathfinding and Secluded Area Functions
+            // ====================
 
             // Implementing Theta* algorithm with optimizations
             function isCornerCell(grid, col, row) {
@@ -1043,20 +1104,20 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                     alert('No path found to exits from corner cells.');
                 } else {
                     alert(
-                        `The furthest corner from an exit is approximately ${Math.round(maxDistance * cellSize)/100} m away.`
+                        `The furthest corner from an exit is approximately ${Math.round((maxDistance * cellSize) / 100)} m away.`
                     );
                 }
 
                 p.redraw();
             }
 
-            function findCornerCells(grid) {
+            function findCornerCells(gridCopy) {
                 let startingCells = [];
                 checkedCorners = []; // Clear previous checked corners
 
                 for (let col = 0; col < cols; col++) {
                     for (let row = 0; row < rows; row++) {
-                        if (isCornerCell(grid, col, row)) {
+                        if (isCornerCell(gridCopy, col, row)) {
                             startingCells.push({ x: col, y: row });
                             checkedCorners.push({ x: col, y: row }); // For highlighting
                         }
@@ -1065,7 +1126,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 return startingCells;
             }
 
-            function lineOfSight(grid, x0, y0, x1, y1) {
+            function lineOfSight(gridCopy, x0, y0, x1, y1) {
                 let sx, sy, dx, dy, err, e2;
                 dx = Math.abs(x1 - x0);
                 dy = Math.abs(y1 - y0);
@@ -1074,7 +1135,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 err = dx - dy;
 
                 while (true) {
-                    if (grid[x0][y0].isWall) {
+                    if (gridCopy[x0][y0].isWall) {
                         return false;
                     }
                     if (x0 === x1 && y0 === y1) {
@@ -1101,7 +1162,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 return Math.hypot(x2 - x1, y2 - y1);
             }
 
-            function getNeighbors(grid, x, y) {
+            function getNeighbors(gridCopy, x, y) {
                 let neighbors = [];
                 let directions = [
                     { x: 0, y: -1 },
@@ -1122,7 +1183,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                         nx < cols &&
                         ny >= 0 &&
                         ny < rows &&
-                        !grid[nx][ny].isWall
+                        !gridCopy[nx][ny].isWall
                     ) {
                         neighbors.push({ x: nx, y: ny });
                     }
@@ -1130,9 +1191,9 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 return neighbors;
             }
 
-            function reconstructPath(grid, startX, startY, endX, endY) {
+            function reconstructPath(gridCopy, startX, startY, endX, endY) {
                 let path = [];
-                let current = grid[endX][endY];
+                let current = gridCopy[endX][endY];
                 while (current && !(current.x === startX && current.y === startY)) {
                     path.push({ x: current.x, y: current.y });
                     current = current.parent;
@@ -1140,6 +1201,10 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 path.push({ x: startX, y: startY });
                 return path.reverse();
             }
+
+            // ====================
+            // Drawing Functions
+            // ====================
 
             function drawSecludedCells() {
                 if (secludedCells.length > 0) {
@@ -1171,6 +1236,23 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 }
             }
 
+            function drawNarrowCorridors() {
+                if (narrowCorridorCells.length > 0) {
+                    p.fill(255, 0, 0, 100); // Red with transparency
+                    p.noStroke();
+                    for (let cell of narrowCorridorCells) {
+                        let x = minX + cell.x * cellSizePx;
+                        let y = minY + cell.y * cellSizePx;
+                        p.rect(x, y, cellSizePx, cellSizePx);
+                    }
+                }
+            }
+
+            // ====================
+            // Helper Functions
+            // ====================
+
+            // MinHeap class for priority queue in Theta*
             class MinHeap {
                 constructor() {
                     this.heap = [];
@@ -1238,13 +1320,6 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                     return this.heap.length === 0;
                 }
             }
-
-            // Function to find secluded areas (Theta* implementation)
-            // [Implementation as per original code]
-
-            // Additional helper functions (traceBlackRectangles, findRectangle, etc.)
-            // [All functions from the original p5 sketch remain unchanged except references to 'currentImage']
-
         };
 
         // Initialize p5 instance
@@ -1268,7 +1343,9 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             {!uploadedImage && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75">
                     <div className="flex flex-col items-center p-6 bg-white rounded shadow">
-                        <p className="mb-4 text-center">No floorplan image available. Please upload one.</p>
+                        <p className="mb-4 text-center">
+                            No floorplan image available. Please upload one.
+                        </p>
                         <button
                             onClick={triggerFileInput}
                             className="px-4 py-2 mb-2 bg-blue-500 text-white rounded hover:bg-blue-600"
