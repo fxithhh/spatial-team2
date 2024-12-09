@@ -99,7 +99,7 @@ const ArtworkCard = ({ artwork }) => {
               <div key={subIndex} className="ml-5">
                 {subHeading.subHeading ? (
                   <div className='flex flex-col my-2'>
-                    <span className="font-semibold text-gray-400">{subHeading.subHeading}:</span>
+                    <span className="font-semibold text-gray-600">{subHeading.subHeading}:</span>
                     <p className="text-gray-500">{subHeading.content}</p>
                   </div>
                 ) : (
