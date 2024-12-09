@@ -28,6 +28,29 @@ function Graph({ width = '100%', height = '100%' }) {
   const containerRef = useRef(null);
   const [isHeightLarge, setIsHeightLarge] = useState(true);
   const isHeightLargeRef = useRef(true); // To track previous state
+  const [hiddenNodes, setHiddenNodes] = useState([]);
+
+useEffect(() => {
+  const handleKeyDown = event => {
+    if ((event.key === 'h' || event.key === 'H') && selectedNodeId !== null) {
+      const node = networkInstanceRef.current.body.data.nodes.get(selectedNodeId);
+      if (node) {
+        // If already hidden, unhide
+        if (hiddenNodes.some(n => n.id === selectedNodeId)) {
+          setHiddenNodes(hiddenNodes.filter(n => n.id !== selectedNodeId));
+          networkInstanceRef.current.body.data.nodes.add(node);
+        } else {
+          // Hide it
+          setHiddenNodes([...hiddenNodes, node]);
+          networkInstanceRef.current.body.data.nodes.remove(selectedNodeId);
+        }
+      }
+    }
+  };
+  document.addEventListener('keydown', handleKeyDown);
+  return () => document.removeEventListener('keydown', handleKeyDown);
+}, [selectedNodeId, hiddenNodes]);
+
 
   // Update ref when state changes
   useEffect(() => {
@@ -356,6 +379,21 @@ useEffect(() => {
           }}
         ></div>
       </div>
+      <div className="hidden-nodes-container">
+  {hiddenNodes.map(node => (
+    <button 
+      key={node.id} 
+      onClick={() => {
+        setHiddenNodes(hiddenNodes.filter(n => n.id !== node.id));
+        networkInstanceRef.current.body.data.nodes.add(node);
+      }}
+    >
+      {node.label}
+    </button>
+  ))}
+</div>
+
+
 
       <h2 className="text-xl font-semibold mt-4">Artworks Connectivity Graph</h2>
 
