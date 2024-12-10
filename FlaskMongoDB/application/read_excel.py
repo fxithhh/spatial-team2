@@ -1,97 +1,99 @@
 from openpyxl import load_workbook
-from pymongo import MongoClient
+from openpyxl.utils.exceptions import InvalidFileException
+import base64
+
+# Standard Library Imports
+import base64
+
+# Third-Party Imports
+from openpyxl import load_workbook
+from openpyxl.utils.exceptions import InvalidFileException
 from io import BytesIO
-from PIL import Image as PILImage
-import os
 
-# MongoDB connection settings
-MONGO_URI = os.getenv("MONGO_URI")
-client = MongoClient(MONGO_URI)
-db = client["spatial"]
-collection = db["Bulkuploads"]
 
-def process_excel_file(file_stream):
+def process_excel_file(file):
     """
-    Processes the Excel file (in-memory), extracts metadata, data, and images,
-    and stores them in MongoDB.
+    Processes the Excel file uploaded via form data to extract tabular data and embedded images.
     """
     try:
-        workbook = load_workbook(file_stream)
-
-        # Extract metadata
-        metadata = extract_metadata(workbook)
-
-        # Extract rows and images
-        data = extract_rows_and_images(workbook)
-        if not data:
-            raise ValueError("No data found in the uploaded file.")
-
-        # Save to MongoDB
-        save_to_mongo(metadata, data)
-
-        return {
-            "metadata": metadata,  # Metadata now includes a stringified `_id`
-            "data": data,          # Data now includes stringified `_id` for rows
-            "data_count": len(data),
-        }
-
+        # Load workbook from the uploaded file (file-like object)
+        workbook = load_workbook(file, data_only=True)
+    except InvalidFileException:
+        raise ValueError("Invalid Excel file format")
     except Exception as e:
-        print(f"Error processing file: {e}")
-        # Always return a consistent structure
-        return {"error": str(e), "metadata": {}, "data": []}
+        raise ValueError(f"Error loading Excel file: {str(e)}")
 
+    # Extract data and images from the workbook
+    extracted_data = extract_rows_and_images(workbook)
+    print("Debug: Extracted data from Excel file:", extracted_data)
 
+    # Separate tabular data and images
+    tabular_data = []
+    headers = workbook.active.iter_cols(min_row=1, max_row=1, values_only=True)
+    headers = [header[0] if header else "" for header in headers]
 
-def extract_metadata(workbook):
-    """Extract metadata from the Excel workbook."""
-    metadata = {
-        "sheetnames": workbook.sheetnames,
-        "active_sheet": workbook.active.title,
-        "properties": {
-            "title": workbook.properties.title,
-            "author": workbook.properties.creator,
-            "created": str(workbook.properties.created),
-        }
+    for idx, row in enumerate(extracted_data):
+        if "row_data" in row:
+            row_data = dict(zip(headers, row["row_data"]))
+            tabular_data.append(row_data)
+        if "image_base64" in row:
+            # Add embedded image data to the corresponding row, if applicable
+            row_index = row.get("row_index")
+            if row_index is not None and row_index < len(tabular_data):
+                tabular_data[row_index]["embedded_image"] = row["image_base64"]
+
+    # Extract standalone images
+    images = [row["image_base64"] for row in extracted_data if "image_base64" in row]
+
+    # Return as a dictionary
+    result = {
+        "data": tabular_data,  # List of dictionaries representing the rows
+        "images": images       # List of standalone image Base64 strings
     }
-    return metadata
+    print("Debug: Processed data to be returned:", result)
+    return result
+
 
 def extract_rows_and_images(workbook):
-    """Extract row data and images from the Excel workbook."""
+    """
+    Extracts rows and images from the workbook and associates images with row metadata.
+    """
     data = []
     active_sheet = workbook.active
 
-    # Extract rows
-    for row in active_sheet.iter_rows(min_row=1, values_only=True):
-        data.append({"row_data": list(row)})
+    # Extract rows from the active sheet
+    for idx, row in enumerate(active_sheet.iter_rows(min_row=2, values_only=True)):
+        data.append({"row_data": list(row), "row_index": idx})
 
-    # Extract images
+    # Extract images with debugging
     if hasattr(active_sheet, "_images") and active_sheet._images:
-        for idx, img_obj in enumerate(active_sheet._images):
+        print(f"Found {len(active_sheet._images)} images in the sheet.")
+        for img_obj in active_sheet._images:
             try:
-                # Handle raw binary image data
-                if isinstance(img_obj.ref, BytesIO):
-                    img_data = img_obj.ref.getvalue()  # Extract raw bytes from BytesIO
-                else:
-                    img_data = img_obj.ref  # Use directly if it's already in bytes
+                # Debugging: Type of img_obj.ref
+                print(f"Image type: {type(img_obj.ref)}")
+                
+                img_data = img_obj.ref
 
-                # Append image metadata to data
-                data.append({
-                    "image_binary": img_data
-                })
+                # Convert BytesIO to bytes if necessary
+                if isinstance(img_data, BytesIO):
+                    img_data.seek(0)
+                    img_data = img_data.read()
+                    print("Image read from BytesIO.")
+
+                # Convert image to Base64
+                image_base64 = base64.b64encode(img_data).decode("utf-8")
+                print("Image converted to Base64.")
+
+                # Append image metadata to row
+                if img_obj.anchor:
+                    cell_reference = img_obj.anchor._from
+                    row_index = cell_reference.row - 1
+                    data.append({"row_index": row_index, "image_base64": image_base64})
+                    print(f"Image associated with row {row_index}.")
             except Exception as e:
-                print(f"Error processing image {idx}: {e}")
+                print(f"Error extracting image: {str(e)}")
+    else:
+        print("No images found in the sheet.")
 
     return data
-
-def save_to_mongo(metadata, data):
-    """Save metadata and rows to MongoDB."""
-    # Insert all rows into MongoDB without specifying `_id`
-    if data:
-        result = collection.insert_many(data)
-        # Update the data with stringified `_id`
-        for i, obj_id in enumerate(result.inserted_ids):
-            data[i]["_id"] = str(obj_id)
-
-    # Insert metadata as a separate document
-    metadata_result = collection.insert_one(metadata)
-    metadata["_id"] = str(metadata_result.inserted_id)

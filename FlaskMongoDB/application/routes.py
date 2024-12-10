@@ -159,63 +159,138 @@ def upload_json():
         return jsonify({"error": "Failed to process JSON object"}), 500
 
 @app.route("/bulk_upload", methods=["POST"])
-def upload_bulk():
-    # Check for form data
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part in the request"}), 400
-
-    # Extract the Excel file
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    # Check for floor plan
-    floor_plan_file = request.files.get('floor_plan')
-    floor_plan = None
-    if floor_plan_file and floor_plan_file.filename != '':
-        floor_plan = BytesIO(floor_plan_file.read())
-
+def bulk_upload():
     try:
-        # Extract additional form data
+        # Debug incoming form data and files
+        print("Incoming form data:", request.form.to_dict())
+        print("Incoming files:", list(request.files.keys()))
+
+        # Extract form data
         exhibit_title = request.form.get("exhibit_title")
         concept = request.form.get("concept")
-        subsections = request.form.get("subsections")
+        subsections = request.form.getlist("subsections")  # Extract as list
 
-        # Validate required form data
-        if not exhibit_title or not concept or not subsections:
-            return jsonify({"error": "Missing required form data"}), 400
+        if not exhibit_title or not concept:
+            print("Missing required form data: 'exhibit_title' or 'concept'")
+            return jsonify({"error": "Missing required form data: 'exhibit_title' or 'concept'"}), 400
 
-        # Process the Excel file (replace with your .read_excel logic)
-        file_stream = BytesIO(file.read())
-        result = process_excel_file(file_stream)
-
-        # Validate the result of Excel processing
-        if result is None or "data" not in result or result["data"] is None:
-            raise ValueError("Processing failed: No data returned from process_excel_file.")
-
-        excel_data = result["data"]  # Extract processed Excel data
-        rows_saved = len(excel_data)
-
-        # Prepare the data to be stored in MongoDB
         form_data = {
             "exhibit_title": exhibit_title,
             "concept": concept,
             "subsections": subsections,
-            "artworks": excel_data,  # Store processed Excel data under 'artworks'
-            "floor_plan": floor_plan.getvalue() if floor_plan else None,  # Store floor plan as binary data
         }
 
-        # Insert the form data into MongoDB
-        form_data_result = create_exhibits.insert_one(form_data)
+        # Debug extracted form data
+        print("Extracted form data:", form_data)
 
-        # Combine form data and Excel metadata in the response
+        # Process images
+        images = {}
+        for key, file in request.files.items():
+            try:
+                print(f"Processing file: {file.filename} (key: {key}, type: {file.content_type})")
+                if key != "artwork_list" and file.content_type.startswith("image/"):
+                    images[key] = handle_image_upload(file)
+                    print(f"Image {file.filename} processed successfully.")
+            except Exception as e:
+                print(f"Error processing image {key}: {str(e)}")
+                return jsonify({"error": f"Error processing image '{key}': {str(e)}"}), 400
+
+        form_data["images"] = images
+        print("Processed images:", images.keys())
+
+        # Process the Excel file
+        if "artwork_list" in request.files:
+            try:
+                artwork_file = request.files["artwork_list"]
+                print(f"Processing Excel file: {artwork_file.filename}")
+                processed_data = process_excel_file(artwork_file)
+                print("Debug: Processed data:", processed_data)
+
+                # Validate processed_data structure
+                if "data" not in processed_data or "images" not in processed_data:
+                    print("Debug: Missing 'data' or 'images' in processed_data.")
+                    return jsonify({"error": "Invalid data structure returned from Excel processing."}), 400
+
+                form_data["artworks"] = processed_data["data"]
+                form_data["excel_images"] = processed_data["images"]
+
+                print(f"Excel file {artwork_file.filename} processed successfully.")
+            except Exception as e:
+                print(f"Error processing artwork Excel file: {str(e)}")
+                return jsonify({"error": f"Error processing artwork Excel file: {str(e)}"}), 400
+
+            form_data["artworks"] = processed_data["data"]
+            form_data["excel_images"] = processed_data["images"]
+
+            for idx, row in enumerate(processed_data["data"]):
+                try:
+                    print(f"Calling OpenAI API for row {idx}")
+                    
+                    # Get the image data
+                    embedded_image = row.get("embedded_image", "")
+                    if not embedded_image:
+                        print(f"No embedded image for row {idx}. Skipping row.")
+                        row["error"] = "No embedded image."
+                        continue
+
+                    # Convert to JPEG format
+                    embedded_image = convert_image_to_jpeg(embedded_image, return_base64=True)
+                    if not embedded_image:
+                        print(f"Failed to convert image to JPEG for row {idx}.")
+                        row["error"] = "Image conversion to JPEG failed."
+                        continue
+
+                    # Debug: Log the image being sent to GPT
+                    print(f"Debug: Row {idx} image being sent to GPT: {embedded_image[:50]}... (truncated)")
+
+                    # Call OpenAI APIs
+                    row["conservation_guidelines"] = generate_response_conservation(row)
+                    row["taxonomy_tags"] = generate_taxonomy_tags(row, embedded_image, {}, "gpt-4o")
+                    row["visual_context"] = generate_visual_context(row, embedded_image, {}, "gpt-4o")
+                    print(f"OpenAI metadata generated for row {idx}")
+                except Exception as e:
+                    print(f"Error generating OpenAI metadata for row {idx}: {str(e)}")
+                    row["error"] = f"OpenAI metadata generation failed: {str(e)}"
+                    
+        # Insert the form data into MongoDB
+        try:
+            print("Inserting data into MongoDB...")
+            result = create_exhibits.insert_one(form_data)
+            form_data["_id"] = str(result.inserted_id)
+            print(f"Data inserted into MongoDB with ID: {form_data['_id']}")
+        except Exception as e:
+            print("Error inserting data into MongoDB:", str(e))
+            return jsonify({"error": "Failed to save data to MongoDB"}), 500
+
+        # Return success response
         return jsonify({
-            "message": "File processed successfully",
-            "metadata": form_data,  # Return stored form data directly
-            "rows_saved": rows_saved,
+            "message": "Form submitted successfully",
+            "data": form_data,
         }), 201
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Catch all unexpected errors
+        print("Unexpected error:", str(e))
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+
+
+# Helper: Handle image uploads
+def handle_image_upload(file):
+    """Converts an image to Base64."""
+    try:
+        image_binary = file.read()
+        return base64.b64encode(image_binary).decode("utf-8")
+    except Exception:
+        raise ValueError("Invalid image file")
+
+def is_valid_base64(data):
+    try:
+        base64.b64decode(data, validate=True)
+        return True
+    except Exception:
+        return False
+
 
 
 @app.route("/view_graph")
