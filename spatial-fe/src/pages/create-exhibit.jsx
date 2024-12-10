@@ -17,14 +17,17 @@ function CreateExhibit() {
     const [fileName, setFileName] = useState('');
     const [imgFileName, setImgFileName] = useState('');
     const [previewImage, setPreviewImage] = useState(null);
+    const navigate = useNavigate();
+    const [newSubsection, setNewSubsection] = useState("");
+    const [loading, setLoading] = useState(false);
 
     // Handle image upload
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
             const fileExtension = file.name.split(".").pop().toLowerCase();
-            if (fileExtension !== "png") {
-                toast.error("Invalid file type! Please upload a PNG file.");
+            if (fileExtension !== "png" && fileExtension !== "jpg" && fileExtension !== "jpeg") {
+                toast.error("Invalid file type! Please upload a JPG or PNG file.");
                 e.target.value = ""; // Clear invalid file input
                 return;
             }
@@ -32,16 +35,51 @@ function CreateExhibit() {
                 ...prevFormData,
                 floor_plan: file,
             }));
-            setPreviewImage(URL.createObjectURL(file));
+            setPreviewImage(URL.createObjectURL(file)); // Generate preview URL
             setImgFileName(file.name);
         }
     };
 
+    // Handle file upload
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
+        const validExtensions = ["csv", "xlsx", "xls"]; // Allowed extensions
         if (file) {
-            setFileName(file.name);
+            const fileExtension = file.name.split(".").pop().toLowerCase();
+            if (!validExtensions.includes(fileExtension)) {
+                toast.error("Invalid file type! Please upload a CSV, XLSX, or XLS file.");
+                e.target.value = ""; // Clear invalid file input
+                return;
+            }
+            setFileName(file.name); // Store the valid file name in state
         }
+    };
+
+    // Handle new subsection input change
+    const handleNewSubsectionChange = (e) => {
+        setNewSubsection(e.target.value);
+    };
+
+    // Handle adding subsection tags
+    const handleSubsectionKeyPress = (e) => {
+        if (e.key === 'Enter' && newSubsection.trim()) {
+            e.preventDefault(); // Prevent default enter behavior (new line in textarea)
+            if (!formData.subsections.includes(newSubsection)) {
+                setFormData((prevFormData) => ({
+                    ...prevFormData,
+                    subsections: [...prevFormData.subsections, newSubsection], // Add new subsection to array
+                }));
+            }
+            setNewSubsection(""); // Clear the input after adding
+        }
+    };
+
+    // Handle removal of subsection tag
+    const handleRemoveSubsection = (index) => {
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            subsections: prevFormData.subsections.filter((_, i) => i !== index),
+        }));
     };
 
     // Handle input changes dynamically
@@ -53,36 +91,45 @@ function CreateExhibit() {
         }));
     };
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         // Form validation
         if (!formData.exhibit_title || !formData.concept || !formData.floor_plan || !fileName) {
             toast.error("Please fill in all required fields and upload necessary files.");
             return;
         }
+    
+        // Validate file inputs
+        const artworkInput = document.getElementById("file-upload");
+        if (!artworkInput || !artworkInput.files[0]) {
+            toast.error("Please upload an artwork file.");
+            return;
+        }
+    
+        if (!(formData.floor_plan instanceof File)) {
+            toast.error("Invalid floor plan file. Please re-upload.");
+            return;
+        }
+    
         try {
             const formDataToSend = new FormData();
             formDataToSend.append("exhibit_title", formData.exhibit_title);
             formDataToSend.append("concept", formData.concept);
-
-            formData.subsections.forEach((subsection, index) => {
-                formDataToSend.append(`subsections[${index}]`, subsection);
-            });
-
-            formDataToSend.append("floor_plan", formData.floor_plan);
-
-            const artworkInput = document.getElementById("file-upload");
-            if (artworkInput && artworkInput.files[0]) {
-                formDataToSend.append("artwork_list", artworkInput.files[0]);
+            formDataToSend.append("subsections", JSON.stringify(formData.subsections));
+            formDataToSend.append("floor_plan", formData.floor_plan); // Floor plan file
+            formDataToSend.append("artwork_list", artworkInput.files[0]); // Match backend's 'artwork_list' key
+    
+            // Debug FormData
+            for (let pair of formDataToSend.entries()) {
+                console.log(`${pair[0]}:`, pair[1]);
             }
-
+    
             const response = await fetch("http://localhost:5000/bulk_upload", {
                 method: "POST",
-                body: formDataToSend,
+                body: formDataToSend, // Let the browser set Content-Type to multipart/form-data
             });
-
+    
             if (response.ok) {
                 const result = await response.json();
                 toast.success("Exhibit created successfully!");
@@ -235,7 +282,7 @@ function CreateExhibit() {
                                     Floor Plan <span className='text-brand'>*</span>
                                 </label>
                                 <span className="font-normal text-gray-400 text-m">
-                                    Upload the floor plan for your exhibition layout. Accepted format: PNG.
+                                    Upload the floor plan for your exhibition layout. Accepted format: PNG, JPG, JPEG.
                                 </span>
                                 <label
                                     htmlFor="floor-plan-upload"
