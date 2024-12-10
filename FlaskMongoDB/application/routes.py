@@ -274,6 +274,22 @@ def bulk_upload():
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 
+@app.route('/api/exhibit/<string:exhibit_id>', methods=['GET'])
+def get_exhibit(exhibit_id):
+    try:
+        # Fetch exhibit data by _id
+        exhibit = create_exhibits.find_one({"_id": exhibit_id})
+        if not exhibit:
+            return jsonify({"error": "Exhibit not found"}), 404
+        
+        # Convert MongoDB ObjectId to string (if needed)
+        exhibit["_id"] = str(exhibit["_id"])
+        
+        # Return the exhibit data as JSON
+        return jsonify(exhibit), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 # Helper: Handle image uploads
 def handle_image_upload(file):
