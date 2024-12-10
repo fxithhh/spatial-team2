@@ -389,7 +389,7 @@ useEffect(() => {
             className="absolute top-0 left-0 right-0 p-4 bg-yellow-100 border border-yellow-300 rounded-b shadow-md z-10"
             style={{ pointerEvents: 'none' }} // Allows interactions with underlying elements
           >
-            <strong>Instructions:</strong> Click on a node to select it, then press the <strong>F</strong> key to fix/unfix its position. You can drag fixed nodes by clicking and dragging; they will be temporarily unfixed during the drag and fixed again once you release.
+            <strong>Instructions:</strong> Click on a node to select it, then press the <strong>F</strong> key to fix/unfix its position. You can drag fixed nodes by clicking and dragging; they will be temporarily unfixed during the drag and fixed again once you release. Press "h" to hide a node and press "i" to show nodes as images.
           </div>
         )}
 
@@ -406,6 +406,7 @@ useEffect(() => {
         ></div>
       </div>
       <div className="hidden-nodes-container">
+      Hidden Nodes(Click to Unhide):
   {hiddenNodes.map(node => (
     <button 
       key={node.id} 

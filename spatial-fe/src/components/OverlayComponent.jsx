@@ -29,8 +29,8 @@ function OverlayComponent() {
                     position: 'absolute',
                     inset: 0,
                     zIndex: 2,
-                    background: showGraphOnTop ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
-                    pointerEvents: 'none', // Transparent overlay does not block interaction
+                    background: showGraphOnTop ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                    pointerEvents: 'none',
                 }}
             />
 
