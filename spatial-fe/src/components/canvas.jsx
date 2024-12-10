@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import p5 from 'p5';
 
-function Canvas({ floorplanImage: propFloorplanImage }) {
+function Canvas({ floorplanImage: propFloorplanImage, disabled = false }) {
     // State to manage the uploaded image
     const [uploadedImage, setUploadedImage] = useState(propFloorplanImage || null);
     const sketchRef = useRef();
@@ -202,6 +202,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             };
 
             p.mousePressed = function () {
+                if (disabled) return;
                 if (mostSquareRect && !isScaleDefined) {
                     if (
                         p.mouseX >= mostSquareRect.x &&
@@ -265,6 +266,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             };
 
             p.mouseDragged = function () {
+                if (disabled) return;
                 if (isScaleDefined && currentWall) {
                     let gridPos = getGridPosition(p.mouseX, p.mouseY);
                     if (gridPos) {
@@ -281,6 +283,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             };
 
             p.mouseReleased = function () {
+                if (disabled) return;
                 if (isDrawing) {
                     adjustWallPositionAndSize(currentWall);
                     isDrawing = false;
@@ -298,6 +301,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             };
 
             p.keyPressed = function () {
+                if (disabled) return;
                 if (p.key === 'E' || p.key === 'e') {
                     currentTool = 'entrance';
                 } else if (p.key === 'F' || p.key === 'f') {
@@ -313,6 +317,11 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                     }
                 }
             };
+            p._mousePressedOrig = p.mousePressed;
+p._mouseDraggedOrig = p.mouseDragged;
+p._mouseReleasedOrig = p.mouseReleased;
+p._keyPressedOrig = p.keyPressed;
+
 
             // ====================
             // Improved Rectangle Detection
@@ -1333,6 +1342,30 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             }
         };
     }, [uploadedImage]);
+    useEffect(() => {
+        if (p5InstanceRef.current) {
+            if (disabled) {
+                // Disable event handlers
+                p5InstanceRef.current.mousePressed = () => {};
+                p5InstanceRef.current.mouseDragged = () => {};
+                p5InstanceRef.current.mouseReleased = () => {};
+                p5InstanceRef.current.keyPressed = () => {};
+    
+                // If the sketch relies on continuous drawing, stop looping
+                p5InstanceRef.current.noLoop();
+            } else {
+                // Restore original event handlers when enabled
+                p5InstanceRef.current.mousePressed = p5InstanceRef.current._mousePressedOrig;
+                p5InstanceRef.current.mouseDragged = p5InstanceRef.current._mouseDraggedOrig;
+                p5InstanceRef.current.mouseReleased = p5InstanceRef.current._mouseReleasedOrig;
+                p5InstanceRef.current.keyPressed = p5InstanceRef.current._keyPressedOrig;
+    
+                // Resume looping if previously stopped
+                p5InstanceRef.current.loop();
+            }
+        }
+    }, [disabled]);
+    
 
     return (
         <div className="relative w-full h-full border-2 border-gray-300">
