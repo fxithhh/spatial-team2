@@ -306,8 +306,19 @@ def get_exhibits(id=None):
                     "historical_significance": artwork.get("Hist Signi", "N/A"),
                     "style_significance": artwork.get("Style Signi", "N/A"),
                     "exhibition_utilization": artwork.get("Acq. Utilisation", "N/A"),
-                    "conservation_guidelines": artwork.get("conservation_guidelines", "N/A"),
-                    "taxonomy": artwork.get("taxonomy_tags", "N/A"),
+                    "conservation_guidelines": artwork.get("conservation_guidelines", {}).get("Conservation_Guidelines", []),
+                    "taxonomy": {
+                        "artistic_movement": artwork.get("taxonomy_tags", {}).get("Artistic_Movement", "Unknown"),
+                        "object_type": artwork.get("taxonomy_tags", {}).get("Object_Type", "Unknown"),
+                        "medium": artwork.get("taxonomy_tags", {}).get("Medium", []),
+                        "associated_geography": artwork.get("taxonomy_tags", {}).get("Associated_Geography", []),
+                        "theme": artwork.get("taxonomy_tags", {}).get("Theme", []),
+                        "exhibition_history": artwork.get("taxonomy_tags", {}).get("Exhibition_History", []),
+                        "style": artwork.get("taxonomy_tags", {}).get("Style", []),
+                        "artist": artwork.get("taxonomy_tags", {}).get("Artist", "Unknown"),
+                        "year": artwork.get("taxonomy_tags", {}).get("Year", "Unknown Year"),
+                    },
+                    "visual_context": artwork.get("visual_context", []),
                     "image": f"data:image/png;base64,{artwork.get('embedded_image', '')}"
                 }
                 for artwork in exhibit.get("artworks", [])
