@@ -128,7 +128,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
             }
 
             // Submit the JSON data to the backend
-            const response = await fetch("http://localhost:5000/upload_json", {
+            const response = await fetch("http://localhost:5000/add_artwork", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(dataToSend),

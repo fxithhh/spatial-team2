@@ -7,19 +7,23 @@ function ExhibitsList() {
   const [exhibits, setExhibits] = useState([]);
   const navigate = useNavigate();
 
-  // // Fetch exhibits from the backend API on component mount
-  // useEffect(() => {
-  //   const fetchExhibits = async () => {
-  //     try {
-  //       const response = await fetch('/api/exhibits'); // API endpoint to get the list of exhibits
-  //       const data = await response.json();
-  //       setExhibits(data); // Update state with fetched exhibits
-  //     } catch (error) {
-  //       console.error("Error fetching exhibits:", error);
-  //     }
-  //   };
-  //   fetchExhibits();
-  // }, []);
+  // Fetch exhibits from the backend API on component mount
+  useEffect(() => {
+    const fetchExhibits = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/exhibits'); // API endpoint to get the list of exhibits
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Fetched exhibits:", data); // Debug the fetched data
+        setExhibits(data); // Update state with fetched exhibits
+      } catch (error) {
+        console.error("Error fetching exhibits:", error);
+      }
+    };
+    fetchExhibits();
+  }, []);
 
   const handleCreateExhibit = () => {
     navigate("/create-exhibit");
@@ -47,16 +51,15 @@ function ExhibitsList() {
           exhibits.map((exhibit) => (
             <Link key={exhibit._id} to={`/exhibitions/${exhibit._id}`} className="text-black-500">
               <img
-                src={`${process.env.PUBLIC_URL}${exhibit.image}`}
-                alt={exhibit.title}
+                src={exhibit.floor_plan?.startsWith('data:image')
+                  ? exhibit.floor_plan
+                  : `/placeholder.jpg`} // Handle Base64 or fallback to placeholder
+                alt={exhibit.title || 'Exhibit Image'}
                 className="w-full h-48 object-cover mb-4"
               />
               <h2 className="text-xl font-['Roboto'] font-semibold transition-transform duration-300 transform group-hover:scale-110">
-                {exhibit.title}
+                {exhibit.title || 'Untitled Exhibit'} {/* Fallback for missing title */}
               </h2>
-              <p className="text-gray-600 font-['Roboto'] transition-transform duration-300 transform group-hover:scale-110">
-                {exhibit.description}
-              </p>
             </Link>
           ))
         ) : (

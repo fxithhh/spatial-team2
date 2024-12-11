@@ -36,104 +36,85 @@ def favicon():
     return app.send_static_file('favicon.ico')
 
 # Route to handle JSON file upload and store it in MongoDB
-
-
-@app.route("/upload_json", methods=["POST"])
-def upload_json():
+@app.route("/add_artwork", methods=["POST"])
+def add_artwork():
     # Check if the request is JSON
     if not request.is_json:
-        print("Debug: Request is not JSON.")
         return jsonify({"error": "Request must be a JSON object"}), 400
 
     try:
         # Parse the incoming JSON
         original_metadata = request.get_json()
-        print("Debug: Received JSON data:", original_metadata)
+        exhibition_id = original_metadata.get("exhibition_id")
+        if not exhibition_id:
+            return jsonify({"error": "Exhibition ID is required"}), 400
+        
+        try:
+            exhibition = create_exhibits.find_one({"_id": ObjectId(exhibition_id)})
+            if not exhibition:
+                return jsonify({"error": "Invalid exhibition ID"}), 400
+        except Exception:
+            return jsonify({"error": "Invalid exhibition ID format"}), 400
 
         # Extract and process image data
         image_data = original_metadata.get("image")
         if image_data:
             try:
-                print("Debug: Processing image data.")
-                base64_data = image_data.split(
-                    ",")[1] if "," in image_data else image_data
+                base64_data = image_data.split(",")[1] if "," in image_data else image_data
                 image_binary = base64.b64decode(base64_data, validate=True)
-                print("Debug: Image data decoded successfully.")
 
                 # Convert to JPEG
                 compressed_image = convert_image_to_jpeg(image_binary)
                 if compressed_image is None:
                     raise ValueError("Image conversion failed.")
-                print("Debug: Image successfully converted to JPEG.")
 
                 # Encode back to Base64
-                compressed_image_base64 = base64.b64encode(
-                    compressed_image).decode("utf-8")
-                print("Debug: Image re-encoded to Base64.")
-            except Exception as e:
-                print(f"Debug: Image processing error: {e}")
+                compressed_image_base64 = base64.b64encode(compressed_image).decode("utf-8")
+            except Exception:
                 return jsonify({"error": "Invalid image data or conversion failed"}), 400
         else:
-            print("Debug: No image data provided.")
             compressed_image_base64 = None
 
         # Prepare metadata without the image
-        metadata_without_image = {
-            key: value for key, value in original_metadata.items() if key != "image"}
-        print("Debug: Metadata without image:", metadata_without_image)
-        print(
-            f"API_KEY: {'Set' if API_KEY else 'Not Set'}: {API_KEY[:4]}****{API_KEY[-4:]}" if API_KEY else "API_KEY is Not Set")
+        metadata_without_image = {key: value for key, value in original_metadata.items() if key != "image"}
 
         # Generate conservation feedback
         try:
-            print("Debug: Generating conservation feedback.")
             vectorstore = load_vectorstore_from_mongo()
-            print("Debug: Vectorstore loaded successfully.")
             openai_feedback = generate_response_conservation(
                 metadata=metadata_without_image,
                 vectorstore=vectorstore,
                 model="gpt-4o"
             )
-            print("Debug: OpenAI conservation feedback received:", openai_feedback)
-        except Exception as e:
-            print(f"Debug: OpenAI API error (conservation): {e}")
+        except Exception:
             return jsonify({"error": "Failed to process data with OpenAI for conservation feedback"}), 500
 
         # Generate taxonomy feedback if image data is present
         if image_data:
             try:
-                print("Debug: Generating taxonomy feedback.")
                 taxonomy_feedback = generate_taxonomy_tags(
                     metadata=metadata_without_image,
                     image_data=compressed_image_base64,
                     tax_template=tax_template,
                     model="gpt-4o"
                 )
-                print("Debug: OpenAI taxonomy feedback received:",
-                      taxonomy_feedback)
-            except Exception as e:
-                print(f"Debug: OpenAI API error (taxonomy): {e}")
+            except Exception:
                 return jsonify({"error": "Failed to process data with OpenAI for taxonomy feedback"}), 500
         else:
-            print("Debug: Skipping taxonomy feedback generation (no image data).")
             taxonomy_feedback = None
-
-          # Generate visual_context if image data is present
+        
+        # Generate visual_context if image data is present
         if image_data:
             try:
-                print("Debug: Generating Visual Context.")
                 visual_context = generate_visual_context(
                     metadata=metadata_without_image,
                     image_data=compressed_image_base64,
                     tax_template=tax_template,
                     model="gpt-4o"
                 )
-                print("Debug: OpenAI visual context received:", visual_context)
-            except Exception as e:
-                print(f"Debug: OpenAI API error (taxonomy): {e}")
+            except Exception:
                 return jsonify({"error": "Failed to process data with OpenAI for visual context"}), 500
         else:
-            print("Debug: Skipping taxonomy feedback generation (no image data).")
             taxonomy_feedback = None
 
         # Combine data for MongoDB insertion
@@ -141,22 +122,26 @@ def upload_json():
             **original_metadata,
             "openai_feedback": openai_feedback,
             "taxonomy_feedback": taxonomy_feedback,
-            "visual_context": visual_context
+            "visual_context": visual_context,
+            "exhibition_id": exhibition_id
         }
-        print("Debug: Combined data prepared for MongoDB:", combined_data)
 
         # Insert into MongoDB
         try:
-            print("Debug: Inserting data into MongoDB.")
             insertion_result = artworks_collection.insert_one(combined_data)
             inserted_id = str(insertion_result.inserted_id)
-            print("Debug: Data inserted successfully with ID:", inserted_id)
-        except Exception as e:
-            print(f"Debug: MongoDB insertion error: {e}")
+        except Exception:
             return jsonify({"error": "Failed to insert data into MongoDB"}), 500
+        
+        try:
+            create_exhibits.update_one(
+                {"_id": ObjectId(exhibition_id)},
+                {"$push": {"artworks": inserted_id}}
+            )
+        except Exception:
+            return jsonify({"error": "Failed to link artwork to exhibition"}), 500
 
         # Return success response
-        print("Debug: Returning success response.")
         return jsonify({
             "message": "Artwork uploaded and processed successfully",
             "artwork_id": inserted_id,
@@ -165,8 +150,7 @@ def upload_json():
             "visual_context": visual_context
         }), 200
 
-    except Exception as e:
-        print(f"Debug: Unexpected error: {e}")
+    except Exception:
         return jsonify({"error": "Failed to process JSON object"}), 500
 
 

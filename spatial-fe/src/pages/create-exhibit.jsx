@@ -133,7 +133,7 @@ function CreateExhibit() {
                 console.log(`${pair[0]}:`, pair[1]);
             }
 
-            const response = await fetch("http://localhost:5000/bulk_upload", {
+            const response = await fetch("http://localhost:5000/create_exhibit", {
                 method: 'POST',
                 body: formDataToSend, // Let the browser handle multipart/form-data
             });

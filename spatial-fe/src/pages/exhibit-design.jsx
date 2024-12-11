@@ -86,14 +86,18 @@ const ExhibitDetail = () => {
         setIsAddArtworkOpen(false);
     };
 
-    // Fetch exhibit and artworks data
     const fetchArtworks = async () => {
         try {
-            const response = await fetch(`http://localhost:5000/api/exhibit/${exhibitId}`);
+            const response = await fetch(`http://localhost:5000/exhibits`);
             if (response.ok) {
                 const data = await response.json();
+    
+                // Flatten the artworks from all exhibits
+                const allArtworks = data.flatMap((exhibit) => exhibit.artworks);
+    
+                // Update state with the flattened artworks
                 setExhibit(data);
-                setArtworks(data.artworks || []); // Ensure it's an array
+                setArtworks(allArtworks || []); // Ensure it's an array
             } else {
                 setError(`Failed to fetch exhibit: ${response.status}`);
             }
@@ -393,21 +397,23 @@ const ExhibitDetail = () => {
                             {/* Artwork List */}
                             <div className="max-h-[400px] overflow-y-auto">
                                 {artworks.map((artwork) => (
-                                    <div key={artwork._id}
+                                    <div
+                                        key={artwork._id}
                                         onClick={() => {
                                             handleArtworkSelect(artwork);
-                                            console.log(`Selected artwork: ${artwork["Artwork Title"]}`);
+                                            console.log(`Selected artwork: ${artwork.title || "Untitled"}`);
                                         }}
-                                        className="grid grid-cols-12 py-1 px-2 my-2 border-b-2 cursor-pointer max-h-60 overflow-y-auto hover:border-2 hover:bg-linkhover hover:border-brand">
-                                        {/* Adjusting for backend field names */}
-                                        <span className='col-span-5 capitalize'>
-                                            {artwork["Artwork Title"] || "Untitled"}
+                                        className="grid grid-cols-12 py-1 px-2 my-2 border-b-2 cursor-pointer max-h-60 overflow-y-auto hover:border-2 hover:bg-linkhover hover:border-brand"
+                                    >
+                                        {/* Map backend fields dynamically */}
+                                        <span className="col-span-5 capitalize">
+                                            {artwork.title || "Untitled"}
                                         </span>
-                                        <span className='col-span-3 capitalize'>
-                                            {artwork["Artist Name"] || "Unknown Artist"}
+                                        <span className="col-span-3 capitalize">
+                                            {artwork.artist || "Unknown Artist"}
                                         </span>
-                                        <span className='col-span-4 capitalize'>
-                                            {artwork["Dimension"] || "Unknown Dimensions"}
+                                        <span className="col-span-4 capitalize">
+                                            {artwork.dimension || "Unknown Dimensions"}
                                         </span>
                                     </div>
                                 ))}
