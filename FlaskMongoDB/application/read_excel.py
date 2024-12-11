@@ -32,7 +32,7 @@ def process_excel_file(file):
 
     # Extract data and images from the workbook
     extracted_data,base64_image_ls = extract_rows_and_images(output_sheet)
-    column_headers = [cell.value for cell in sheet[1]]  # Assumes headers are in the first row
+    column_headers = [cell.value for cell in output_sheet[1]]  # Assumes headers are in the first row
     column_headers.remove("Image")
     
     tabular_data = []
