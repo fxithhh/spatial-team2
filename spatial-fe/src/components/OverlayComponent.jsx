@@ -3,36 +3,19 @@ import Canvas from './Canvas';
 import Graph from './Graph';
 
 function OverlayComponent() {
-    const [showGraphOnTop, setShowGraphOnTop] = useState(false);
-    const [hideFloorplan, setHideFloorplan] = useState(false);
+    // 0: Floorplan Only
+    // 1: Graph Over Floorplan
+    // 2: Graph Only (default)
+    const [viewMode, setViewMode] = useState(2);
 
-    const toggleOverlayOrder = () => {
-        // If we are hiding the floorplan, graph is on top anyway, so just ignore toggle?
-        // Or allow toggling if floorplan is visible:
-        if (!hideFloorplan) {
-            setShowGraphOnTop((prev) => !prev);
-        }
-    };
+    const hideFloorplan = viewMode === 2;
+    const showGraphOnTop = viewMode >= 1;
 
-    const toggleFloorplanVisibility = () => {
-        setHideFloorplan((prev) => {
-            const newVal = !prev;
-            if (newVal) {
-                // If we are now hiding the floorplan, ensure the graph is on top.
-                setShowGraphOnTop(true);
-            }
-            return newVal;
-        });
-    };
-
-    // Determine button labels based on current state:
-    const overlayOrderButtonLabel = hideFloorplan
-        ? 'Graph Only (No Floorplan)'
-        : showGraphOnTop 
-            ? 'Switch to Floorplan Only'
-            : 'Switch to Graph Over Floorplan';
-
-    const floorplanButtonLabel = hideFloorplan ? 'Show Floorplan' : 'Hide Floorplan';
+    const states = [
+        "Floorplan Only",
+        "Graph Over Floorplan",
+        "Graph Only"
+    ];
 
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -42,7 +25,6 @@ function OverlayComponent() {
                     position: 'absolute',
                     inset: 0,
                     zIndex: 1,
-                    // If the graph is on top or floorplan is hidden, interactions with floorplan may be disabled:
                     pointerEvents: (showGraphOnTop || hideFloorplan) ? 'none' : 'auto',
                     visibility: hideFloorplan ? 'hidden' : 'visible'
                 }}
@@ -50,17 +32,12 @@ function OverlayComponent() {
                 <Canvas disabled={hideFloorplan || showGraphOnTop} />
             </div>
 
-            {/* No need for a solid white overlay now, since we're hiding the floorplan via visibility. */}
-            {/* If you prefer a solid overlay to cover the floorplan instead of visibility, 
-                you could use a solid div here. But per the instructions, we now just hide it. */}
-
             {/* Translucent overlay (only visible when graph is on top and floorplan is visible) */}
             <div
                 style={{
                     position: 'absolute',
                     inset: 0,
                     zIndex: 2,
-                    // If graph is on top and floorplan is not hidden, show translucent overlay:
                     background: (showGraphOnTop && !hideFloorplan) ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                     pointerEvents: 'none'
                 }}
@@ -72,7 +49,6 @@ function OverlayComponent() {
                     position: 'absolute',
                     inset: 0,
                     zIndex: 3,
-                    // If hideFloorplan is true or showGraphOnTop is true, graph is visible:
                     opacity: (hideFloorplan || showGraphOnTop) ? 1 : 0,
                     pointerEvents: (hideFloorplan || showGraphOnTop) ? 'auto' : 'none',
                     transition: 'opacity 0.3s ease-in-out'
@@ -81,47 +57,63 @@ function OverlayComponent() {
                 <Graph />
             </div>
 
-            {/* Toggle Button for Overlay Order */}
-            <button
-                onClick={toggleOverlayOrder}
+            {/* 3-State Segmented Control */}
+            <div
                 style={{
                     position: 'absolute',
                     top: 10,
                     right: 10,
                     zIndex: 999,
-                    padding: '10px 20px',
-                    background: '#007bff',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '5px',
+                    width: '300px',
+                    height: '40px',
+                    background: '#ccc',
+                    borderRadius: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-around',
                     cursor: 'pointer',
-                    opacity: hideFloorplan ? 0.6 : 1,
-                    pointerEvents: hideFloorplan ? 'none' : 'auto'
+                    overflow: 'hidden',
+                    userSelect: 'none',
+                    fontFamily: 'sans-serif',
+                    fontSize: '0.9rem',
+                    position: 'absolute'
                 }}
-                title="Toggle which layer is on top"
+                title="Click a state to switch view mode"
             >
-                {overlayOrderButtonLabel}
-            </button>
+                {/* Highlight Slider */}
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: `${(viewMode * 100) / 3}%`,
+                        width: `${100/3}%`,
+                        height: '100%',
+                        background: '#007bff',
+                        borderRadius: '20px',
+                        transition: 'left 0.3s'
+                    }}
+                />
 
-            {/* Toggle Button for Floorplan Visibility */}
-            <button
-                onClick={toggleFloorplanVisibility}
-                style={{
-                    position: 'absolute',
-                    top: 50,
-                    right: 10,
-                    zIndex: 999,
-                    padding: '10px 20px',
-                    background: '#007bff',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                }}
-                title="Show or hide the floorplan"
-            >
-                {floorplanButtonLabel}
-            </button>
+                {/* State Labels - now clickable individually */}
+                {states.map((label, i) => (
+                    <div
+                        key={i}
+                        style={{ 
+                            position: 'relative', 
+                            zIndex: 2, 
+                            color: i === viewMode ? '#fff' : '#000', 
+                            fontWeight: i === viewMode ? 'bold' : 'normal',
+                            textAlign: 'center', 
+                            width: `${100/3}%`,
+                            cursor: 'pointer',
+                            padding: '0 5px'
+                        }}
+                        onClick={() => setViewMode(i)}
+                    >
+                        {label}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
