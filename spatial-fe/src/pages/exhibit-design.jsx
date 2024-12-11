@@ -65,6 +65,7 @@ const ExhibitDetail = () => {
     const [floorplanImage, setFloorplanImage] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedArtwork, setSelectedArtwork] = useState(null);
+    const [selectedExhibit, setSelectedExhibit] = useState(null);
     const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // Add artwork popup
 
     // Dropdown toggle
@@ -88,26 +89,25 @@ const ExhibitDetail = () => {
 
     const fetchArtworks = async () => {
         try {
-            const response = await fetch(`http://localhost:5000/exhibits`);
-            if (response.ok) {
-                const data = await response.json();
-    
-                // Flatten the artworks from all exhibits
-                const allArtworks = data.flatMap((exhibit) => exhibit.artworks);
-    
-                // Update state with the flattened artworks
-                setExhibit(data);
-                setArtworks(allArtworks || []); // Ensure it's an array
-            } else {
-                setError(`Failed to fetch exhibit: ${response.status}`);
+            const response = await fetch(`http://localhost:5000/exhibits/${exhibitId}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch exhibit: ${response.status}`);
             }
+            const data = await response.json();
+    
+            // Update state with the exhibit and its artworks
+            setSelectedExhibit(data);
+            setArtworks(data.artworks || []);
         } catch (err) {
             setError('Error fetching exhibit');
         }
     };
-
+    
+    // Fetch data on component mount
     useEffect(() => {
-        fetchArtworks();
+        if (exhibitId) {
+            fetchArtworks();
+        }
     }, [exhibitId]);
 
     if (error) return <p>Error: {error}</p>;
