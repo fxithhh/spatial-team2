@@ -190,54 +190,6 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
     answer = json.loads(answer_temp)
     return answer
 
-
-def convert_image_to_jpeg(image_input, output_format="JPEG", return_base64=False):
-    """
-    Converts an image to JPEG format. Accepts both Base64 strings and raw binary data as input.
-    
-    Parameters:
-        image_input (str or bytes): The input image in Base64 string or raw binary format.
-        output_format (str): The desired output format (default is "JPEG").
-        return_base64 (bool): Whether to return the result as a Base64-encoded string.
-    
-    Returns:
-        bytes or str: Raw binary data of the converted image, or Base64 string if return_base64=True.
-        None: If conversion fails.
-    """
-    try:
-        # Check if the input is a Base64-encoded string
-        if isinstance(image_input, str):
-            # Decode Base64 string into binary image data
-            image_binary = base64.b64decode(image_input, validate=True)
-        elif isinstance(image_input, bytes):
-            image_binary = image_input
-        else:
-            raise ValueError("Invalid input type. Expected Base64 string or bytes.")
-
-        # Open the image using Pillow
-        image = Image.open(BytesIO(image_binary))
-
-        # Debug: Log image format and properties
-        print(f"Debug: Image format: {image.format}, mode: {image.mode}, size: {image.size}")
-
-        # Ensure conversion to RGB for JPEG compatibility
-        if image.mode != "RGB" and output_format.upper() == "JPEG":
-            image = image.convert("RGB")
-
-        # Save to JPEG format in a buffer
-        buffer = BytesIO()
-        image.save(buffer, format=output_format, quality=100)
-        buffer.seek(0)
-
-        # Return as raw binary or Base64
-        converted_image = buffer.read()
-        if return_base64:
-            return base64.b64encode(converted_image).decode("utf-8")
-        return converted_image
-    except Exception as e:
-        print(f"Error converting image to JPEG: {e}")
-        return None
-
 # Taxonomy Tagging Function
 def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o"):
     # Call OpenAI API for taxonomy tagging

@@ -7,6 +7,7 @@ const ArtworkCard = ({ artwork }) => {
     conservation: false,
     taxonomy: false,
     additionalDetails: false,
+    visualContext: false, // New section for visual context
   });
 
   const [showFullDescription, setShowFullDescription] = useState(false);
@@ -42,6 +43,7 @@ const ArtworkCard = ({ artwork }) => {
       )}
     </div>
   );
+  
 
   const renderTaxonomy = (taxonomy) => {
     if (!taxonomy) {
@@ -50,64 +52,52 @@ const ArtworkCard = ({ artwork }) => {
 
     return (
       <div>
-        {taxonomy.artistic_movement && (
-          <p><strong>Artistic Movement:</strong> {taxonomy.artistic_movement}</p>
-        )}
-        {taxonomy.object_type && (
-          <p><strong>Object Type:</strong> {taxonomy.object_type}</p>
-        )}
-        {taxonomy.medium && taxonomy.medium.length > 0 && (
+        {taxonomy.Artist && <p><strong>Artist:</strong> {taxonomy.Artist}</p>}
+        {taxonomy.Title && <p><strong>Title:</strong> {taxonomy.Title}</p>}
+        {taxonomy.Dating && <p><strong>Dating:</strong> {taxonomy.Dating}</p>}
+        
+        {Array.isArray(taxonomy.Material) && taxonomy.Material.length > 0 ? (
           <div>
-            <strong>Medium:</strong>
+            <strong>Material:</strong>
             <ul className="list-inside list-disc text-gray-500">
-              {taxonomy.medium.map((item, index) => <li key={index}>{item}</li>)}
+              {taxonomy.Material.map((item, index) => <li key={index}>{item}</li>)}
             </ul>
           </div>
+        ) : (
+          <p><strong>Material:</strong> N/A</p>
         )}
-        {taxonomy.associated_geography && taxonomy.associated_geography.length > 0 && (
+  
+        {taxonomy["Geographical Association"] && (
+          <p><strong>Geographical Association:</strong> {taxonomy["Geographical Association"]}</p>
+        )}
+        
+        {Array.isArray(taxonomy["Style Significance"]) && taxonomy["Style Significance"].length > 0 ? (
           <div>
-            <strong>Associated Geography:</strong>
+            <strong>Style Significance:</strong>
             <ul className="list-inside list-disc text-gray-500">
-              {taxonomy.associated_geography.map((item, index) => <li key={index}>{item}</li>)}
+              {taxonomy["Style Significance"].map((item, index) => <li key={index}>{item}</li>)}
             </ul>
           </div>
+        ) : (
+          <p><strong>Style Significance:</strong> N/A</p>
         )}
-        {taxonomy.theme && taxonomy.theme.length > 0 && (
+        
+        {Array.isArray(taxonomy["Historical Significance"]) && taxonomy["Historical Significance"].length > 0 ? (
           <div>
-            <strong>Theme:</strong>
+            <strong>Historical Significance:</strong>
             <ul className="list-inside list-disc text-gray-500">
-              {taxonomy.theme.map((item, index) => <li key={index}>{item}</li>)}
+              {taxonomy["Historical Significance"].map((item, index) => <li key={index}>{item}</li>)}
             </ul>
           </div>
-        )}
-        {taxonomy.exhibition_history && taxonomy.exhibition_history.length > 0 && (
-          <div>
-            <strong>Exhibition History:</strong>
-            <ul className="list-inside list-disc text-gray-500">
-              {taxonomy.exhibition_history.map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
-          </div>
-        )}
-        {taxonomy.style && taxonomy.style.length > 0 && (
-          <div>
-            <strong>Style:</strong>
-            <ul className="list-inside list-disc text-gray-500">
-              {taxonomy.style.map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
-          </div>
-        )}
-        {taxonomy.artist && (
-          <p><strong>Artist:</strong> {taxonomy.artist}</p>
-        )}
-        {taxonomy.year && (
-          <p><strong>Year:</strong> {taxonomy.year}</p>
+        ) : (
+          <p><strong>Historical Significance:</strong> N/A</p>
         )}
       </div>
     );
   };
 
   const renderConservationGuidelines = (guidelines) => {
-    if (!guidelines || guidelines.length === 0) {
+    if (!Array.isArray(guidelines) || guidelines.length === 0) {
       return <p className="text-red-500">No conservation guidelines available</p>;
     }
 
@@ -116,6 +106,22 @@ const ArtworkCard = ({ artwork }) => {
         {guidelines.map((guideline, index) => (
           <li key={index} className="mb-2">
             {guideline}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const renderVisualContext = (visualContext) => {
+    if (!Array.isArray(visualContext) || visualContext.length === 0) {
+      return <p className="text-red-500">No visual context available</p>;
+    }
+
+    return (
+      <ul className="list-inside list-disc text-gray-500">
+        {visualContext.map((item, index) => (
+          <li key={index} className="mb-2">
+            {item}
           </li>
         ))}
       </ul>
@@ -161,8 +167,8 @@ const ArtworkCard = ({ artwork }) => {
         {/* Dimensions */}
         {renderSection('Dimensions', artwork.dimension || 'N/A')}
 
-                {/* Additional Details Section */}
-                <div className="mb-4 border border-gray-300 rounded p-4">
+        {/* Additional Details Section */}
+        <div className="mb-4 border border-gray-300 rounded p-4">
           <button
             onClick={() => toggleSection('additionalDetails')}
             className="w-full flex justify-between items-center text-left font-bold text-gray-800"
@@ -176,6 +182,14 @@ const ArtworkCard = ({ artwork }) => {
           </button>
           {sections.additionalDetails && (
             <div className="mt-4">
+              {renderSection(
+                'Description',
+                artwork.description || 'N/A',
+                () => setShowFullDescription(!showFullDescription),
+                showFullDescription
+              )}
+              {renderSection('Display Type', artwork.display_type || 'N/A')}
+              {renderSection('Acquisition Type', artwork.acquisition_type || 'N/A')}
               {renderSection(
                 'Historical Significance',
                 artwork.historical_significance || 'N/A',
@@ -218,7 +232,26 @@ const ArtworkCard = ({ artwork }) => {
           )}
         </div>
 
-        
+        {/* Visual Context Section */}
+        <div className="mb-4 border border-gray-300 rounded p-4">
+          <button
+            onClick={() => toggleSection('visualContext')}
+            className="w-full flex justify-between items-center text-left font-bold text-gray-800"
+          >
+            Visual Context
+            {sections.visualContext ? (
+              <ChevronUpIcon className="w-6 h-6" />
+            ) : (
+              <ChevronDownIcon className="w-6 h-6" />
+            )}
+          </button>
+          {sections.visualContext && (
+            <div className="mt-4">
+              {renderVisualContext(artwork.visual_context)}
+            </div>
+          )}
+        </div>
+
         {/* Taxonomy Section */}
         <div className="mb-4 border border-gray-300 rounded p-4">
           <button
@@ -238,7 +271,6 @@ const ArtworkCard = ({ artwork }) => {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

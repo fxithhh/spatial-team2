@@ -1,4 +1,4 @@
-from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags, generate_visual_context, convert_image_to_jpeg, load_vectorstore_from_mongo
+from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags, generate_visual_context, load_vectorstore_from_mongo
 from .read_excel import process_excel_file
 from io import BytesIO
 from application import app, mongo, db
@@ -164,10 +164,9 @@ def create_exhibit():
         # Extract form data
         exhibit_title = request.form.get("exhibit_title")
         concept = request.form.get("concept")
-        subsections = request.form.getlist("subsections")  # Extract as list
+        subsections = request.form.getlist("subsections")
 
         if not exhibit_title or not concept:
-            print("Missing required form data: 'exhibit_title' or 'concept'")
             return jsonify({"error": "Missing required form data: 'exhibit_title' or 'concept'"}), 400
 
         form_data = {
@@ -176,110 +175,82 @@ def create_exhibit():
             "subsections": subsections,
         }
 
-        # Debug extracted form data
-        print("Extracted form data:", form_data)
-
-        # Process images
-        images = {}
-        for key, file in request.files.items():
-            try:
-                print(
-                    f"Processing file: {file.filename} (key: {key}, type: {file.content_type})")
-                if key != "artwork_list" and file.content_type.startswith("image/"):
-                    images[key] = handle_image_upload(file)
-                    print(f"Image {file.filename} processed successfully.")
-            except Exception as e:
-                print(f"Error processing image {key}: {str(e)}")
-                return jsonify({"error": f"Error processing image '{key}': {str(e)}"}), 400
-
-        form_data["images"] = images
-        print("Processed images:", images.keys())
-
         # Process the Excel file
-        if "artwork_list" in request.files:
-            try:
-                artwork_file = request.files["artwork_list"]
-                print(f"Processing Excel file: {artwork_file.filename}")
-                processed_data = process_excel_file(artwork_file)
-                print("Debug: Processed data:", processed_data)
+        if "artwork_list" not in request.files:
+            return jsonify({"error": "Missing artwork Excel file."}), 400
 
-                form_data["excel_images"] = processed_data["images"]
+        try:
+            artwork_file = request.files["artwork_list"]
+            print(f"Processing Excel file: {artwork_file.filename}")
+            processed_data = process_excel_file(artwork_file)
 
-                form_data["artworks"] = processed_data["data"]
-
-
-                # Validate processed_data structure
-                if "data" not in processed_data or "images" not in processed_data:
-                    print("Debug: Missing 'data' or 'images' in processed_data.")
-                    return jsonify({"error": "Invalid data structure returned from Excel processing."}), 400
-
-               
-
-                print(
-                    f"Excel file {artwork_file.filename} processed successfully.")
-            except Exception as e:
-                print(f"Error processing artwork Excel file: {str(e)}")
-                return jsonify({"error": f"Error processing artwork Excel file: {str(e)}"}), 400
+            if "data" not in processed_data or "images" not in processed_data:
+                return jsonify({"error": "Invalid data structure from Excel processing."}), 400
 
             form_data["artworks"] = processed_data["data"]
             form_data["excel_images"] = processed_data["images"]
 
-            for idx, row in enumerate(processed_data["data"]):
-                try:
-                    print(f"Calling OpenAI API for row {idx}")
+            print(f"Excel file {artwork_file.filename} processed successfully.")
+        except Exception as e:
+            return jsonify({"error": f"Error processing artwork Excel file: {str(e)}"}), 400
+        
+        # Validate and process the images
+        valid_images = []
+        for idx, image in enumerate(processed_data["images"]):
+            try:
+                print(f"Validating image {idx}")
+                
+                # Validate Base64 string
+                if not is_valid_base64(image):
+                    raise ValueError(f"Image {idx} is not a valid Base64 string.")
 
-                    # Get the image data
-                    embedded_image = row.get("embedded_image", "")
-                    
-             
+                valid_images.append(image)
+                print(f"Image {idx} validated and processed successfully.")
 
-                    # Convert to JPEG format
-                    embedded_image = convert_image_to_jpeg(
-                        embedded_image, return_base64=True)
-                    if not embedded_image:
-                        print(
-                            f"Failed to convert image to JPEG for row {idx}.")
-                        row["error"] = "Image conversion to JPEG failed."
-                        continue
+            except Exception as e:
+                print(f"Error processing image {idx}: {str(e)}")
 
-                    # Debug: Log the image being sent to GPT
-                    print(
-                        f"Debug: Row {idx} image being sent to GPT: {embedded_image[:50]}... (truncated)")
+        # Run OpenAI functions on the extracted rows
+        for idx, row in enumerate(form_data["artworks"]):
+            try:
+                print(f"Calling OpenAI API for row {idx}")
+                # Use the validated image for this row
+                image_for_row = valid_images[idx] if idx < len(valid_images) else None
+                if not image_for_row:
+                    raise ValueError(f"No valid image for row {idx}. Skipping OpenAI API call.")
 
-                    # Call OpenAI APIs
-                    row["conservation_guidelines"] = generate_response_conservation(
-                        row)
-                    row["taxonomy_tags"] = generate_taxonomy_tags(
-                        row, embedded_image, {}, "gpt-4o")
-                    row["visual_context"] = generate_visual_context(
-                        row, embedded_image, {}, "gpt-4o")
-                    print(f"OpenAI metadata generated for row {idx}")
-                except Exception as e:
-                    print(
-                        f"Error generating OpenAI metadata for row {idx}: {str(e)}")
-                    row["error"] = f"OpenAI metadata generation failed: {str(e)}"
+                # Validate metadata
+                metadata = row
+                if not isinstance(metadata, dict):
+                    raise ValueError(f"Invalid metadata for row {idx}.")
 
-        # Insert the form data into MongoDB
+                row["conservation_guidelines"] = generate_response_conservation(row)
+                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row, {}, "gpt-4o")
+                row["visual_context"] = generate_visual_context(row,image_for_row, {}, "gpt-4o")
+                print(f"OpenAI metadata generated for row {idx}")
+            except Exception as e:
+                print(f"Error generating OpenAI metadata for row {idx}: {str(e)}")
+                row["error"] = f"OpenAI metadata generation failed: {str(e)}"
+
+        # Insert the complete form data into MongoDB
         try:
             print("Inserting data into MongoDB...")
             result = create_exhibits.insert_one(form_data)
             form_data["_id"] = str(result.inserted_id)
             print(f"Data inserted into MongoDB with ID: {form_data['_id']}")
         except Exception as e:
-            print("Error inserting data into MongoDB:", str(e))
             return jsonify({"error": "Failed to save data to MongoDB"}), 500
 
         # Return success response
         return jsonify({
             "message": "Form submitted successfully",
             "data": form_data,
-            "exhibitId": str(result.inserted_id)
+            "exhibitId": str(result.inserted_id),
         }), 201
 
     except Exception as e:
-        # Catch all unexpected errors
         print("Unexpected error:", str(e))
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route('/exhibits', methods=['GET'])
@@ -297,30 +268,34 @@ def get_exhibits(id=None):
             exhibit["_id"] = str(exhibit["_id"])
             exhibit["artworks"] = [
                 {
-                    "title": artwork.get("Object Name/Title", "Untitled Artwork"),
-                    "artist": artwork.get("Artist/ Producer", "Unknown Artist"),
-                    "dimension": artwork.get("Dimen", "Unknown Dimensions"),
+                    "title": artwork.get("Artwork Title", "Untitled Artwork"),
+                    "description": artwork.get("Artwork Description ", "No Description"),
+                    "artist": artwork.get("Artist Name", "Unknown Artist"),
+                    "dating": artwork.get(" Dating", "Unknown Date"),
+                    "dimension": artwork.get("Dimension", "Unknown Dimensions"),
                     "material": artwork.get("Material", "Unknown Material"),
-                    "display_type": artwork.get("Display_Type", "N/A"),
-                    "geographical_association": artwork.get("Geog. Associ.", "N/A"),
-                    "acquisition_type": artwork.get("Acq. Type", "N/A"),
-                    "historical_significance": artwork.get("Hist Signi", "N/A"),
-                    "style_significance": artwork.get("Style Signi", "N/A"),
-                    "exhibition_utilization": artwork.get("Acq. Utilisation", "N/A"),
-                    "conservation_guidelines": artwork.get("conservation_guidelines", {}).get("Conservation_Guidelines", []),
+                    "display_type": artwork.get("Display Type", "N/A"),
+                    "geographical_association": artwork.get("Geographical Association ", "N/A"),
+                    "acquisition_type": artwork.get("Acquisition Type ", "N/A"),
+                    "historical_significance": artwork.get("Historical Significance", "N/A"),
+                    "style_significance": artwork.get("Style Significance", "N/A"),
+                    "exhibition_utilization": artwork.get("Exhibition Utilisation ", "N/A"),
+                    "conservation_guidelines": artwork.get("conservation_guidelines", {}).get("Conservation_Guidelines", "N/A"),
                     "taxonomy": {
-                        "artistic_movement": artwork.get("taxonomy_tags", {}).get("Artistic_Movement", "Unknown"),
-                        "object_type": artwork.get("taxonomy_tags", {}).get("Object_Type", "Unknown"),
-                        "medium": artwork.get("taxonomy_tags", {}).get("Medium", []),
-                        "associated_geography": artwork.get("taxonomy_tags", {}).get("Associated_Geography", []),
-                        "theme": artwork.get("taxonomy_tags", {}).get("Theme", []),
-                        "exhibition_history": artwork.get("taxonomy_tags", {}).get("Exhibition_History", []),
-                        "style": artwork.get("taxonomy_tags", {}).get("Style", []),
-                        "artist": artwork.get("taxonomy_tags", {}).get("Artist", "Unknown"),
-                        "year": artwork.get("taxonomy_tags", {}).get("Year", "Unknown Year"),
-                    },
+                        "Artist": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Artist", "Unknown"),
+                        "Title": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Title", "Untitled"),
+                        "Dating": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Dating", "Unknown Year"),
+                        "Material": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Material", []),
+                        "Geographical Association": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Geographical Association", "Unknown"),
+                        "Acquisition Type": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Acquisition Type", "Unknown"),
+                        "Display Type": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Display Type", "Unknown"),
+                        "Exhibition Utilisation": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Exhibition Utilisation", "Unknown"),
+                        "Style Significance": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Style Significance", []),
+                        "Historical Significance": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Historical Significance", []),
+                        "Conservation Guidelines": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Conservation Guidelines", []),
+                        },
                     "visual_context": artwork.get("visual_context", []),
-                    "image": f"data:image/png;base64,{artwork.get('embedded_image', '')}"
+                    "image": f"data:image/;base64,{artwork.get('excel_images', '')}"
                 }
                 for artwork in exhibit.get("artworks", [])
             ]
@@ -348,9 +323,9 @@ def get_exhibits(id=None):
 
                 artworks = [
                     {
-                        "title": artwork.get("Object Name/Title", "Untitled Artwork"),
-                        "artist": artwork.get("Artist/Producer", "Unknown Artist"),
-                        "dimension": artwork.get("Dimen", "Unknown Dimensions"),
+                        "title": artwork.get("Artwork Title", "Untitled Artwork"),
+                        "artist": artwork.get("Artist Name", "Unknown Artist"),
+                        "dimension": artwork.get("Dimension", "Unknown Dimensions"),
                     }
                     for artwork in exhibit.get("artworks", [])
                 ]
@@ -369,8 +344,6 @@ def get_exhibits(id=None):
             if not exhibits:
                 return jsonify({"error": "No exhibits found"}), 404
 
-            # Log the fetched data for debugging
-            print("Fetched exhibits:", exhibits)
 
             # Return the list of exhibits as JSON
             return jsonify(exhibits), 200
