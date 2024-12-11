@@ -10,6 +10,7 @@ function CreateExhibit() {
 
     const [formData, setFormData] = useState({
         exhibit_title: "",
+        description: "",
         concept: "",
         subsections: [],
         floor_plan: null
@@ -92,62 +93,46 @@ function CreateExhibit() {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-    
-        // Form validation
-        if (!formData.exhibit_title || !formData.concept || !formData.floor_plan || !fileName) {
-            toast.error("Please fill in all required fields and upload necessary files.");
-            return;
-        }
-    
-        // Validate file inputs
-        const artworkInput = document.getElementById("file-upload");
-        if (!artworkInput || !artworkInput.files[0]) {
-            toast.error("Please upload an artwork file.");
-            return;
-        }
-    
-        if (!(formData.floor_plan instanceof File)) {
-            toast.error("Invalid floor plan file. Please re-upload.");
-            return;
-        }
-    
-        try {
-            const formDataToSend = new FormData();
-            formDataToSend.append("exhibit_title", formData.exhibit_title);
-            formDataToSend.append("concept", formData.concept);
-            formDataToSend.append("subsections", JSON.stringify(formData.subsections));
-            formDataToSend.append("floor_plan", formData.floor_plan); // Floor plan file
-            formDataToSend.append("artwork_list", artworkInput.files[0]); // Match backend's 'artwork_list' key
-    
-            // Debug FormData
-            for (let pair of formDataToSend.entries()) {
-                console.log(`${pair[0]}:`, pair[1]);
-            }
-    
-            const response = await fetch("http://localhost:5000/bulk_upload", {
-                method: "POST",
-                body: formDataToSend, // Let the browser set Content-Type to multipart/form-data
-            });
-    
-            if (response.ok) {
-                const result = await response.json();
-                toast.success("Exhibit created successfully!");
-                setLoading(true);
-                setTimeout(() => {
-                    setLoading(false);
-                    navigate(`/exhibitions/${result.exhibitId}`);
-                }, 1000);
-            } else {
-                const errorText = await response.text();
-                console.error("Failed to create exhibit:", errorText);
-                toast.error("Failed to create exhibit. Please try again.");
-            }
-        } catch (error) {
-            console.error("Error submitting form:", error);
-            toast.error("An unexpected error occurred. Please try again.");
-        }
-    };
+    e.preventDefault();
+
+    // Validate required fields
+    if (!formData.exhibit_title || !formData.description || !formData.concept || !formData.floor_plan) {
+      toast.error("Please fill in all required fields and upload necessary files.");
+      return;
+    }
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("exhibit_title", formData.exhibit_title); // Title
+      formDataToSend.append("description", formData.description); // Description
+      formDataToSend.append("concept", formData.concept);
+      formDataToSend.append("subsections", JSON.stringify(formData.subsections));
+      formDataToSend.append("floor_plan", formData.floor_plan);
+
+      const response = await fetch('/api/exhibits', {
+        method: 'POST',
+        body: formDataToSend, // Let the browser handle multipart/form-data
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success('Exhibit created successfully!');
+        setLoading(true);
+        setTimeout(() => {
+          setLoading(false);
+          navigate(`/exhibitions/${result.exhibitId}`);
+        }, 1000);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to create exhibit:', errorText);
+        toast.error('Failed to create exhibit. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    }
+  };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">

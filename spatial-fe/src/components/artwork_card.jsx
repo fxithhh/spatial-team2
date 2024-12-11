@@ -6,11 +6,17 @@ const ArtworkCard = ({ artwork }) => {
     details: true,
     conservation: false,
     taxonomy: false,
-    additionalDetails: false, // State to toggle additional details
+    additionalDetails: false,
   });
 
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showFullConservation, setShowFullConservation] = useState(false);
+  const [showFullMedium, setShowFullMedium] = useState(false);
+  const [showFullHistoricalSignificance, setShowFullHistoricalSignificance] = useState(false);
+  const [showFullStyleSignificance, setShowFullStyleSignificance] = useState(false);
+  const [showFullExhibitionUtilization, setShowFullExhibitionUtilization] = useState(false);
+  const [showFullDimension, setShowFullDimension] = useState(false);
+
 
   // Toggle individual sections
   const toggleSection = (section) => {
@@ -30,16 +36,47 @@ const ArtworkCard = ({ artwork }) => {
     setShowFullConservation(!showFullConservation);
   };
 
-  // A helper to render sections with common structure
-  const renderSection = (title, content) => (
+  const toggleMedium = () => {
+    setShowFullMedium(!showFullMedium);
+  };
+
+  const toggleHistoricalSignificance = () => {
+    setShowFullHistoricalSignificance(!showFullHistoricalSignificance);
+  };
+
+  const toggleStyleSignificance = () => {
+    setShowFullStyleSignificance(!showFullStyleSignificance);
+  };
+
+  const toggleExhibitionUtilization = () => {
+    setShowFullExhibitionUtilization(!showFullExhibitionUtilization);
+  };
+
+  const toggleDimension = () => {
+    setShowFullDimension(!showFullDimension);
+  };
+
+  const renderSection = (title, content, toggleFunc, showFullState) => (
     <div className="mb-4">
       <span className="font-bold text-gray-400 mr-8 w-32">{title}</span>
-      <p className="text-lg line-clamp-3 overflow-hidden text-ellipsis">{content}</p>
+      <p className="text-lg">
+        {showFullState
+          ? content
+          : content ? content.slice(0, 100) : "No content available"}
+      </p>
+      {content && content.length > 100 && (
+        <button onClick={toggleFunc} className="text-brand text-sm hover:underline mt-2">
+          {showFullState ? 'See less' : 'See more'}
+        </button>
+      )}
     </div>
   );
 
-  // A helper to render conservation guidelines as a list, with optional "See more" functionality
   const renderConservationGuidelines = (guidelines) => {
+    if (!guidelines || guidelines.length === 0) {
+      return <p className="text-red-500">No conservation guidelines available</p>;
+    }
+
     const guidelinesToShow = showFullConservation ? guidelines : guidelines.slice(0, 2);
     return (
       <div>
@@ -67,18 +104,19 @@ const ArtworkCard = ({ artwork }) => {
   };
 
   const renderTaxonomy = (taxonomy) => {
+    if (!taxonomy || taxonomy.length === 0) {
+      return <p className="text-red-500">No taxonomy available</p>;
+    }
+
     return taxonomy.map((entry, index) => (
       <div key={index} className="mb-4">
-        {/* Show button only if there are subheadings */}
         {entry.subHeadings && entry.subHeadings.length > 0 && (
           <button
             onClick={() => toggleSection(`taxonomy-${index}`)}
             className="w-full flex justify-start items-center text-left font-bold text-gray-400"
           >
-            {/* Triangle toggle symbol */}
             <span
-              className={`mr-2 text-xl ${sections[`taxonomy-${index}`] ? '-rotate-90' : ''
-                }`}
+              className={`mr-2 text-xl ${sections[`taxonomy-${index}`] ? '-rotate-90' : ''}`}
               style={{
                 display: 'inline-block',
                 width: 0,
@@ -92,7 +130,6 @@ const ArtworkCard = ({ artwork }) => {
           </button>
         )}
 
-        {/* Render content with subheadings only if it's toggled on */}
         {sections[`taxonomy-${index}`] && (
           <div className="mt-2">
             {entry.subHeadings.map((subHeading, subIndex) => (
@@ -114,26 +151,27 @@ const ArtworkCard = ({ artwork }) => {
   };
 
 
+  if (!artwork) {
+    return <div>Loading...</div>; // Or some other loading indicator
+  }
+
   return (
     <div className="flex flex-col">
       {/* Title and Basic Info */}
-      <div className='flex justify-between'>
-        <span className="font-semibold text-2xl text-black mr-4 font-['Roboto_Condensed']">{artwork.title}</span>
-        <button
-          onClick={() => alert('Placeholder: Clicked to add to canvas!')}
-          className="flex items-center justify-center w-8 h-8 bg-brand text-white hover:bg-brandhover transition-colors"
-          title="Click to add to canvas"
-        >
-          +
-        </button>
+      <div className="flex justify-between">
+        <span className="font-semibold text-2xl text-black mr-4 font-['Roboto_Condensed']">{artwork["Artwork Title"] || "Untitled"}</span>
       </div>
-      <span className="font-normal text-lg text-brand mr-4 font-['Roboto']">{artwork.artist_name}</span>
+      <span className="font-normal text-lg text-brand mr-4 font-['Roboto']">{artwork["Artist Name"] || "Unknown Artist"}</span>
       <span className="font-normal text-lg text-gray-400 mr-4 font-['Roboto']">
-        {artwork.date_of_creation}, {artwork.geographical_association}
+        {artwork[" Dating"] || "Unknown Date"}, {artwork["Geographical Association "] || "Unknown Location"}
       </span>
 
       {/* Artwork Image */}
-      <img src={artwork.image} alt={artwork.title} className="w-full max-w-[400px] mb-4 mx-auto" />
+      <img
+        src={artwork.Image !== "#VALUE!" ? artwork.Image : "placeholder-image-url.jpg"}
+        alt={artwork["Artwork Title"] || "Untitled Artwork"}
+        className="w-full max-w-[400px] mb-4 mx-auto"
+      />
 
       {/* Scrollable Content Section */}
       <div className="h-full overflow-y-auto mb-4">
@@ -141,7 +179,10 @@ const ArtworkCard = ({ artwork }) => {
         <div className="mb-4">
           <span className="font-semibold text-gray-400 mr-8 w-32">Description</span>
           <p className="text-lg">
-            {showFullDescription ? artwork.description : `${artwork.description.slice(0, 100)}...`}
+            {showFullDescription
+              ? (artwork["Artwork Description "] || "No description available.")
+              : (artwork["Artwork Description "] ? artwork["Artwork Description "].slice(0, 100) : "No description available.")
+            }
           </p>
           <button
             onClick={toggleDescription}
@@ -150,11 +191,12 @@ const ArtworkCard = ({ artwork }) => {
           </button>
         </div>
 
-        {renderSection('Medium of Artwork', artwork.material)}
-        {renderSection('Dimensions of Artwork', artwork.dimensions)}
-        {renderSection('Display Type', artwork.display_type)}
-        {renderSection('Geographical Association', artwork.geographical_association)}
-        {renderSection('Acquisition Type', artwork.acquisition_type)}
+        {/* Render sections with "See More" toggle */}
+        {renderSection('Medium of Artwork', artwork["Material"] || "Unknown Material", toggleMedium, showFullMedium)}
+        {renderSection('Dimensions of Artwork', artwork["Dimension"] || "N/A", toggleDimension, showFullDimension)}
+        {renderSection('Display Type', artwork["Display Type"] || "N/A")}
+        {renderSection('Geographical Association', artwork["Geographical Association"] || "N/A")}
+        {renderSection('Acquisition Type', artwork["Acquisition Type"] || "N/A")}
 
         {/* Additional Details Section */}
         <div className="mb-4 border border-gray-300 rounded p-4">
@@ -171,9 +213,9 @@ const ArtworkCard = ({ artwork }) => {
           </button>
           {sections.additionalDetails && (
             <div className="mt-4">
-              {renderSection('Historical Significance', artwork.historical_significance)}
-              {renderSection('Style Significance', artwork.style_significance)}
-              {renderSection('Exhibition Utilization', artwork.exhibition_utilisation)}
+              {renderSection('Historical Significance', artwork["Historical Significance"] || "N/A", toggleHistoricalSignificance, showFullHistoricalSignificance)}
+              {renderSection('Style Significance', artwork["Style Significance"] || "N/A", toggleStyleSignificance, showFullStyleSignificance)}
+              {renderSection('Exhibition Utilization', artwork["Exhibition Utilisation "] || "N/A", toggleExhibitionUtilization, showFullExhibitionUtilization)}
             </div>
           )}
         </div>
@@ -193,7 +235,7 @@ const ArtworkCard = ({ artwork }) => {
           </button>
           {sections.conservation && (
             <div className="mt-4">
-              {renderConservationGuidelines(artwork.conservation_guidelines)}
+              {renderConservationGuidelines(artwork.conservation_guidelines || [])}
             </div>
           )}
         </div>

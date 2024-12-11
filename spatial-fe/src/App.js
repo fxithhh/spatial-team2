@@ -43,7 +43,7 @@ function App() {
           <Route index element={<ExhibitsList />} /> {/* Default route for "/" */}
           <Route path="/exhibitions" element={<ExhibitsList />} />
           <Route path="/create-exhibit" element={<CreateExhibit />} />
-          <Route path="/exhibitions/:id" element={<ExhibitDesign />} />
+          <Route path="/exhibitions/:exhibitId" element={<ExhibitDesign />} />
           <Route path="/guidelines" element={<Guidelines />} />
         </Routes>
       </div>

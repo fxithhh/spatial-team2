@@ -1,18 +1,19 @@
+from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags, generate_visual_context, convert_image_to_jpeg, load_vectorstore_from_mongo
+from .read_excel import process_excel_file
+from io import BytesIO
 from application import app, mongo, db
 from flask import request, jsonify, Blueprint, render_template, redirect
 from dotenv import load_dotenv
 import os
-import json, base64
+import json
+import base64
 from bson import ObjectId
 from pymongo import MongoClient
 load_dotenv()
-from io import BytesIO
 
 MONGO_URI = os.getenv("MONGO_URI")
 API_KEY = os.getenv("API_KEY")
-#import the func from openai_api.py
-from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags,generate_visual_context, convert_image_to_jpeg, load_vectorstore_from_mongo
-from .read_excel import process_excel_file
+# import the func from openai_api.py
 
 api = Blueprint('api', __name__)
 mongo_client = MongoClient(MONGO_URI)
@@ -23,15 +24,20 @@ taxonomy_artworks_collection = db.TaxonomyArtworks
 create_exhibits = db.Bulkuploads
 
 # Home route to render the HTML form
+
+
 @app.route("/")
 def home():
     return redirect('/view_graph')
+
 
 @app.route('/favicon.ico')
 def favicon():
     return app.send_static_file('favicon.ico')
 
 # Route to handle JSON file upload and store it in MongoDB
+
+
 @app.route("/upload_json", methods=["POST"])
 def upload_json():
     # Check if the request is JSON
@@ -49,7 +55,8 @@ def upload_json():
         if image_data:
             try:
                 print("Debug: Processing image data.")
-                base64_data = image_data.split(",")[1] if "," in image_data else image_data
+                base64_data = image_data.split(
+                    ",")[1] if "," in image_data else image_data
                 image_binary = base64.b64decode(base64_data, validate=True)
                 print("Debug: Image data decoded successfully.")
 
@@ -60,7 +67,8 @@ def upload_json():
                 print("Debug: Image successfully converted to JPEG.")
 
                 # Encode back to Base64
-                compressed_image_base64 = base64.b64encode(compressed_image).decode("utf-8")
+                compressed_image_base64 = base64.b64encode(
+                    compressed_image).decode("utf-8")
                 print("Debug: Image re-encoded to Base64.")
             except Exception as e:
                 print(f"Debug: Image processing error: {e}")
@@ -70,9 +78,11 @@ def upload_json():
             compressed_image_base64 = None
 
         # Prepare metadata without the image
-        metadata_without_image = {key: value for key, value in original_metadata.items() if key != "image"}
+        metadata_without_image = {
+            key: value for key, value in original_metadata.items() if key != "image"}
         print("Debug: Metadata without image:", metadata_without_image)
-        print(f"API_KEY: {'Set' if API_KEY else 'Not Set'}: {API_KEY[:4]}****{API_KEY[-4:]}" if API_KEY else "API_KEY is Not Set")
+        print(
+            f"API_KEY: {'Set' if API_KEY else 'Not Set'}: {API_KEY[:4]}****{API_KEY[-4:]}" if API_KEY else "API_KEY is Not Set")
 
         # Generate conservation feedback
         try:
@@ -99,14 +109,15 @@ def upload_json():
                     tax_template=tax_template,
                     model="gpt-4o"
                 )
-                print("Debug: OpenAI taxonomy feedback received:", taxonomy_feedback)
+                print("Debug: OpenAI taxonomy feedback received:",
+                      taxonomy_feedback)
             except Exception as e:
                 print(f"Debug: OpenAI API error (taxonomy): {e}")
                 return jsonify({"error": "Failed to process data with OpenAI for taxonomy feedback"}), 500
         else:
             print("Debug: Skipping taxonomy feedback generation (no image data).")
             taxonomy_feedback = None
-        
+
           # Generate visual_context if image data is present
         if image_data:
             try:
@@ -158,6 +169,7 @@ def upload_json():
         print(f"Debug: Unexpected error: {e}")
         return jsonify({"error": "Failed to process JSON object"}), 500
 
+
 @app.route("/bulk_upload", methods=["POST"])
 def bulk_upload():
     try:
@@ -187,7 +199,8 @@ def bulk_upload():
         images = {}
         for key, file in request.files.items():
             try:
-                print(f"Processing file: {file.filename} (key: {key}, type: {file.content_type})")
+                print(
+                    f"Processing file: {file.filename} (key: {key}, type: {file.content_type})")
                 if key != "artwork_list" and file.content_type.startswith("image/"):
                     images[key] = handle_image_upload(file)
                     print(f"Image {file.filename} processed successfully.")
@@ -214,7 +227,8 @@ def bulk_upload():
                 form_data["artworks"] = processed_data["data"]
                 form_data["excel_images"] = processed_data["images"]
 
-                print(f"Excel file {artwork_file.filename} processed successfully.")
+                print(
+                    f"Excel file {artwork_file.filename} processed successfully.")
             except Exception as e:
                 print(f"Error processing artwork Excel file: {str(e)}")
                 return jsonify({"error": f"Error processing artwork Excel file: {str(e)}"}), 400
@@ -225,33 +239,41 @@ def bulk_upload():
             for idx, row in enumerate(processed_data["data"]):
                 try:
                     print(f"Calling OpenAI API for row {idx}")
-                    
+
                     # Get the image data
                     embedded_image = row.get("embedded_image", "")
                     if not embedded_image:
-                        print(f"No embedded image for row {idx}. Skipping row.")
+                        print(
+                            f"No embedded image for row {idx}. Skipping row.")
                         row["error"] = "No embedded image."
                         continue
 
                     # Convert to JPEG format
-                    embedded_image = convert_image_to_jpeg(embedded_image, return_base64=True)
+                    embedded_image = convert_image_to_jpeg(
+                        embedded_image, return_base64=True)
                     if not embedded_image:
-                        print(f"Failed to convert image to JPEG for row {idx}.")
+                        print(
+                            f"Failed to convert image to JPEG for row {idx}.")
                         row["error"] = "Image conversion to JPEG failed."
                         continue
 
                     # Debug: Log the image being sent to GPT
-                    print(f"Debug: Row {idx} image being sent to GPT: {embedded_image[:50]}... (truncated)")
+                    print(
+                        f"Debug: Row {idx} image being sent to GPT: {embedded_image[:50]}... (truncated)")
 
                     # Call OpenAI APIs
-                    row["conservation_guidelines"] = generate_response_conservation(row)
-                    row["taxonomy_tags"] = generate_taxonomy_tags(row, embedded_image, {}, "gpt-4o")
-                    row["visual_context"] = generate_visual_context(row, embedded_image, {}, "gpt-4o")
+                    row["conservation_guidelines"] = generate_response_conservation(
+                        row)
+                    row["taxonomy_tags"] = generate_taxonomy_tags(
+                        row, embedded_image, {}, "gpt-4o")
+                    row["visual_context"] = generate_visual_context(
+                        row, embedded_image, {}, "gpt-4o")
                     print(f"OpenAI metadata generated for row {idx}")
                 except Exception as e:
-                    print(f"Error generating OpenAI metadata for row {idx}: {str(e)}")
+                    print(
+                        f"Error generating OpenAI metadata for row {idx}: {str(e)}")
                     row["error"] = f"OpenAI metadata generation failed: {str(e)}"
-                    
+
         # Insert the form data into MongoDB
         try:
             print("Inserting data into MongoDB...")
@@ -266,6 +288,7 @@ def bulk_upload():
         return jsonify({
             "message": "Form submitted successfully",
             "data": form_data,
+            "exhibitId": str(result.inserted_id)
         }), 201
 
     except Exception as e:
@@ -277,21 +300,27 @@ def bulk_upload():
 @app.route('/api/exhibit/<string:exhibit_id>', methods=['GET'])
 def get_exhibit(exhibit_id):
     try:
-        # Fetch exhibit data by _id
-        exhibit = create_exhibits.find_one({"_id": exhibit_id})
+        # Validate if the exhibit_id is a valid ObjectId
+        if not ObjectId.is_valid(exhibit_id):
+            return jsonify({"error": "Invalid exhibit ID format"}), 400
+
+        # Fetch exhibit data by _id (converted to ObjectId)
+        exhibit = create_exhibits.find_one({"_id": ObjectId(exhibit_id)})
         if not exhibit:
             return jsonify({"error": "Exhibit not found"}), 404
-        
-        # Convert MongoDB ObjectId to string (if needed)
+
+        # Convert ObjectId to string for JSON serialization
         exhibit["_id"] = str(exhibit["_id"])
-        
+
         # Return the exhibit data as JSON
         return jsonify(exhibit), 200
     except Exception as e:
-        print(e)
+        print(f"Error fetching exhibit: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
 # Helper: Handle image uploads
+
+
 def handle_image_upload(file):
     """Converts an image to Base64."""
     try:
@@ -300,13 +329,13 @@ def handle_image_upload(file):
     except Exception:
         raise ValueError("Invalid image file")
 
+
 def is_valid_base64(data):
     try:
         base64.b64decode(data, validate=True)
         return True
     except Exception:
         return False
-
 
 
 @app.route("/view_graph")
@@ -317,6 +346,8 @@ def view_graph():
     return render_template("artworks_graph_with_sliders.html")
 
 # New Route to Get Graph Data (if not already added)
+
+
 @app.route("/get_graph", methods=["GET"])
 def get_graph():
     """
@@ -324,10 +355,12 @@ def get_graph():
     """
     graph_data = db['ArtworksGraph'].find_one(sort=[('created_at', -1)])
     if graph_data:
-        graph_data["_id"] = str(graph_data["_id"])  # Convert ObjectId to string
+        # Convert ObjectId to string
+        graph_data["_id"] = str(graph_data["_id"])
         return jsonify(graph_data["graph"])
     else:
         return jsonify({"error": "Graph data not found"}), 404
+
 
 # Ensure that the Flask app runs only when executed directly
 if __name__ == "__main__":
