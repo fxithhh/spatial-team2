@@ -1,14 +1,39 @@
 import React, { useRef, useEffect, useState } from 'react';
 import p5 from 'p5';
+import { useParams } from 'react-router-dom'; // If you're using React Router
+// If not using React Router, ensure you have a way to get the exhibit ID
 
-function Canvas({ floorplanImage: propFloorplanImage, disabled = false }) {
-    // State to manage the uploaded image
-    const [uploadedImage, setUploadedImage] = useState(propFloorplanImage || null);
+function Canvas({ disabled = false }) {
+    const { exhibitId } = useParams(); 
+    const [uploadedImage, setUploadedImage] = useState(null);
     const sketchRef = useRef();
     const p5InstanceRef = useRef(null);
     const fileInputRef = useRef(null);
 
-    // Handle image upload via file input
+    // New: Fetch the floorplan image from the backend when the component mounts
+    useEffect(() => {
+        if (!exhibitId) return; // If no exhibitId in the URL, don't fetch
+
+        async function fetchFloorplan() {
+            try {
+                const response = await fetch(`http://localhost:5000/exhibits/${exhibitId}/floorplan`);
+                if (!response.ok) {
+                    console.error('Failed to load floorplan:', response.statusText);
+                    return;
+                }
+                const data = await response.json();
+                if (data.floor_plan) {
+                    setUploadedImage(data.floor_plan); // e.g. "data:image/png;base64,<encoded>"
+                } else {
+                    console.error('No floor_plan field found in response.');
+                }
+            } catch (error) {
+                console.error('Error fetching floorplan:', error);
+            }
+        }
+
+        fetchFloorplan();
+    }, [exhibitId]);
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -72,27 +97,25 @@ function Canvas({ floorplanImage: propFloorplanImage, disabled = false }) {
             let narrowCorridorCells = []; // Cells to be marked as narrow corridors
             let wallsChanged = false; // Flag to indicate walls have changed
             let currentTool = 'wall'; // Initialize currentTool
-
+                        // Variables for scale input
+                        let scaleInput;
+                        let setScaleButton;
             p.preload = function () {
                 floorplanImg = p.loadImage(currentImage);
             };
 
             p.setup = function () {
-                floorplanImg = p.loadImage(currentImage, () => {
                     let aspectRatio = floorplanImg.width / floorplanImg.height;
-
                     let containerWidth = sketchRef.current.clientWidth;
                     let containerHeight = sketchRef.current.clientHeight;
                     let canvasWidth = containerWidth;
                     let canvasHeight = canvasWidth / aspectRatio;
-
                     if (canvasHeight > containerHeight) {
                         canvasHeight = containerHeight;
                         canvasWidth = canvasHeight * aspectRatio;
                     }
 
                     p.createCanvas(canvasWidth, canvasHeight);
-
                     imgWidth = canvasWidth;
                     imgHeight = canvasHeight;
 
@@ -104,11 +127,45 @@ function Canvas({ floorplanImage: propFloorplanImage, disabled = false }) {
                     calculateExtremeEdges();
                     findLargestSquareRectangle();
 
-                    // Create the button after canvas is created
-                    findSecludedAreaButton = p.createButton('Find Most Secluded Area');
-                    findSecludedAreaButton.position(10, p.height + 10);
-                    findSecludedAreaButton.mousePressed(findMostSecludedArea);
+                // Create the input field and button for scale definition
+                scaleInput = p.createInput('');
+                scaleInput.position(10, p.height + 10);
+                scaleInput.size(150);
+                scaleInput.attribute('placeholder', 'Enter scale (cm)');
+
+                setScaleButton = p.createButton('Set Scale');
+                setScaleButton.position(scaleInput.x + scaleInput.width + 10, p.height + 10);
+                setScaleButton.mousePressed(() => {
+                    const scaleValue = parseFloat(scaleInput.value());
+                    if (isNaN(scaleValue) || scaleValue <= 0) {
+                        alert('Please enter a valid positive number for scale.');
+                        return;
+                    }
+                    // Define pixelsPerCm and proceed
+                    pixelsPerCm = mostSquareRect ? mostSquareRect.w / scaleValue : null;
+                    if (pixelsPerCm) {
+                        cellSizePx = cellSize * pixelsPerCm;
+                        defineGridFromExtremes();
+                        isScaleDefined = true;
+
+                        // Detect autowalls from the floorplan image
+                        detectAutowallsFromImage();
+
+                        wallsChanged = true;
+
+                        // Remove the image after processing
+                        showImage = false;
+                    } else {
+                        alert('Unable to define scale. Ensure the most square rectangle is detected.');
+                    }
                 });
+
+
+                // Create the "Find Most Secluded Area" button
+                findSecludedAreaButton = p.createButton('Find Most Secluded Area');
+                findSecludedAreaButton.position(10, p.height + 50);
+                findSecludedAreaButton.mousePressed(findMostSecludedArea);
+                ;
             };
 
             p.windowResized = function () {
@@ -170,7 +227,7 @@ function Canvas({ floorplanImage: propFloorplanImage, disabled = false }) {
                         p.textSize(16);
                         p.textAlign(p.LEFT, p.TOP);
                         p.text(
-                            '<-- Click to define size',
+                            '<-- Enter its real size below',
                             mostSquareRect.x + mostSquareRect.w + 10,
                             mostSquareRect.y
                         );
@@ -201,69 +258,6 @@ function Canvas({ floorplanImage: propFloorplanImage, disabled = false }) {
                 }
             };
 
-            p.mousePressed = function () {
-                if (disabled) return;
-                if (mostSquareRect && !isScaleDefined) {
-                    if (
-                        p.mouseX >= mostSquareRect.x &&
-                        p.mouseX <= mostSquareRect.x + mostSquareRect.w &&
-                        p.mouseY >= mostSquareRect.y &&
-                        p.mouseY <= mostSquareRect.y + mostSquareRect.h
-                    ) {
-                        let realDistance = prompt(
-                            'Enter the actual width of the highlighted square pillar in centimeters:'
-                        );
-                        if (realDistance) {
-                            realDistance = parseFloat(realDistance);
-                            if (!isNaN(realDistance) && realDistance > 0) {
-                                let pixelDistance = mostSquareRect.w;
-                                pixelsPerCm = pixelDistance / realDistance;
-                                cellSizePx = cellSize * pixelsPerCm;
-                                defineGridFromExtremes();
-                                isScaleDefined = true;
-
-                                // Detect autowalls from the floorplan image
-                                detectAutowallsFromImage();
-
-                                wallsChanged = true;
-
-                                // Remove the image after processing
-                                showImage = false;
-                            }
-                        }
-                    }
-                } else if (isScaleDefined) {
-                    let gridPos = getGridPosition(p.mouseX, p.mouseY);
-                    if (gridPos) {
-                        let wall = getWallAt(gridPos.col, gridPos.row);
-                        if (wall) {
-                            if (wall.type === 'autoWall') {
-                                // Do not allow interaction with auto-detected walls
-                                currentWall = null;
-                            } else {
-                                currentWall = wall;
-                                isResizing = checkResizeHandle(p.mouseX, p.mouseY, currentWall);
-                                if (!isResizing) {
-                                    offsetX = gridPos.col - currentWall.x;
-                                    offsetY = gridPos.row - currentWall.y;
-                                }
-                            }
-                        } else {
-                            isDrawing = true;
-                            currentWall = {
-                                x: gridPos.col,
-                                y: gridPos.row,
-                                w: 1,
-                                h: 1,
-                                type: currentTool,
-                            };
-                            walls.push(currentWall);
-                        }
-                    } else {
-                        currentWall = null;
-                    }
-                }
-            };
 
             p.mouseDragged = function () {
                 if (disabled) return;

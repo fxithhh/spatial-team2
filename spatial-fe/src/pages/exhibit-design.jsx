@@ -5,7 +5,6 @@ import { useParams } from 'react-router-dom';
 import Graph from '../components/Graph'; // Adjust the path if necessary
 import Breadcrumb from '../components/breadcrumb';
 import { ArrowsRightLeftIcon, ListBulletIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import Canvas from '../components/Canvas';
 import OverlayComponent from '../components/OverlayComponent';
 import ArtworkCard from '../components/artwork_card';
 import ImportArtWork from '../components/popups/import-artwork';
@@ -132,56 +131,13 @@ const ExhibitDetail = () => {
                 {/* Main View Area */}
                 <div className="flex w-3/4 bg-white relative border-black border-2">
                     {/* Main View */}
-                    <div className="flex-grow flex justify-center items-center p-4">
-                        {view === "connection" ? (
+                    <div className="flex-grow flex justify-center items-center p-2">
                             <OverlayComponent/>
-                        ) : (
-                            <Canvas floorplanImage={floorplanImage} />
-                        )}
-                    </div>
-
-                    {/* Switch View Button */}
-                    <div className='flex flex-row-reverse h-5'>
-                        <button
-                            onClick={toggleView}
-                            className="absolute top-0 right-0 bg-brand text-white px-4 py-2 rounded-0 transition flex items-center"
-                        >
-                            Switch View
-                            <ArrowsRightLeftIcon className='h-5 ml-2' />
-                        </button>
                     </div>
                 </div>
 
                 {/* Side Panel */}
                 <aside className="w-1/4 flex flex-col gap-y-10">
-                    {/* Preview Box */}
-                    <div className="w-full h-80 border-black border-2 flex justify-center items-center p-2 shadow-sm">
-                        {/* Option 1: Using Size Props */}
-                        {view === "connection" ? (
-                            <Canvas
-                                floorplanImage={floorplanImage}
-                                width="300px"  // Specify desired width
-                                height="200px" // Specify desired height
-                            />
-                        ) : (
-                            <Graph
-                                width="300px"  // Specify desired width
-                                height="500px%" // Specify desired height
-                            />
-                        )}
-
-                        {/* Option 2: Using CSS Transform Scale */}
-                        {/*
-                        <div className="transform scale-75 origin-top-left">
-                            {view === "connection" ? (
-                                <Canvas floorplanImage={floorplanImage} />
-                            ) : (
-                                <Graph />
-                            )}
-                        </div>
-                        */}
-                    </div>
-
                     {/* Settings Panel */}
                     <div className="flex-grow p-4 border-black border-2 overflow-y-auto">
                         {view === "connection" ? (

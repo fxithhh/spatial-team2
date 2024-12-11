@@ -20,9 +20,9 @@ function Graph({ width = '100%', height = '100%' }) {
   // Slider states
   const [visualThreshold, setVisualThreshold] = useState(4.0);
   const [narrativeThreshold, setNarrativeThreshold] = useState(6.0);
-  const [springLengthModulator, setSpringLengthModulator] = useState(1.0);
-  const [springStiffnessModulator, setSpringStiffnessModulator] = useState(1.0);
-  const [repulsionStrength, setRepulsionStrength] = useState(50);
+  const [springLengthModulator, setSpringLengthModulator] = useState(0.7);
+  const [springStiffnessModulator, setSpringStiffnessModulator] = useState(0.7);
+  const [repulsionStrength, setRepulsionStrength] = useState(25);
 
   // Manage instructions visibility
   const containerRef = useRef(null);
@@ -142,10 +142,10 @@ useEffect(() => {
         enabled: true,
         forceAtlas2Based: {
           gravitationalConstant: -repulsionStrength,
-          centralGravity: 0.0005,
+          centralGravity: 0,
           springLength: 100,
           springConstant: 0.1 * springStiffnessModulator,
-          damping: 0.4
+          damping: 1
         },
         solver: 'forceAtlas2Based',
         stabilization: { iterations: 50 }
@@ -157,7 +157,7 @@ useEffect(() => {
         multiselect: false,
         selectConnectedEdges: false
       },
-      nodes: { font: { size: 12 }, borderWidth: 1 }
+      nodes: { font: { size: 16 }, borderWidth: 1 }
     };
 
     networkInstanceRef.current = new Network(networkRef.current, data, options);
