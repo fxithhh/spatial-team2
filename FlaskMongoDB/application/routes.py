@@ -21,7 +21,7 @@ db = mongo_client.spatial
 
 artworks_collection = db.Artworks
 taxonomy_artworks_collection = db.TaxonomyArtworks
-create_exhibits = db.Bulkuploads
+create_exhibits = db.Exhibits
 
 # Home route to render the HTML form
 
@@ -154,8 +154,8 @@ def add_artwork():
         return jsonify({"error": "Failed to process JSON object"}), 500
 
 
-@app.route("/bulk_upload", methods=["POST"])
-def bulk_upload():
+@app.route("/create_exhibit", methods=["POST"])
+def create_exhibit():
     try:
         # Debug incoming form data and files
         print("Incoming form data:", request.form.to_dict())
@@ -281,7 +281,7 @@ def bulk_upload():
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 
-@app.route('/api/exhibit/<string:exhibit_id>', methods=['GET'])
+@app.route('/exhibit/<string:exhibit_id>', methods=['GET'])
 def get_exhibit(exhibit_id):
     try:
         # Validate if the exhibit_id is a valid ObjectId
@@ -302,9 +302,75 @@ def get_exhibit(exhibit_id):
         print(f"Error fetching exhibit: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
+@app.route('/exhibits', methods=['GET'])
+def get_exhibits():
+    try:
+        # Fetch all exhibits from the MongoDB collection
+        exhibits_cursor = create_exhibits.find()
+
+        # Convert the MongoDB cursor to a list of dictionaries
+        exhibits = []
+        for exhibit in exhibits_cursor:
+            exhibit["_id"] = str(exhibit["_id"])  # Convert ObjectId to string for JSON serialization
+
+            # Extract relevant fields
+            exhibit_title = exhibit.get("exhibit_title", "Untitled Exhibit")
+            concept = exhibit.get("concept", "")
+            subsections = exhibit.get("subsections", [])
+            images = exhibit.get("images", {})
+            floor_plan = images.get("floor_plan", None)
+
+            # Ensure floor_plan includes Base64 prefix if missing
+            if floor_plan and not floor_plan.startswith("data:image"):
+                floor_plan = f"data:image/png;base64,{floor_plan}"
+
+            artworks = [
+                {
+                    "title": artwork.get("Object Name/Title", "Untitled Artwork"),
+                    "artist": artwork.get("Artist/Producer", "Unknown Artist"),
+                    "dimension": artwork.get("Dimen", "Unknown Dimensions"),
+                    "material": artwork.get("Material", "Unknown Material"),
+                    "display type": artwork.get("Display_Type", "N/A"),
+                    "Geographical Association": artwork.get("Geog. Associ.", "N/A"),
+                    "Acquisition Type": artwork.get("Acq. Type", "N/A"),
+                    "Historical Significance": artwork.get("Hist Signi", "N/A"),
+                    "Style Significance": artwork.get("Style Signi", "N/A"),
+                    "Exhibition Utilization": artwork.get("Acq. Utilisation", "N/A"),
+                    "Conservation Guidelines": artwork.get("conservation_guidelines", "N/A"),
+                    "Taxonomy": artwork.get("taxonomy_tags", "N/A"),
+                    "image": f"data:image/png;base64,{artwork.get('embedded_image', '')}"
+                }
+                for artwork in exhibit.get("artworks", [])
+            ]
+
+            # Append processed exhibit to the list
+            exhibits.append({
+                "_id": exhibit["_id"],
+                "exhibit_title": exhibit_title,
+                "concept": concept,
+                "subsections": subsections,
+                "floor_plan": floor_plan,
+                "artworks": artworks,
+            })
+
+        # If no exhibits are found, return an appropriate message
+        if not exhibits:
+            return jsonify({"error": "No exhibits found"}), 404
+
+        # Log the fetched data for debugging
+        print("Fetched exhibits:", exhibits)
+
+        # Return the list of exhibits as JSON
+        return jsonify(exhibits), 200
+
+    except Exception as e:
+        print(f"Error fetching exhibits: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+
+
 # Helper: Handle image uploads
-
-
 def handle_image_upload(file):
     """Converts an image to Base64."""
     try:
