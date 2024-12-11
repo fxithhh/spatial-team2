@@ -1,14 +1,12 @@
+
+import base64
+import openpyxl
+from PIL import Image
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
-import base64
+import io
+from openpyxl_image_loader import SheetImageLoader
 
-# Standard Library Imports
-import base64
-
-# Third-Party Imports
-from openpyxl import load_workbook
-from openpyxl.utils.exceptions import InvalidFileException
-from io import BytesIO
 
 
 def process_excel_file(file):
@@ -18,82 +16,81 @@ def process_excel_file(file):
     try:
         # Load workbook from the uploaded file (file-like object)
         workbook = load_workbook(file, data_only=True)
+        
     except InvalidFileException:
         raise ValueError("Invalid Excel file format")
     except Exception as e:
         raise ValueError(f"Error loading Excel file: {str(e)}")
 
+   # Check if the sheet exists
+    sheet_name = "Output"
+    if sheet_name not in workbook.sheetnames:
+        raise ValueError(f"Sheet '{sheet_name}' not found in the workbook")
+    else:
+        output_sheet = workbook["Output"]
+    
+
     # Extract data and images from the workbook
-    extracted_data = extract_rows_and_images(workbook)
-    print("Debug: Extracted data from Excel file:", extracted_data)
-
-    # Separate tabular data and images
-    tabular_data = []
-    headers = workbook.active.iter_cols(min_row=1, max_row=1, values_only=True)
-    headers = [header[0] if header else "" for header in headers]
-
-    for idx, row in enumerate(extracted_data):
-        if "row_data" in row:
-            row_data = dict(zip(headers, row["row_data"]))
-            tabular_data.append(row_data)
-        if "image_base64" in row:
-            # Add embedded image data to the corresponding row, if applicable
-            row_index = row.get("row_index")
-            if row_index is not None and row_index < len(tabular_data):
-                tabular_data[row_index]["embedded_image"] = row["image_base64"]
-
-    # Extract standalone images
-    images = [row["image_base64"] for row in extracted_data if "image_base64" in row]
+    extracted_data,base64_image_ls = extract_rows_and_images(output_sheet)
 
     # Return as a dictionary
     result = {
-        "data": tabular_data,  # List of dictionaries representing the rows
-        "images": images       # List of standalone image Base64 strings
+        "data": extracted_data,  # List of dictionaries representing the rows
+        "images": base64_image_ls       # List of standalone image Base64 strings
     }
-    print("Debug: Processed data to be returned:", result)
+   
     return result
 
 
-def extract_rows_and_images(workbook):
+def extract_rows_and_images(sheet):
     """
     Extracts rows and images from the workbook and associates images with row metadata.
     """
     data = []
-    active_sheet = workbook.active
-
+    active_sheet = sheet
+    
     # Extract rows from the active sheet
     for idx, row in enumerate(active_sheet.iter_rows(min_row=2, values_only=True)):
         data.append({"row_data": list(row), "row_index": idx})
+    
+    base64_image_ls = []
 
-    # Extract images with debugging
-    if hasattr(active_sheet, "_images") and active_sheet._images:
-        print(f"Found {len(active_sheet._images)} images in the sheet.")
-        for img_obj in active_sheet._images:
+    # # Check all cells for images
+    for row_idx, row in enumerate(sheet.iter_rows(min_row=2, max_col=sheet.max_column, max_row=sheet.max_row)):
+        for cell in row:
+            cell_coord = cell.coordinate
             try:
-                # Debugging: Type of img_obj.ref
-                print(f"Image type: {type(img_obj.ref)}")
-                
-                img_data = img_obj.ref
+                # Attempt to retrieve the image
+                image_loader = SheetImageLoader(sheet)
+                image = image_loader.get(cell_coord)
+                # Convert the image to bytes
+                img_buffer = io.BytesIO()  # Create an in-memory buffer
+                image.save(img_buffer, format='PNG')  # Save the image in PNG format to the buffer
+                img_buffer.seek(0)  # Move the pointer to the start of the buffer
+                image_base64 = base64.b64encode(img_buffer.getvalue()).decode("utf-8")  # Encode in base64
+                base64_image_ls.append(image_base64)
+                # Locate the row in `data` and overwrite the corresponding cell with base64
+                for entry in data:
+                    if entry['row_index'] == row_idx:  # Match the row index
+                        column_idx = cell.column - 1  # Convert column letter to zero-based index
+                        entry['row_data'].pop(column_idx)
+                        break
 
-                # Convert BytesIO to bytes if necessary
-                if isinstance(img_data, BytesIO):
-                    img_data.seek(0)
-                    img_data = img_data.read()
-                    print("Image read from BytesIO.")
+            except ValueError:
+                # If no image is found, skip
+                pass
+      # After processing all cells for a row, check for invalid values
+        for entry in data:
+            if entry['row_index'] == row_idx:
+                count_invalid_values = sum(1 for value in entry['row_data'] if value in [0, None])
 
-                # Convert image to Base64
-                image_base64 = base64.b64encode(img_data).decode("utf-8")
-                print("Image converted to Base64.")
+                # Remove the row from `data` if there are more than 4 invalid values
+                if count_invalid_values > 4:
+                    data.remove(entry)
+        # Re-adjust the row indices after removal
+    for idx, entry in enumerate(data):
+        entry['row_index'] = idx  # Update the row_index to reflect the new position
 
-                # Append image metadata to row
-                if img_obj.anchor:
-                    cell_reference = img_obj.anchor._from
-                    row_index = cell_reference.row - 1
-                    data.append({"row_index": row_index, "image_base64": image_base64})
-                    print(f"Image associated with row {row_index}.")
-            except Exception as e:
-                print(f"Error extracting image: {str(e)}")
-    else:
-        print("No images found in the sheet.")
 
-    return data
+
+    return data,base64_image_ls
