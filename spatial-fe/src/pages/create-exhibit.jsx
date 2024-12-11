@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import 'reactjs-popup/dist/index.css';
 import { toast, ToastContainer } from "react-toastify";
-import config from "../data/config.json";
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 function CreateExhibit() {
@@ -97,7 +96,6 @@ function CreateExhibit() {
 
         console.log(formData);
         console.log("Title:", formData.exhibit_title);
-        // console.log("Description:", formData.description);
         console.log("Concept:", formData.concept);
         console.log("Floor Plan:", formData.floor_plan);
 
@@ -121,8 +119,7 @@ function CreateExhibit() {
 
         try {
             const formDataToSend = new FormData();
-            formDataToSend.append("exhibit_title", formData.exhibit_title); // Title
-            // formDataToSend.append("description", formData.description); // Description
+            formDataToSend.append("exhibit_title", formData.exhibit_title);
             formDataToSend.append("concept", formData.concept);
             formDataToSend.append("subsections", JSON.stringify(formData.subsections));
             formDataToSend.append("floor_plan", formData.floor_plan);
