@@ -270,9 +270,123 @@ function Canvas({ disabled = false }) {
             };
 
             // Remove the previous mousePressed interaction
-            // p.mousePressed = function () { ... }
+            p.mouseDragged = function () {
+                if (disabled) return;
+                if (isScaleDefined && currentWall) {
+                    let gridPos = getGridPosition(p.mouseX, p.mouseY);
+                    if (gridPos) {
+                        if (isDrawing) {
+                            currentWall.w = gridPos.col - currentWall.x + 1;
+                            currentWall.h = gridPos.row - currentWall.y + 1;
+                        } else if (isResizing) {
+                            resizeWall(gridPos);
+                        } else {
+                            moveWall(gridPos);
+                        }
+                    }
+                }
+            };
+            p.mousePressed = function () {
+                if (disabled) return;
+                if (mostSquareRect && !isScaleDefined) {
+                    if (
+                        p.mouseX >= mostSquareRect.x &&
+                        p.mouseX <= mostSquareRect.x + mostSquareRect.w &&
+                        p.mouseY >= mostSquareRect.y &&
+                        p.mouseY <= mostSquareRect.y + mostSquareRect.h
+                    ) {
+                        let realDistance = prompt(
+                            'Enter the actual width of the highlighted square pillar in centimeters:'
+                        );
+                        if (realDistance) {
+                            realDistance = parseFloat(realDistance);
+                            if (!isNaN(realDistance) && realDistance > 0) {
+                                let pixelDistance = mostSquareRect.w;
+                                pixelsPerCm = pixelDistance / realDistance;
+                                cellSizePx = cellSize * pixelsPerCm;
+                                defineGridFromExtremes();
+                                isScaleDefined = true;
+                                // Detect autowalls from the floorplan image
+                                detectAutowallsFromImage();
+                                wallsChanged = true;
+                                // Remove the image after processing
+                                showImage = false;
+                            }
+                        }
+                    }
+                } else if (isScaleDefined) {
+                    let gridPos = getGridPosition(p.mouseX, p.mouseY);
+                    if (gridPos) {
+                        let wall = getWallAt(gridPos.col, gridPos.row);
+                        if (wall) {
+                            if (wall.type === 'autoWall') {
+                                // Do not allow interaction with auto-detected walls
+                                currentWall = null;
+                            } else {
+                                currentWall = wall;
+                                isResizing = checkResizeHandle(p.mouseX, p.mouseY, currentWall);
+                                if (!isResizing) {
+                                    offsetX = gridPos.col - currentWall.x;
+                                    offsetY = gridPos.row - currentWall.y;
+                                }
+                            }
+                        } else {
+                            isDrawing = true;
+                            currentWall = {
+                                x: gridPos.col,
+                                y: gridPos.row,
+                                w: 1,
+                                h: 1,
+                                type: currentTool,
+                            };
+                            walls.push(currentWall);
+                        }
+                    } else {
+                        currentWall = null;
+                    }
+                }
+            };
 
-            // Existing mouseDragged, mouseReleased, keyPressed functions remain unchanged
+            p.mouseReleased = function () {
+                if (disabled) return;
+                if (isDrawing) {
+                    adjustWallPositionAndSize(currentWall);
+                    isDrawing = false;
+                    wallsChanged = true; // Walls have changed
+                    // Keep currentWall selected
+                } else if (isResizing) {
+                    isResizing = false;
+                    wallsChanged = true; // Walls have changed
+                    resizeHandle = null;
+                    // Keep currentWall selected
+                } else if (currentWall) {
+                    wallsChanged = true; // Walls have changed
+                    // Keep currentWall selected
+                }
+            };
+
+            p.keyPressed = function () {
+                if (disabled) return;
+                if (p.key === 'E' || p.key === 'e') {
+                    currentTool = 'entrance';
+                } else if (p.key === 'F' || p.key === 'f') {
+                    currentTool = 'fireEscape';
+                } else if (p.key === 'W' || p.key === 'w') {
+                    currentTool = 'wall';
+                } else if (p.keyCode === p.BACKSPACE || p.keyCode === p.DELETE) {
+                    if (currentWall && currentWall.type !== 'autoWall') {
+                        // Remove the wall
+                        walls.splice(walls.indexOf(currentWall), 1);
+                        wallsChanged = true; // Walls have changed
+                        currentWall = null; // Deselect the wall
+                    }
+                }
+            };
+            p._mousePressedOrig = p.mousePressed;
+p._mouseDraggedOrig = p.mouseDragged;
+p._mouseReleasedOrig = p.mouseReleased;
+p._keyPressedOrig = p.keyPressed;
+
 
             // ====================
             // Improved Rectangle Detection
@@ -1319,7 +1433,7 @@ function Canvas({ disabled = false }) {
     }, [disabled]);
 
     return (
-        <div className="relative w-full h-full border-2 border-gray-300">
+        <div className="relative w-full h-full">
             {/* p5.js Sketch Container */}
             <div ref={sketchRef} className="w-full h-full"></div>
 

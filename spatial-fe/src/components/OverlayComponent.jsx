@@ -6,7 +6,7 @@ function OverlayComponent() {
     // 0: Floorplan Only
     // 1: Graph Over Floorplan
     // 2: Graph Only (default)
-    const [viewMode, setViewMode] = useState(2);
+    const [viewMode, setViewMode] = useState(0);
 
     const hideFloorplan = viewMode === 2;
     const showGraphOnTop = viewMode >= 1;

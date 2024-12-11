@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Network, DataSet } from 'vis-network/standalone/esm/vis-network';
 import 'vis-network/styles/vis-network.css';
-import './Graph.css'; // Optional: Create this file for additional styling
+import './Graph.css'; // Ensure this contains the necessary styles
+import { FaInfoCircle } from 'react-icons/fa'; // Importing the info icon
 
 function Graph({ width = '100%', height = '100%' }) {
   const networkRef = useRef(null);
@@ -30,14 +31,17 @@ function Graph({ width = '100%', height = '100%' }) {
   const isHeightLargeRef = useRef(true); // To track previous state
   const [hiddenNodes, setHiddenNodes] = useState([]);
 
-  //toggle for node shape to become image
+  // Toggle for node shape to become image
   const [useImageNodes, setUseImageNodes] = useState(false);
+
+  // New state for showing instructions
+  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = event => {
       if ((event.key === 'i' || event.key === 'I')) {
         setUseImageNodes(prev => !prev);
-  
+
         const updatedNodes = networkInstanceRef.current.body.data.nodes.getIds().map(id => {
           const node = networkInstanceRef.current.body.data.nodes.get(id);
           return {
@@ -49,33 +53,36 @@ function Graph({ width = '100%', height = '100%' }) {
         networkInstanceRef.current.body.data.nodes.update(updatedNodes);
       }
     };
-  
+
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [useImageNodes]);
-  
 
-useEffect(() => {
-  const handleKeyDown = event => {
-    if ((event.key === 'h' || event.key === 'H') && selectedNodeId !== null) {
-      const node = networkInstanceRef.current.body.data.nodes.get(selectedNodeId);
-      if (node) {
-        // If already hidden, unhide
-        if (hiddenNodes.some(n => n.id === selectedNodeId)) {
-          setHiddenNodes(hiddenNodes.filter(n => n.id !== selectedNodeId));
-          networkInstanceRef.current.body.data.nodes.add(node);
-        } else {
-          // Hide it
-          setHiddenNodes([...hiddenNodes, node]);
-          networkInstanceRef.current.body.data.nodes.remove(selectedNodeId);
+  useEffect(() => {
+    const handleKeyDown = event => {
+      if ((event.key === 'h' || event.key === 'H') && selectedNodeId !== null) {
+        const node = networkInstanceRef.current.body.data.nodes.get(selectedNodeId);
+        if (node) {
+          // If already hidden, unhide
+          if (hiddenNodes.some(n => n.id === selectedNodeId)) {
+            setHiddenNodes(hiddenNodes.filter(n => n.id !== selectedNodeId));
+            networkInstanceRef.current.body.data.nodes.add(node);
+          } else {
+            // Hide it
+            setHiddenNodes([...hiddenNodes, node]);
+            networkInstanceRef.current.body.data.nodes.remove(selectedNodeId);
+          }
         }
       }
-    }
-  };
-  document.addEventListener('keydown', handleKeyDown);
-  return () => document.removeEventListener('keydown', handleKeyDown);
-}, [selectedNodeId, hiddenNodes]);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedNodeId, hiddenNodes]);
 
+  // Initialize showInstructions based on isHeightLarge
+  useEffect(() => {
+    setShowInstructions(isHeightLarge);
+  }, [isHeightLarge]);
 
   // Update ref when state changes
   useEffect(() => {
@@ -129,101 +136,100 @@ useEffect(() => {
       });
   }, []);
 
-// Replace the existing initialization useEffect with one that only depends on allNodes and allEdges:
+  // Replace the existing initialization useEffect with one that only depends on allNodes and allEdges:
+  useEffect(() => {
+    if (networkRef.current && allNodes.length > 0 && allEdges.length > 0 && !networkInstanceRef.current) {
+      const nodes = new DataSet(allNodes);
+      const edges = new DataSet();
+      const data = { nodes, edges };
 
-useEffect(() => {
-  if (networkRef.current && allNodes.length > 0 && allEdges.length > 0 && !networkInstanceRef.current) {
-    const nodes = new DataSet(allNodes);
-    const edges = new DataSet();
-    const data = { nodes, edges };
-
-    const options = {
-      physics: {
-        enabled: true,
-        forceAtlas2Based: {
-          gravitationalConstant: -repulsionStrength,
-          centralGravity: 0,
-          springLength: 100,
-          springConstant: 0.1 * springStiffnessModulator,
-          damping: 1
+      const options = {
+        physics: {
+          enabled: true,
+          forceAtlas2Based: {
+            gravitationalConstant: -repulsionStrength,
+            centralGravity: 0,
+            springLength: 100,
+            springConstant: 0.1 * springStiffnessModulator,
+            damping: 1
+          },
+          solver: 'forceAtlas2Based',
+          stabilization: { iterations: 50 }
         },
-        solver: 'forceAtlas2Based',
-        stabilization: { iterations: 50 }
-      },
-      edges: { smooth: false },
-      interaction: {
-        hover: true,
-        tooltipDelay: 200,
-        multiselect: false,
-        selectConnectedEdges: false
-      },
-      nodes: { font: { size: 16 }, borderWidth: 1 }
-    };
+        edges: { smooth: false },
+        interaction: {
+          hover: true,
+          tooltipDelay: 200,
+          multiselect: false,
+          selectConnectedEdges: false
+        },
+        nodes: { font: { size: 16 }, borderWidth: 1 }
+      };
 
-    networkInstanceRef.current = new Network(networkRef.current, data, options);
+      networkInstanceRef.current = new Network(networkRef.current, data, options);
 
-    networkInstanceRef.current.on('click', params => {
-      if (params.nodes.length > 0) {
-        setSelectedNodeId(params.nodes[0]);
-        highlightSelectedNode(networkInstanceRef.current, params.nodes[0]);
-      } else {
-        setSelectedNodeId(null);
-        clearNodeHighlights(networkInstanceRef.current);
-      }
-    });
+      networkInstanceRef.current.on('click', params => {
+        if (params.nodes.length > 0) {
+          setSelectedNodeId(params.nodes[0]);
+          highlightSelectedNode(networkInstanceRef.current, params.nodes[0]);
+        } else {
+          setSelectedNodeId(null);
+          clearNodeHighlights(networkInstanceRef.current);
+        }
+      });
 
+      const handleKeyDown = event => {
+        if ((event.key === 'f' || event.key === 'F') && selectedNodeId !== null) {
+          toggleNodeFixed(selectedNodeId, networkInstanceRef.current);
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        if (networkInstanceRef.current) {
+          networkInstanceRef.current.destroy();
+          networkInstanceRef.current = null;
+        }
+      };
+    }
+  }, [allNodes, allEdges]);
+
+  // Keep other effects for updating physics and edges separate and do not include all initialization dependencies there.
+  useEffect(() => {
     const handleKeyDown = event => {
       if ((event.key === 'f' || event.key === 'F') && selectedNodeId !== null) {
         toggleNodeFixed(selectedNodeId, networkInstanceRef.current);
       }
     };
+
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      if (networkInstanceRef.current) {
-        networkInstanceRef.current.destroy();
-        networkInstanceRef.current = null;
-      }
     };
-  }
-}, [allNodes, allEdges]);
+  }, [selectedNodeId]);
 
-// Keep other effects for updating physics and edges separate and do not include all initialization dependencies there.
-
-useEffect(() => {
-  const handleKeyDown = event => {
-    if ((event.key === 'f' || event.key === 'F') && selectedNodeId !== null) {
-      toggleNodeFixed(selectedNodeId, networkInstanceRef.current);
-    }
-  };
-
-  document.addEventListener('keydown', handleKeyDown);
-
-  return () => {
-    document.removeEventListener('keydown', handleKeyDown);
-  };
-}, [selectedNodeId]);
-useEffect(() => {
-  if (networkInstanceRef.current) {
-    networkInstanceRef.current.on('dragStart', params => {
-      if (params.nodes.length === 1) {
-        networkInstanceRef.current.body.data.nodes.update({ id: params.nodes[0], fixed: false });
-      }
-    });
-
-    networkInstanceRef.current.on('dragEnd', params => {
-      if (params.nodes.length === 1) {
-        const nodeId = params.nodes[0];
-        const node = networkInstanceRef.current.body.data.nodes.get(nodeId);
-        // If node was fixed (orange), refix it after drag
-        if (node && node.color === 'orange') {
-          networkInstanceRef.current.body.data.nodes.update({ id: nodeId, fixed: { x: true, y: true } });
+  useEffect(() => {
+    if (networkInstanceRef.current) {
+      networkInstanceRef.current.on('dragStart', params => {
+        if (params.nodes.length === 1) {
+          networkInstanceRef.current.body.data.nodes.update({ id: params.nodes[0], fixed: false });
         }
-      }
-    });
-  }
-}, [selectedNodeId]);
+      });
+
+      networkInstanceRef.current.on('dragEnd', params => {
+        if (params.nodes.length === 1) {
+          const nodeId = params.nodes[0];
+          const node = networkInstanceRef.current.body.data.nodes.get(nodeId);
+          // If node was fixed (orange), refix it after drag
+          if (node && node.color === 'orange') {
+            networkInstanceRef.current.body.data.nodes.update({ id: nodeId, fixed: { x: true, y: true } });
+          }
+        }
+      });
+    }
+  }, [selectedNodeId]);
 
   // Update edges based on sliders
   useEffect(() => {
@@ -381,14 +387,29 @@ useEffect(() => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-      <div ref={containerRef} style={{ width, height, position: 'relative' }}>
+      <div ref={containerRef} style={{ width, height, position: 'relative', marginBottom: '4rem' }}>
+        {/* "i" Icon for toggling instructions */}
+        <button
+          onClick={() => setShowInstructions(!showInstructions)}
+          className="info-button"
+          aria-label="Toggle Instructions"
+        >
+          <FaInfoCircle size={24} />
+        </button>
+
         {/* Conditionally Render Instructions */}
-        {isHeightLarge && (
+        {showInstructions && (
           <div
             id="instructions"
-            className="absolute top-0 left-0 right-0 p-4 bg-yellow-100 border border-yellow-300 rounded-b shadow-md z-10"
-            style={{ pointerEvents: 'none' }} // Allows interactions with underlying elements
+            className="instructions-panel"
           >
+            <button
+              onClick={() => setShowInstructions(false)}
+              className="close-button"
+              aria-label="Close Instructions"
+            >
+              &times;
+            </button>
             <strong>Instructions:</strong> Click on a node to select it, then press the <strong>F</strong> key to fix/unfix its position. You can drag fixed nodes by clicking and dragging; they will be temporarily unfixed during the drag and fixed again once you release. Press "h" to hide a node and press "i" to show nodes as images.
           </div>
         )}
@@ -400,27 +421,25 @@ useEffect(() => {
           style={{
             width: '100%',
             height: '100%',
-            border: '1px solid lightgray',
+            border: '0px solid lightgray',
             overflow: 'hidden'
           }}
         ></div>
       </div>
       <div className="hidden-nodes-container">
-      Hidden Nodes(Click to Unhide):
-  {hiddenNodes.map(node => (
-    <button 
-      key={node.id} 
-      onClick={() => {
-        setHiddenNodes(hiddenNodes.filter(n => n.id !== node.id));
-        networkInstanceRef.current.body.data.nodes.add(node);
-      }}
-    >
-      {node.label}
-    </button>
-  ))}
-</div>
-
-
+        Hidden Nodes (Click to Unhide):
+        {hiddenNodes.map(node => (
+          <button 
+            key={node.id} 
+            onClick={() => {
+              setHiddenNodes(hiddenNodes.filter(n => n.id !== node.id));
+              networkInstanceRef.current.body.data.nodes.add(node);
+            }}
+          >
+            {node.label}
+          </button>
+        ))}
+      </div>
 
       <h2 className="text-xl font-semibold mt-4">Artworks Connectivity Graph</h2>
 

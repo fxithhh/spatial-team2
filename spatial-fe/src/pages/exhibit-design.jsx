@@ -129,9 +129,9 @@ const ExhibitDetail = () => {
             {/* Main Content */}
             <div className="flex flex-grow gap-x-10 z-0">
                 {/* Main View Area */}
-                <div className="flex w-3/4 bg-white relative border-black border-2">
+                <div className="flex w-3/4 bg-white relative">
                     {/* Main View */}
-                    <div className="flex-grow flex justify-center items-center p-2">
+                    <div className="flex-grow flex justify-center items-center">
                             <OverlayComponent/>
                     </div>
                 </div>
