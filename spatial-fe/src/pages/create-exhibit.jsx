@@ -88,50 +88,74 @@ function CreateExhibit() {
         const { name, value } = e.target;
         setFormData((prevFormData) => ({
             ...prevFormData,
-            [name]: value,
+            [name]: value.trim(),
         }));
     };
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    // Validate required fields
-    if (!formData.exhibit_title || !formData.description || !formData.concept || !formData.floor_plan) {
-      toast.error("Please fill in all required fields and upload necessary files.");
-      return;
-    }
+        console.log(formData);
+        console.log("Title:", formData.exhibit_title);
+        // console.log("Description:", formData.description);
+        console.log("Concept:", formData.concept);
+        console.log("Floor Plan:", formData.floor_plan);
 
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("exhibit_title", formData.exhibit_title); // Title
-      formDataToSend.append("description", formData.description); // Description
-      formDataToSend.append("concept", formData.concept);
-      formDataToSend.append("subsections", JSON.stringify(formData.subsections));
-      formDataToSend.append("floor_plan", formData.floor_plan);
+        // Validate required fields
+        if (!formData.exhibit_title || !formData.concept || !formData.subsections || !formData.floor_plan || !fileName) {
+            toast.error("Please fill in all required fields and upload necessary files.");
+            return;
+        }
 
-      const response = await fetch('/api/exhibits', {
-        method: 'POST',
-        body: formDataToSend, // Let the browser handle multipart/form-data
-      });
+        // Validate file inputs
+        const artworkInput = document.getElementById("file-upload");
+        if (!artworkInput || !artworkInput.files[0]) {
+            toast.error("Please upload an artwork file.");
+            return;
+        }
 
-      if (response.ok) {
-        const result = await response.json();
-        toast.success('Exhibit created successfully!');
-        setLoading(true);
-        setTimeout(() => {
-          setLoading(false);
-          navigate(`/exhibitions/${result.exhibitId}`);
-        }, 1000);
-      } else {
-        const errorText = await response.text();
-        console.error('Failed to create exhibit:', errorText);
-        toast.error('Failed to create exhibit. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      toast.error('An unexpected error occurred. Please try again.');
-    }
-  };
+        if (!(formData.floor_plan instanceof File)) {
+            toast.error("Invalid floor plan file. Please re-upload.");
+            return;
+        }
+
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append("exhibit_title", formData.exhibit_title); // Title
+            // formDataToSend.append("description", formData.description); // Description
+            formDataToSend.append("concept", formData.concept);
+            formDataToSend.append("subsections", JSON.stringify(formData.subsections));
+            formDataToSend.append("floor_plan", formData.floor_plan);
+            formDataToSend.append("artwork_list", artworkInput.files[0]);
+
+            // Debug FormData
+            for (let pair of formDataToSend.entries()) {
+                console.log(`${pair[0]}:`, pair[1]);
+            }
+
+            const response = await fetch("http://localhost:5000/bulk_upload", {
+                method: 'POST',
+                body: formDataToSend, // Let the browser handle multipart/form-data
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                toast.success('Exhibit created successfully!');
+                setLoading(true);
+                setTimeout(() => {
+                    setLoading(false);
+                    navigate(`/exhibitions/${result.exhibitId}`);
+                }, 1000);
+            } else {
+                const errorText = await response.text();
+                console.error('Failed to create exhibit:', errorText, 'Status Code:', response.status);
+                toast.error(`Error ${response.status}: Failed to create exhibit. Please try again.`);
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            toast.error('An unexpected error occurred. Please try again.');
+        }
+    };
 
     if (loading) {
         return (

@@ -107,7 +107,6 @@ const ExhibitDetail = () => {
     }, [exhibitId]);
 
     if (error) return <p>Error: {error}</p>;
-    if (!exhibit) return <p>Exhibit Not Found.</p>;
 
     return (
         <div className="flex flex-col min-h-screen my-8 mx-12">
