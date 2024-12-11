@@ -89,12 +89,12 @@ def upload_json():
             print("Debug: Generating conservation feedback.")
             vectorstore = load_vectorstore_from_mongo()
             print("Debug: Vectorstore loaded successfully.")
-            openai_feedback = generate_response_conservation(
-                metadata=metadata_without_image,
-                vectorstore=vectorstore,
-                model="gpt-4o"
-            )
-            print("Debug: OpenAI conservation feedback received:", openai_feedback)
+           # openai_feedback = generate_response_conservation(
+            #    metadata=metadata_without_image,
+             #   vectorstore=vectorstore,
+              #  model="gpt-4o"
+            #)
+            #print("Debug: OpenAI conservation feedback received:", openai_feedback)
         except Exception as e:
             print(f"Debug: OpenAI API error (conservation): {e}")
             return jsonify({"error": "Failed to process data with OpenAI for conservation feedback"}), 500
@@ -103,14 +103,13 @@ def upload_json():
         if image_data:
             try:
                 print("Debug: Generating taxonomy feedback.")
-                taxonomy_feedback = generate_taxonomy_tags(
-                    metadata=metadata_without_image,
-                    image_data=compressed_image_base64,
-                    tax_template=tax_template,
-                    model="gpt-4o"
-                )
-                print("Debug: OpenAI taxonomy feedback received:",
-                      taxonomy_feedback)
+                #taxonomy_feedback = generate_taxonomy_tags(
+                 #   metadata=metadata_without_image,
+                  #  image_data=compressed_image_base64,
+                   # tax_template=tax_template,
+                    #model="gpt-4o"
+                #)
+                #print("Debug: OpenAI taxonomy feedback received:",taxonomy_feedback)
             except Exception as e:
                 print(f"Debug: OpenAI API error (taxonomy): {e}")
                 return jsonify({"error": "Failed to process data with OpenAI for taxonomy feedback"}), 500
@@ -236,6 +235,12 @@ def bulk_upload():
             form_data["artworks"] = processed_data["data"]
             form_data["excel_images"] = processed_data["images"]
 
+            #Structure Exhibition Related Info
+            exhibit_info = { 
+            "exhibit_title": exhibit_title,
+            "concept": concept,
+            "subsections": subsections}
+
             for idx, row in enumerate(processed_data["data"]):
                 try:
                     print(f"Calling OpenAI API for row {idx}")
@@ -262,12 +267,12 @@ def bulk_upload():
                         f"Debug: Row {idx} image being sent to GPT: {embedded_image[:50]}... (truncated)")
 
                     # Call OpenAI APIs
-                    row["conservation_guidelines"] = generate_response_conservation(
-                        row)
-                    row["taxonomy_tags"] = generate_taxonomy_tags(
-                        row, embedded_image, {}, "gpt-4o")
-                    row["visual_context"] = generate_visual_context(
-                        row, embedded_image, {}, "gpt-4o")
+                    # row["conservation_guidelines"] = generate_response_conservation(
+                    #     row)
+                    # row["taxonomy_tags"] = generate_taxonomy_tags(
+                    #     row, embedded_image, {},exhibit_info, "gpt-4o")
+                    # row["visual_context"] = generate_visual_context(
+                    #     row, embedded_image, {}, "gpt-4o")
                     print(f"OpenAI metadata generated for row {idx}")
                 except Exception as e:
                     print(

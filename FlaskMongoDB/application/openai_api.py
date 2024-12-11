@@ -55,17 +55,7 @@ def load_vectorstore_from_mongo(collection_name=COLLECTION_NAME):
     print(f"Vectorstore loaded from MongoDB collection '{collection_name}'.")
     return vectorstore
 
-# Predefined Exhibition Sections
-ex_sections = [
-    "Durational Performance and the Passage of Time",
-    "Art as Lived Experience",
-    "Resilience in Adversity",
-    "Acts of Resistance and Agency",
-    "Sense-Making in Crisis",
-    "Cultural Practices and the Everyday",
-    "Collective Strength in Individual Actions",
-    "Asian Perspectives on the Everyday"
-]
+
 
 # Define the base directory using pathlib
 BASE_DIR = Path(__file__).resolve().parent
@@ -77,8 +67,6 @@ taxonomy_path = BASE_DIR / 'taxonomy_picklist.json'
 try:
     with taxonomy_path.open("r", encoding="utf-8") as file:
         tax_template = json.load(file)
-        print(tax_template)
-    tax_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
     print("Taxonomy template loaded and updated successfully.")
 except FileNotFoundError:
     print(f"Taxonomy file not found at {taxonomy_path}. Please check the relative path.")
@@ -239,27 +227,45 @@ def convert_image_to_jpeg(image_input, output_format="JPEG", return_base64=False
         return None
 
 # Taxonomy Tagging Function
-def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o"):
+def generate_taxonomy_tags(metadata, image_data, tax_template,exhibit_form, model="gpt-4o"):
+
+    #Set Up Information from current exhibition
+    ex_sections = exhibit_form["subsections"]
+    ex_title = exhibit_form["exhibit_title"]
+    ex_concept = exhibit_form["concept"]
+    
+    tax_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
+
+
     # Call OpenAI API for taxonomy tagging
     taxonomy_response = client.chat.completions.create(
         model=model,
-        messages=[
-            {
-                "role": "system",
-                "content": "A system that generates taggings for museums based on the provided artwork image and its metadata. The system references an established artwork taxonomy to assign appropriate tags according to the provided categories and choices. Ensure that the answer should strictly adhere to the taxonomy JSON format provided."
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"Given the metadata in the image: {metadata} and the image information, assign its tagging according to this taxonomy format {tax_template}"
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{image_data}"
-                        },
+         messages=[
+      {
+  "role": "system",
+  "content": """
+  A system that generates taggings for museums based on the provided artwork image and its metadata. 
+          The system references an established artwork taxonomy to assign appropriate tags according to the provided categories and choices. 
+          Ensure that the answer should strictly adhere to the taxonomy JSON format provided.
+          
+          Utilise the artwork metadata, artwork image and exhibition information to aid in the tagging process.
+          """
+    },
+    {
+      "role": "user",
+      "content": [
+        {"type": "text", "text": f"""
+        Artwork Metadata: {metadata}  \n
+        Taxonomy Format: {tax_template} \n
+        Exhibition Information: {exhibit_form}
+        
+        
+        """},
+        {
+          "type": "image_url",
+          "image_url": {
+            "url":  f"data:image/jpeg;base64,{image_data}"
+          },
                     },
                 ]
             }
@@ -271,6 +277,84 @@ def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o"):
     # Extract response content
     tags_temp = taxonomy_response.choices[0].message.content
     tags = json.loads(tags_temp)
+
+    response_reccs = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+    "role": "system",
+    "content": """
+    
+    You are an expert museum curation assistant specializing in generating actionable insights and recommendations for artwork display, storytelling, and audience engagement. 
+    Using the provided metadata about an artwork, provide insightful recommendations for curators.
+    
+    **Input Metadata Template**:
+    - Title:
+    - Description: 
+    - Artist Name: 
+    - Date of Artwork: 
+    - Medium: 
+    - Dimensions: 
+    - Display Type: 
+    - Geographical Association: 
+    - Acquisition Type:
+    - Historical Significance: 
+    - Style Significance: 
+    - Exhibition Utilization:
+
+    **Reccomendation Categories**
+
+    1. **Lighting Requirements**: Suggest the type of lighting setup needed for optimal display, considering the artwork's medium, dimensions,exhibition utilization and material properties. 
+
+    2. **Display Suggestions**: Recommend ideal placements and configurations for the artwork. Include insights on orientation (e.g., vertical or horizontal), display type (e.g., wall-mounted, free-standing), and any spatial requirements.
+
+    3. **Storytelling Potential**: Highlight the key narrative or thematic elements of the artwork. Suggest how it can be integrated into broader exhibition themes or its potential as a centerpiece for storytelling.
+
+    4. **Emotional Connection Tags**: Analyze the artwork's description and visuals to provide precise tags that reflect its emotional resonance. Ensure that it is relevant to the exhibition concept, artwork description and its historical context.
+
+    5. **Historical Context**: Provide insights on the artwork's historical and cultural significance based on its creation date, artist, and any notable movements or events it reflects.
+
+
+
+    **Output Guidelines**:
+    - Output format should be in a json format, with title "Reccomendations" and in accordance to the Reccomendation Categories. 
+    - Generate the top 3 reccomendation for each category and place it in a list format mapped to its respective category
+    - Each of the reccomendations must not exceed 6 words, and should not be using any abbrievations. 
+    - If the metadata lacks sufficient detail, infer plausible recommendations based on context and similar known artworks.
+
+    
+    """
+        },
+        {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": f"""
+            Artwork Metadata: {metadata}  \n
+            Exhibition Information: {exhibit_form}        
+            """},
+            {
+            "type": "image_url",
+            "image_url": {
+                "url":  f"data:image/jpeg;base64,{image_data}"
+            },
+            },
+        ],
+        }
+    ],response_format={"type":"json_object"},
+    max_tokens=300,
+    )
+    recc_tags = json.loads(response_reccs.choices[0].message.content)
+    for category, items in recc_tags.items():
+        # Format the category name for artwork_taxonomy (e.g., replace spaces with underscores)
+        formatted_category = category.replace(" ", "_")
+        
+        # Check if the field exists in artwork_taxonomy
+        if formatted_category in tags["artwork_taxonomy"]:
+            # Append to the existing list
+            tags["artwork_taxonomy"][formatted_category].extend(items)
+        else:
+            # Create a new field with the items
+            tags["artwork_taxonomy"][formatted_category] = items
     return tags
 
 def generate_visual_context(metadata, image_data, tax_template, model="gpt-4o"):
