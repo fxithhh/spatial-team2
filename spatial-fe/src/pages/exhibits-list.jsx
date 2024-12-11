@@ -43,22 +43,22 @@ function ExhibitsList() {
         Streamline your exhibition planning, manage effortlessly, and simplify your exhibition process.
       </h2>
       <div className="flex justify-between items-center pb-6">
-        <h3 className="text-lg font-['Roboto'] font-bold">Recently Opened</h3>
-        <MagnifyingGlassIcon className="h-5 w-5 text-gray-700" />
+        {/* <h3 className="text-lg font-['Roboto'] font-bold">Recently Opened</h3> */}
+        {/* <MagnifyingGlassIcon className="h-5 w-5 text-gray-700" /> */}
       </div>
-      <div className="grid grid-cols-1 gap-[24px] md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-2  2xl:grid-cols-3 place-items-center justify-center items-center">
         {exhibits.length > 0 ? (
           exhibits.map((exhibit) => (
-            <Link key={exhibit._id} to={`/exhibitions/${exhibit._id}`} className="text-black-500">
-              <img
+            <Link key={exhibit._id} to={`/exhibitions/${exhibit._id}`} className="flex justify-center text-black-500 border-2 border-gray-300 p-4 w-max-[450px] w-96 mb-6 hover:border-brand hover:bg-linkhover hover:text-brand">
+              {/* <img
                 src={exhibit.floor_plan?.startsWith('data:image')
                   ? exhibit.floor_plan
                   : `/placeholder.jpg`} // Handle Base64 or fallback to placeholder
                 alt={exhibit.title || 'Exhibit Image'}
                 className="w-full h-48 object-cover mb-4"
-              />
-              <h2 className="text-xl font-['Roboto'] font-semibold transition-transform duration-300 transform group-hover:scale-110">
-                {exhibit.title || 'Untitled Exhibit'} {/* Fallback for missing title */}
+              /> */}
+              <h2 className="text-xl font-['Roboto'] font-semibold transition-transform duration-300 transform hover:scale-110">
+                {exhibit.exhibit_title || 'Untitled Exhibit'} {/* Fallback for missing title */}
               </h2>
             </Link>
           ))
