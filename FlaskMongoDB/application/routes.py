@@ -281,93 +281,91 @@ def create_exhibit():
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 
-@app.route('/exhibit/<string:exhibit_id>', methods=['GET'])
-def get_exhibit(exhibit_id):
-    try:
-        # Validate if the exhibit_id is a valid ObjectId
-        if not ObjectId.is_valid(exhibit_id):
-            return jsonify({"error": "Invalid exhibit ID format"}), 400
-
-        # Fetch exhibit data by _id (converted to ObjectId)
-        exhibit = create_exhibits.find_one({"_id": ObjectId(exhibit_id)})
-        if not exhibit:
-            return jsonify({"error": "Exhibit not found"}), 404
-
-        # Convert ObjectId to string for JSON serialization
-        exhibit["_id"] = str(exhibit["_id"])
-
-        # Return the exhibit data as JSON
-        return jsonify(exhibit), 200
-    except Exception as e:
-        print(f"Error fetching exhibit: {e}")
-        return jsonify({"error": "Internal server error"}), 500
-
 @app.route('/exhibits', methods=['GET'])
-def get_exhibits():
+@app.route('/exhibits/<id>', methods=['GET'])
+def get_exhibits(id=None):
     try:
-        # Fetch all exhibits from the MongoDB collection
-        exhibits_cursor = create_exhibits.find()
+        if id:
+            # Fetch the exhibit with the given ID
+            exhibit = create_exhibits.find_one({"_id": ObjectId(id)})
 
-        # Convert the MongoDB cursor to a list of dictionaries
-        exhibits = []
-        for exhibit in exhibits_cursor:
-            exhibit["_id"] = str(exhibit["_id"])  # Convert ObjectId to string for JSON serialization
+            if not exhibit:
+                return jsonify({"error": "Exhibit not found"}), 404
 
-            # Extract relevant fields
-            exhibit_title = exhibit.get("exhibit_title", "Untitled Exhibit")
-            concept = exhibit.get("concept", "")
-            subsections = exhibit.get("subsections", [])
-            images = exhibit.get("images", {})
-            floor_plan = images.get("floor_plan", None)
-
-            # Ensure floor_plan includes Base64 prefix if missing
-            if floor_plan and not floor_plan.startswith("data:image"):
-                floor_plan = f"data:image/png;base64,{floor_plan}"
-
-            artworks = [
+            # Process the exhibit fields
+            exhibit["_id"] = str(exhibit["_id"])
+            exhibit["artworks"] = [
                 {
                     "title": artwork.get("Object Name/Title", "Untitled Artwork"),
-                    "artist": artwork.get("Artist/Producer", "Unknown Artist"),
+                    "artist": artwork.get("Artist/ Producer", "Unknown Artist"),
                     "dimension": artwork.get("Dimen", "Unknown Dimensions"),
                     "material": artwork.get("Material", "Unknown Material"),
-                    "display type": artwork.get("Display_Type", "N/A"),
-                    "Geographical Association": artwork.get("Geog. Associ.", "N/A"),
-                    "Acquisition Type": artwork.get("Acq. Type", "N/A"),
-                    "Historical Significance": artwork.get("Hist Signi", "N/A"),
-                    "Style Significance": artwork.get("Style Signi", "N/A"),
-                    "Exhibition Utilization": artwork.get("Acq. Utilisation", "N/A"),
-                    "Conservation Guidelines": artwork.get("conservation_guidelines", "N/A"),
-                    "Taxonomy": artwork.get("taxonomy_tags", "N/A"),
+                    "display_type": artwork.get("Display_Type", "N/A"),
+                    "geographical_association": artwork.get("Geog. Associ.", "N/A"),
+                    "acquisition_type": artwork.get("Acq. Type", "N/A"),
+                    "historical_significance": artwork.get("Hist Signi", "N/A"),
+                    "style_significance": artwork.get("Style Signi", "N/A"),
+                    "exhibition_utilization": artwork.get("Acq. Utilisation", "N/A"),
+                    "conservation_guidelines": artwork.get("conservation_guidelines", "N/A"),
+                    "taxonomy": artwork.get("taxonomy_tags", "N/A"),
                     "image": f"data:image/png;base64,{artwork.get('embedded_image', '')}"
                 }
                 for artwork in exhibit.get("artworks", [])
             ]
 
-            # Append processed exhibit to the list
-            exhibits.append({
-                "_id": exhibit["_id"],
-                "exhibit_title": exhibit_title,
-                "concept": concept,
-                "subsections": subsections,
-                "floor_plan": floor_plan,
-                "artworks": artworks,
-            })
+            return jsonify(exhibit), 200
+        else:
+            # Fetch all exhibits from the MongoDB collection
+            exhibits_cursor = create_exhibits.find()
 
-        # If no exhibits are found, return an appropriate message
-        if not exhibits:
-            return jsonify({"error": "No exhibits found"}), 404
+            # Convert the MongoDB cursor to a list of dictionaries
+            exhibits = []
+            for exhibit in exhibits_cursor:
+                exhibit["_id"] = str(exhibit["_id"])  # Convert ObjectId to string for JSON serialization
 
-        # Log the fetched data for debugging
-        print("Fetched exhibits:", exhibits)
+                # Extract relevant fields
+                title = exhibit.get("exhibit_title", "Untitled Exhibit")
+                concept = exhibit.get("concept", "")
+                subsections = exhibit.get("subsections", [])
+                images = exhibit.get("images", {})
+                floor_plan = images.get("floor_plan", None)
 
-        # Return the list of exhibits as JSON
-        return jsonify(exhibits), 200
+                # Ensure floor_plan includes Base64 prefix if missing
+                if floor_plan and not floor_plan.startswith("data:image"):
+                    floor_plan = f"data:image/png;base64,{floor_plan}"
+
+                artworks = [
+                    {
+                        "title": artwork.get("Object Name/Title", "Untitled Artwork"),
+                        "artist": artwork.get("Artist/Producer", "Unknown Artist"),
+                        "dimension": artwork.get("Dimen", "Unknown Dimensions"),
+                    }
+                    for artwork in exhibit.get("artworks", [])
+                ]
+
+                # Append processed exhibit to the list
+                exhibits.append({
+                    "_id": exhibit["_id"],
+                    "exhibit_title": title,
+                    "concept": concept,
+                    "subsections": subsections,
+                    "floor_plan": floor_plan,
+                    "artworks": artworks,
+                })
+
+            # If no exhibits are found, return an appropriate message
+            if not exhibits:
+                return jsonify({"error": "No exhibits found"}), 404
+
+            # Log the fetched data for debugging
+            print("Fetched exhibits:", exhibits)
+
+            # Return the list of exhibits as JSON
+            return jsonify(exhibits), 200
 
     except Exception as e:
         print(f"Error fetching exhibits: {e}")
         return jsonify({"error": "Internal server error"}), 500
-
-
 
 
 # Helper: Handle image uploads
