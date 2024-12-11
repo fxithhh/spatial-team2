@@ -203,13 +203,17 @@ def create_exhibit():
                 processed_data = process_excel_file(artwork_file)
                 print("Debug: Processed data:", processed_data)
 
+                form_data["excel_images"] = processed_data["images"]
+
+                form_data["artworks"] = processed_data["data"]
+
+
                 # Validate processed_data structure
                 if "data" not in processed_data or "images" not in processed_data:
                     print("Debug: Missing 'data' or 'images' in processed_data.")
                     return jsonify({"error": "Invalid data structure returned from Excel processing."}), 400
 
-                form_data["artworks"] = processed_data["data"]
-                form_data["excel_images"] = processed_data["images"]
+               
 
                 print(
                     f"Excel file {artwork_file.filename} processed successfully.")
@@ -226,11 +230,8 @@ def create_exhibit():
 
                     # Get the image data
                     embedded_image = row.get("embedded_image", "")
-                    if not embedded_image:
-                        print(
-                            f"No embedded image for row {idx}. Skipping row.")
-                        row["error"] = "No embedded image."
-                        continue
+                    
+             
 
                     # Convert to JPEG format
                     embedded_image = convert_image_to_jpeg(
