@@ -88,7 +88,7 @@ function CreateExhibit() {
         const { name, value } = e.target;
         setFormData((prevFormData) => ({
             ...prevFormData,
-            [name]: value.trim(),
+            [name]: value,
         }));
     };
 
@@ -324,7 +324,7 @@ function CreateExhibit() {
                                 type="submit"
                                 className="bg-brand text-white py-2 px-8 hover:bg-brandhover flex items-center"
                             >
-                                "Create Exhibit"
+                                Create Exhibit
                             </button>
                         </div>
 
