@@ -94,7 +94,7 @@ const ExhibitDetail = () => {
                 throw new Error(`Failed to fetch exhibit: ${response.status}`);
             }
             const data = await response.json();
-    
+
             // Update state with the exhibit and its artworks
             setSelectedExhibit(data);
             setArtworks(data.artworks || []);
@@ -102,7 +102,7 @@ const ExhibitDetail = () => {
             setError('Error fetching exhibit');
         }
     };
-    
+
     // Fetch data on component mount
     useEffect(() => {
         if (exhibitId) {
@@ -398,27 +398,27 @@ const ExhibitDetail = () => {
                             <div className="max-h-[400px] overflow-y-auto">
                                 {artworks.map((artwork) => (
                                     <div
-                                    key={artwork._id}
-                                    onClick={() => {
-                                        setSelectedArtwork(artwork); // Pass artwork data to ArtworkCard
-                                        console.log(`Selected artwork: ${artwork.title || "Untitled"}`);
-                                    }}
-                                    className="grid grid-cols-12 py-1 px-2 my-2 border-b-2 cursor-pointer max-h-60 overflow-y-auto hover:border-2 hover:bg-linkhover hover:border-brand"
-                                >
-                                    <span className="col-span-5 capitalize">
-                                        {artwork.title || "Untitled"}
-                                    </span>
-                                    <span className="col-span-3 capitalize">
-                                        {artwork.artist || "Unknown Artist"}
-                                    </span>
-                                    <span className="col-span-4 capitalize">
-                                        {artwork.dimension || "Unknown Dimensions"}
-                                    </span>
-                                </div>
+                                        key={artwork._id}
+                                        onClick={() => {
+                                            setSelectedArtwork(artwork); // Pass artwork data to ArtworkCard
+                                            console.log(`Selected artwork: ${artwork.title || "Untitled"}`);
+                                        }}
+                                        className="grid grid-rows-3 px-2 py-2 border-b-2 cursor-pointer overflow-y-auto items-center hover:border-2 hover:bg-linkhover hover:border-brand"
+                                    >
+                                        <span className="font-semibold text-xl text-black mr-4 font-['Roboto_Condensed']">
+                                            {artwork.title || "Untitled"}
+                                        </span>
+                                        <span className="font-normal text-base text-brand mr-4 font-['Roboto']">
+                                            {artwork.artist || "Unknown Artist"}
+                                        </span>
+                                        <span className="font-normal text-sm text-gray-400 mr-4 font-['Roboto']">
+                                            {artwork.dimension || "Unknown Dimensions"}
+                                        </span>
+                                    </div>
                                 ))}
                             </div>
                         </div>
-                        {/*Artwork Details Section*/} 
+                        {/*Artwork Details Section*/}
                         <div className="mt-4 border-2 border-black py-4 px-8 mb-8 h-auto">
                             {selectedArtwork ? (
                                 <ArtworkCard artwork={selectedArtwork} />
