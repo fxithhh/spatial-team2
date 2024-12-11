@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import 'reactjs-popup/dist/index.css';
 import { toast, ToastContainer } from "react-toastify";
-import config from "../data/config.json";
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 function CreateExhibit() {
 
     const [formData, setFormData] = useState({
         exhibit_title: "",
+        description: "",
         concept: "",
         subsections: [],
         floor_plan: null
@@ -26,8 +26,8 @@ function CreateExhibit() {
         const file = e.target.files[0];
         if (file) {
             const fileExtension = file.name.split(".").pop().toLowerCase();
-            if (fileExtension !== "png") {
-                toast.error("Invalid file type! Please upload a PNG file.");
+            if (fileExtension !== "png" && fileExtension !== "jpg" && fileExtension !== "jpeg") {
+                toast.error("Invalid file type! Please upload a JPG or PNG file.");
                 e.target.value = ""; // Clear invalid file input
                 return;
             }
@@ -91,39 +91,53 @@ function CreateExhibit() {
         }));
     };
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Form validation
-        if (!formData.exhibit_title || !formData.concept || !formData.floor_plan || !fileName) {
+        console.log(formData);
+        console.log("Title:", formData.exhibit_title);
+        console.log("Concept:", formData.concept);
+        console.log("Floor Plan:", formData.floor_plan);
+
+        // Validate required fields
+        if (!formData.exhibit_title || !formData.concept || !formData.subsections || !formData.floor_plan || !fileName) {
             toast.error("Please fill in all required fields and upload necessary files.");
             return;
         }
+
+        // Validate file inputs
+        const artworkInput = document.getElementById("file-upload");
+        if (!artworkInput || !artworkInput.files[0]) {
+            toast.error("Please upload an artwork file.");
+            return;
+        }
+
+        if (!(formData.floor_plan instanceof File)) {
+            toast.error("Invalid floor plan file. Please re-upload.");
+            return;
+        }
+
         try {
             const formDataToSend = new FormData();
             formDataToSend.append("exhibit_title", formData.exhibit_title);
             formDataToSend.append("concept", formData.concept);
-
-            formData.subsections.forEach((subsection, index) => {
-                formDataToSend.append(`subsections[${index}]`, subsection);
-            });
-
+            formDataToSend.append("subsections", JSON.stringify(formData.subsections));
             formDataToSend.append("floor_plan", formData.floor_plan);
+            formDataToSend.append("artwork_list", artworkInput.files[0]);
 
-            const artworkInput = document.getElementById("file-upload");
-            if (artworkInput && artworkInput.files[0]) {
-                formDataToSend.append("artwork_list", artworkInput.files[0]);
+            // Debug FormData
+            for (let pair of formDataToSend.entries()) {
+                console.log(`${pair[0]}:`, pair[1]);
             }
 
-            const response = await fetch("http://localhost:5000/bulk_upload", {
-                method: "POST",
-                body: formDataToSend,
+            const response = await fetch("http://localhost:5000/create_exhibit", {
+                method: 'POST',
+                body: formDataToSend, // Let the browser handle multipart/form-data
             });
 
             if (response.ok) {
                 const result = await response.json();
-                toast.success("Exhibit created successfully!");
+                toast.success('Exhibit created successfully!');
                 setLoading(true);
                 setTimeout(() => {
                     setLoading(false);
@@ -131,14 +145,15 @@ function CreateExhibit() {
                 }, 1000);
             } else {
                 const errorText = await response.text();
-                console.error("Failed to create exhibit:", errorText);
-                toast.error("Failed to create exhibit. Please try again.");
+                console.error('Failed to create exhibit:', errorText, 'Status Code:', response.status);
+                toast.error(`Error ${response.status}: Failed to create exhibit. Please try again.`);
             }
         } catch (error) {
-            console.error("Error submitting form:", error);
-            toast.error("An unexpected error occurred. Please try again.");
+            console.error('Error submitting form:', error);
+            toast.error('An unexpected error occurred. Please try again.');
         }
     };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -273,7 +288,7 @@ function CreateExhibit() {
                                     Floor Plan <span className='text-brand'>*</span>
                                 </label>
                                 <span className="font-normal text-gray-400 text-m">
-                                    Upload the floor plan for your exhibition layout. Accepted format: PNG.
+                                    Upload the floor plan for your exhibition layout. Accepted format: PNG, JPG, JPEG.
                                 </span>
                                 <label
                                     htmlFor="floor-plan-upload"
@@ -306,7 +321,7 @@ function CreateExhibit() {
                                 type="submit"
                                 className="bg-brand text-white py-2 px-8 hover:bg-brandhover flex items-center"
                             >
-                                "Create Exhibit"
+                                Create Exhibit
                             </button>
                         </div>
 

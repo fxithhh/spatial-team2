@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 // Components
@@ -14,6 +14,12 @@ import { AiOutlinePlus } from "react-icons/ai";
 
 const ExhibitDetail = () => {
     const [view, setView] = useState("connection");
+    const [artworks, setArtworks] = useState([]);
+    const { id } = useParams();
+    const [exhibit, setExhibit] = useState(null);
+    const { exhibitId } = useParams();
+    console.log("Exhibit ID:", exhibitId);
+    const [error, setError] = useState(null);
 
     // Toggle between connection and floor plan views
     const toggleView = () => {
@@ -49,8 +55,6 @@ const ExhibitDetail = () => {
     const toggleArtworkLibrary = () => {
         setIsArtworkLibraryOpen((prev) => !prev);
     };
-    const { id } = useParams();
-    const exhibit = config.exhibits.find((exhibit) => exhibit.id === parseInt(id));
 
     const tabs = [
         { id: 1, label: "Path 1" },
@@ -62,11 +66,8 @@ const ExhibitDetail = () => {
     const [floorplanImage, setFloorplanImage] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedArtwork, setSelectedArtwork] = useState(null);
+    const [selectedExhibit, setSelectedExhibit] = useState(null);
     const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // Add artwork popup
-
-    if (!exhibit) {
-        return <div className="container mx-auto p-4">Exhibit not found.</div>;
-    }
 
     // Dropdown toggle
     const toggleDropdown = () => {
@@ -86,6 +87,31 @@ const ExhibitDetail = () => {
     const closeAddArtwork = () => {
         setIsAddArtworkOpen(false);
     };
+
+    const fetchArtworks = async () => {
+        try {
+            const response = await fetch(`http://localhost:5000/exhibits/${exhibitId}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch exhibit: ${response.status}`);
+            }
+            const data = await response.json();
+
+            // Update state with the exhibit and its artworks
+            setSelectedExhibit(data);
+            setArtworks(data.artworks || []);
+        } catch (err) {
+            setError('Error fetching exhibit');
+        }
+    };
+
+    // Fetch data on component mount
+    useEffect(() => {
+        if (exhibitId) {
+            fetchArtworks();
+        }
+    }, [exhibitId]);
+
+    if (error) return <p>Error: {error}</p>;
 
     return (
         <div className="flex flex-col min-h-screen my-8 mx-12">
@@ -145,7 +171,7 @@ const ExhibitDetail = () => {
                         )}
 
                         {/* Option 2: Using CSS Transform Scale */}
-                        {/* 
+                        {/*
                         <div className="transform scale-75 origin-top-left">
                             {view === "connection" ? (
                                 <Canvas floorplanImage={floorplanImage} />
@@ -348,7 +374,7 @@ const ExhibitDetail = () => {
 
                 {/* Artwork Library Sidebar */}
                 {isArtworkLibraryOpen && (
-                    <aside className="top-16 right-0 max-w-[500px] w-full bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
+                    <aside className="top-16 right-0 max-w-1/3 w-[500px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
                         <div className="flex items-center justify-between mb-8 mt-12">
                             <h2 className="font-bold">Artwork Library</h2>
                             <button
@@ -358,6 +384,7 @@ const ExhibitDetail = () => {
                                 <XMarkIcon className="h-6 w-6 rotate-180 color-black" />
                             </button>
                         </div>
+
                         <div className="border-2 border-black py-4 px-8">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-2xl font-['Roboto_Condensed'] font-semibold">List of Artworks</h3>
@@ -368,30 +395,50 @@ const ExhibitDetail = () => {
                                 </button>
                             </div>
 
-                            {config.artworks.map((artwork) => (
-                                <div key={artwork.id}
-                                    onClick={() => {
-                                        handleArtworkSelect(artwork)
-                                        console.log(`Selected generated path: ${artwork.title}`)
-                                    }}
-                                    className="grid grid-cols-12 py-1 px-2 my-2 border-b-2 cursor-pointer max-h-60 overflow-y-auto hover:border-2 hover:bg-linkhover hover:border-brand">
-                                    <span className='col-span-5 capitalize'>{artwork.id}. {artwork.title}</span>
-                                    <span className='col-span-3 capitalize'>{artwork.display_type}</span>
-                                    <span className='col-span-4 capitalize'>{artwork.dimensions}</span>
-                                </div>
-                            ))}
+                            {/* Artwork List */}
+                            <div className="max-h-[400px] overflow-y-auto">
+                                {artworks.map((artwork) => (
+                                    <div
+                                        key={artwork._id}
+                                        onClick={() => {
+                                            setSelectedArtwork(artwork); // Pass artwork data to ArtworkCard
+                                            console.log(`Selected artwork: ${artwork.title || "Untitled"}`);
+                                        }}
+                                        className="grid grid-rows-3 px-2 py-2 border-b-2 cursor-pointer overflow-y-auto items-center hover:border-2 hover:bg-linkhover hover:border-brand"
+                                    >
+                                        <span className="font-semibold text-xl text-black mr-4 font-['Roboto_Condensed']">
+                                            {artwork.title || "Untitled"}
+                                        </span>
+                                        <span className="font-normal text-base text-brand mr-4 font-['Roboto']">
+                                            {artwork.artist || "Unknown Artist"}
+                                        </span>
+                                        <span className="font-normal text-sm text-gray-400 mr-4 font-['Roboto']">
+                                            {artwork.dimension || "Unknown Dimensions"}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-
+                        {/*Artwork Details Section*/}
                         <div className="mt-4 border-2 border-black py-4 px-8 mb-8 h-auto">
                             {selectedArtwork ? (
-                                <ArtworkCard artwork={selectedArtwork} /> // Pass the selected artwork as a prop
-                            ) : <p className='text-lg text-red-500'>Select an artwork to display its information.</p>}
+                                <ArtworkCard artwork={selectedArtwork} />
+                            ) : (
+                                <p className="text-lg text-red-500">Select an artwork to display its information.</p>
+                            )}
                         </div>
                     </aside>
                 )}
+
+                {/* Add Artwork Import Component */}
+                {isAddArtworkOpen && (
+                    <ImportArtWork
+                        isOpen={isAddArtworkOpen}
+                        closeAddArtwork={closeAddArtwork}
+                    />
+                )}
             </div>
-            {isAddArtworkOpen && (<ImportArtWork isOpen={isAddArtworkOpen} closeAddArtwork={closeAddArtwork} />)}
-        </div >
+        </div>
     );
 };
 

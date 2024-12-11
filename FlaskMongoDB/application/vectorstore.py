@@ -15,9 +15,10 @@ COLLECTION_NAME = "Vectorstore"
 
 # PDF file paths for creating the vectorstore (used only for saving)
 PDF_PATHS = [
-    r"C:\Users\Brighton\Desktop\SUTD files\Term 7\spatial\Code\compliance_resources\'Ideal Condition Ranges by Material Type' CCAHA (ND).pdf",
-    r"C:\Users\Brighton\Desktop\SUTD files\Term 7\spatial\Code\compliance_resources\2015 Light Duration Guidlines-Smithsonian.pdf",
-    r"C:\Users\Brighton\Desktop\SUTD files\Term 7\spatial\Code\compliance_resources\Code of Practice for Fire Precautions in Buildings.pdf"
+    'compliance_resources\'Ideal Condition Ranges by Material Type CCAHA (ND).pdf',
+    'compliance_resources\2015 Light Duration Guidlines-Smithsonian.pdf',
+    'compliance_resources\Code of Practice for Fire Precautions in Buildings.pdf'
+    
 ]
 
 # Initialize OpenAI Embeddings globally

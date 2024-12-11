@@ -1,0 +1,40 @@
+{
+    "_id": "67581961ed7d72327b17d066",
+    "exhibit_title": "THIS IS WORKING 2",
+    "concept": "IDEA",
+    "subsections": ["HELLO", "ITS ", "ME"],
+    "images": {
+        "floor_plan": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAkGBggGBQkIBwgKCQkKDRYODQwMDRoTFBAWHx…"
+    },
+    "artworks": [
+        {
+            "SCMS ID": "1473589",
+            "Mus/ Institution": "Singapore Art Museum",
+            "Image": null,
+            "Acc. No": "2020-00355",
+            "Artist/ Producer": "Wong Hoy Cheong (1960)",
+            "Object Name/Title": "Tapestry of Justice",
+            "Dating": "1999–2004",
+            "Dimen": "Object size: 2500.0 x 89.0 x 0.0 cm",
+            "Material": "Thumbprints and petals of flowers and leaves",
+            "Geog. Associ.": "Malaysia",
+            "Category": "HCC-Modern Art Forms",
+            "Acq. Justification": "The National Collection – or, at least, those parts of it...",
+            "Acq. Utilisation": "The time is ripe for SAM to mount a survey of contemporary...",
+            "Curator’s notes": "Original Grade: High Value Collection...",
+            "Acq. Type": "Purchase ",
+            "Hist Signi": "The time is ripe for SAM to mount a survey...",
+            "Styl Signi": "The National Collection – or, at least...",
+            "SGCOOL Label text": "Wong Hoy Cheong is one of Malaysia’s foremost...",
+            "Internet": null,
+            "embedded_image": "/9j/4AAQSkZJRgABAQEA3ADcAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBg…"
+        }
+    ],
+    "conservation_guidelines": {},
+    "taxonomy_tags": {},
+    "visual_context": [],
+    "excel_images": [
+        "/9j/4AAQSkZJRgABAQEA3ADcAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBg…",
+        "/9j/4AAQSkZJRgABAQEA3ADcAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBg…"
+    ]
+}

@@ -20,8 +20,6 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 API_KEY = os.getenv("API_KEY")
 
-print(f"API_KEY: {'Set' if API_KEY else 'Not Set'}: {API_KEY[:4]}****{API_KEY[-4:]}" if API_KEY else "API_KEY is Not Set")
-
 # Initialize OpenAI client
 client = OpenAI(api_key=API_KEY)
 
@@ -192,28 +190,8 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
     answer = json.loads(answer_temp)
     return answer
 
-# Function to convert image to JPEG
-def convert_image_to_jpeg(image_binary, output_format="JPEG"):
-    try:
-        image = Image.open(BytesIO(image_binary))
-
-        # Ensure conversion to RGB for JPEG compatibility
-        if image.mode != "RGB" and output_format.upper() == "JPEG":
-            image = image.convert("RGB")
-
-        # Save to JPEG format in a buffer
-        buffer = BytesIO()
-        image.save(buffer, format=output_format, quality=100)
-        buffer.seek(0)
-
-        return buffer.read()
-    except Exception as e:
-        print(f"Error converting image to JPEG: {e}")
-        return None
-
 # Taxonomy Tagging Function
 def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o"):
-
     # Call OpenAI API for taxonomy tagging
     taxonomy_response = client.chat.completions.create(
         model=model,

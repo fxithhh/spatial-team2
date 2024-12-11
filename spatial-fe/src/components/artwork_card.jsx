@@ -6,13 +6,16 @@ const ArtworkCard = ({ artwork }) => {
     details: true,
     conservation: false,
     taxonomy: false,
-    additionalDetails: false, // State to toggle additional details
+    additionalDetails: false,
+    visualContext: false, // New section for visual context
   });
 
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [showFullConservation, setShowFullConservation] = useState(false);
+  const [showFullMedium, setShowFullMedium] = useState(false);
+  const [showFullHistoricalSignificance, setShowFullHistoricalSignificance] = useState(false);
+  const [showFullStyleSignificance, setShowFullStyleSignificance] = useState(false);
+  const [showFullExhibitionUtilization, setShowFullExhibitionUtilization] = useState(false);
 
-  // Toggle individual sections
   const toggleSection = (section) => {
     setSections((prev) => ({
       ...prev,
@@ -20,141 +23,149 @@ const ArtworkCard = ({ artwork }) => {
     }));
   };
 
-  // Toggle description visibility
-  const toggleDescription = () => {
-    setShowFullDescription(!showFullDescription);
-  };
-
-  // Toggle conservation guidelines visibility
-  const toggleConservation = () => {
-    setShowFullConservation(!showFullConservation);
-  };
-
-  // A helper to render sections with common structure
-  const renderSection = (title, content) => (
+  const renderSection = (title, content, toggleFunc, showFullState) => (
     <div className="mb-4">
       <span className="font-bold text-gray-400 mr-8 w-32">{title}</span>
-      <p className="text-lg line-clamp-3 overflow-hidden text-ellipsis">{content}</p>
+      <p className="text-lg">
+        {showFullState
+          ? content
+          : content
+          ? content.slice(0, 100)
+          : 'No content available'}
+      </p>
+      {content && content.length > 100 && (
+        <button
+          onClick={toggleFunc}
+          className="text-brand text-sm hover:underline mt-2"
+        >
+          {showFullState ? 'See less' : 'See more'}
+        </button>
+      )}
     </div>
   );
+  
 
-  // A helper to render conservation guidelines as a list, with optional "See more" functionality
-  const renderConservationGuidelines = (guidelines) => {
-    const guidelinesToShow = showFullConservation ? guidelines : guidelines.slice(0, 2);
+  const renderTaxonomy = (taxonomy) => {
+    if (!taxonomy) {
+      return <p className="text-red-500">No taxonomy available</p>;
+    }
+
     return (
       <div>
-        <ul className="list-inside list-disc text-gray-600">
-          {guidelinesToShow.map((guideline, index) => (
-            <li key={index} className="mb-2">{guideline}</li>
-          ))}
-        </ul>
-        {!showFullConservation && (
-          <button
-            onClick={toggleConservation}
-            className="text-brand text-sm hover:underline mt-2">
-            See more
-          </button>
+        {taxonomy.Artist && <p><strong>Artist:</strong> {taxonomy.Artist}</p>}
+        {taxonomy.Title && <p><strong>Title:</strong> {taxonomy.Title}</p>}
+        {taxonomy.Dating && <p><strong>Dating:</strong> {taxonomy.Dating}</p>}
+        
+        {Array.isArray(taxonomy.Material) && taxonomy.Material.length > 0 ? (
+          <div>
+            <strong>Material:</strong>
+            <ul className="list-inside list-disc text-gray-500">
+              {taxonomy.Material.map((item, index) => <li key={index}>{item}</li>)}
+            </ul>
+          </div>
+        ) : (
+          <p><strong>Material:</strong> N/A</p>
         )}
-        {showFullConservation && (
-          <button
-            onClick={toggleConservation}
-            className="text-brand text-sm hover:underline mt-2">
-            See less
-          </button>
+  
+        {taxonomy["Geographical Association"] && (
+          <p><strong>Geographical Association:</strong> {taxonomy["Geographical Association"]}</p>
+        )}
+        
+        {Array.isArray(taxonomy["Style Significance"]) && taxonomy["Style Significance"].length > 0 ? (
+          <div>
+            <strong>Style Significance:</strong>
+            <ul className="list-inside list-disc text-gray-500">
+              {taxonomy["Style Significance"].map((item, index) => <li key={index}>{item}</li>)}
+            </ul>
+          </div>
+        ) : (
+          <p><strong>Style Significance:</strong> N/A</p>
+        )}
+        
+        {Array.isArray(taxonomy["Historical Significance"]) && taxonomy["Historical Significance"].length > 0 ? (
+          <div>
+            <strong>Historical Significance:</strong>
+            <ul className="list-inside list-disc text-gray-500">
+              {taxonomy["Historical Significance"].map((item, index) => <li key={index}>{item}</li>)}
+            </ul>
+          </div>
+        ) : (
+          <p><strong>Historical Significance:</strong> N/A</p>
         )}
       </div>
     );
   };
 
-  const renderTaxonomy = (taxonomy) => {
-    return taxonomy.map((entry, index) => (
-      <div key={index} className="mb-4">
-        {/* Show button only if there are subheadings */}
-        {entry.subHeadings && entry.subHeadings.length > 0 && (
-          <button
-            onClick={() => toggleSection(`taxonomy-${index}`)}
-            className="w-full flex justify-start items-center text-left font-bold text-gray-400"
-          >
-            {/* Triangle toggle symbol */}
-            <span
-              className={`mr-2 text-xl ${sections[`taxonomy-${index}`] ? '-rotate-90' : ''
-                }`}
-              style={{
-                display: 'inline-block',
-                width: 0,
-                height: 0,
-                borderLeft: '6px solid transparent',
-                borderRight: '6px solid transparent',
-                borderTop: '6px solid gray',
-              }}
-            ></span>
-            {entry.heading}
-          </button>
-        )}
+  const renderConservationGuidelines = (guidelines) => {
+    if (!Array.isArray(guidelines) || guidelines.length === 0) {
+      return <p className="text-red-500">No conservation guidelines available</p>;
+    }
 
-        {/* Render content with subheadings only if it's toggled on */}
-        {sections[`taxonomy-${index}`] && (
-          <div className="mt-2">
-            {entry.subHeadings.map((subHeading, subIndex) => (
-              <div key={subIndex} className="ml-5">
-                {subHeading.subHeading ? (
-                  <div className='flex flex-col my-2'>
-                    <span className="font-semibold text-gray-600">{subHeading.subHeading}:</span>
-                    <p className="text-gray-500">{subHeading.content}</p>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">{subHeading.content}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    ));
+    return (
+      <ul className="list-inside list-disc text-gray-500">
+        {guidelines.map((guideline, index) => (
+          <li key={index} className="mb-2">
+            {guideline}
+          </li>
+        ))}
+      </ul>
+    );
   };
 
+  const renderVisualContext = (visualContext) => {
+    if (!Array.isArray(visualContext) || visualContext.length === 0) {
+      return <p className="text-red-500">No visual context available</p>;
+    }
+
+    return (
+      <ul className="list-inside list-disc text-gray-500">
+        {visualContext.map((item, index) => (
+          <li key={index} className="mb-2">
+            {item}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  if (!artwork) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col">
       {/* Title and Basic Info */}
-      <div className='flex justify-between'>
-        <span className="font-semibold text-2xl text-black mr-4 font-['Roboto_Condensed']">{artwork.title}</span>
-        <button
-          onClick={() => alert('Placeholder: Clicked to add to canvas!')}
-          className="flex items-center justify-center w-8 h-8 bg-brand text-white hover:bg-brandhover transition-colors"
-          title="Click to add to canvas"
-        >
-          +
-        </button>
+      <div className="flex justify-between">
+        <h1 className="font-semibold text-2xl text-black mr-4 font-['Roboto_Condensed']">
+          {artwork.title || 'Untitled Artwork'}
+        </h1>
       </div>
-      <span className="font-normal text-lg text-brand mr-4 font-['Roboto']">{artwork.artist_name}</span>
-      <span className="font-normal text-lg text-gray-400 mr-4 font-['Roboto']">
-        {artwork.date_of_creation}, {artwork.geographical_association}
-      </span>
+      <p className="font-normal text-lg text-brand mr-4 font-['Roboto']">
+        {artwork.artist || 'Unknown Artist'}
+      </p>
+      <p className="font-normal text-lg text-gray-400 mr-4 font-['Roboto']">
+        {artwork.geographical_association || 'Unknown Location'}
+      </p>
 
       {/* Artwork Image */}
-      <img src={artwork.image} alt={artwork.title} className="w-full max-w-[400px] mb-4 mx-auto" />
+      <img
+        src={artwork.image || 'placeholder-image-url.jpg'}
+        alt={artwork.title || 'Untitled Artwork'}
+        className="w-full max-w-[400px] mb-4 mx-auto"
+      />
 
       {/* Scrollable Content Section */}
       <div className="h-full overflow-y-auto mb-4">
-        {/* Description with See More toggle */}
-        <div className="mb-4">
-          <span className="font-semibold text-gray-400 mr-8 w-32">Description</span>
-          <p className="text-lg">
-            {showFullDescription ? artwork.description : `${artwork.description.slice(0, 100)}...`}
-          </p>
-          <button
-            onClick={toggleDescription}
-            className="text-brand text-sm hover:underline">
-            {showFullDescription ? 'See less' : 'See more'}
-          </button>
-        </div>
+        {/* Material */}
+        {renderSection(
+          'Material',
+          artwork.material || 'Unknown Material',
+          () => setShowFullMedium(!showFullMedium),
+          showFullMedium
+        )}
 
-        {renderSection('Medium of Artwork', artwork.material)}
-        {renderSection('Dimensions of Artwork', artwork.dimensions)}
-        {renderSection('Display Type', artwork.display_type)}
-        {renderSection('Geographical Association', artwork.geographical_association)}
-        {renderSection('Acquisition Type', artwork.acquisition_type)}
+        {/* Dimensions */}
+        {renderSection('Dimensions', artwork.dimension || 'N/A')}
 
         {/* Additional Details Section */}
         <div className="mb-4 border border-gray-300 rounded p-4">
@@ -171,18 +182,41 @@ const ArtworkCard = ({ artwork }) => {
           </button>
           {sections.additionalDetails && (
             <div className="mt-4">
-              {renderSection('Historical Significance', artwork.historical_significance)}
-              {renderSection('Style Significance', artwork.style_significance)}
-              {renderSection('Exhibition Utilization', artwork.exhibition_utilisation)}
+              {renderSection(
+                'Description',
+                artwork.description || 'N/A',
+                () => setShowFullDescription(!showFullDescription),
+                showFullDescription
+              )}
+              {renderSection('Display Type', artwork.display_type || 'N/A')}
+              {renderSection('Acquisition Type', artwork.acquisition_type || 'N/A')}
+              {renderSection(
+                'Historical Significance',
+                artwork.historical_significance || 'N/A',
+                () => setShowFullHistoricalSignificance(!showFullHistoricalSignificance),
+                showFullHistoricalSignificance
+              )}
+              {renderSection(
+                'Style Significance',
+                artwork.style_significance || 'N/A',
+                () => setShowFullStyleSignificance(!showFullStyleSignificance),
+                showFullStyleSignificance
+              )}
+              {renderSection(
+                'Exhibition Utilization',
+                artwork.exhibition_utilization || 'N/A',
+                () => setShowFullExhibitionUtilization(!showFullExhibitionUtilization),
+                showFullExhibitionUtilization
+              )}
             </div>
           )}
         </div>
 
         {/* Conservation Guidelines Section */}
-        <div className="mb-4 mt-2 border border-gray-300 rounded p-4">
+        <div className="mb-4 border border-gray-300 rounded p-4">
           <button
             onClick={() => toggleSection('conservation')}
-            className="w-full h-fit flex justify-between items-center text-left font-bold text-gray-800"
+            className="w-full flex justify-between items-center text-left font-bold text-gray-800"
           >
             Conservation Guidelines
             {sections.conservation ? (
@@ -198,8 +232,28 @@ const ArtworkCard = ({ artwork }) => {
           )}
         </div>
 
+        {/* Visual Context Section */}
+        <div className="mb-4 border border-gray-300 rounded p-4">
+          <button
+            onClick={() => toggleSection('visualContext')}
+            className="w-full flex justify-between items-center text-left font-bold text-gray-800"
+          >
+            Visual Context
+            {sections.visualContext ? (
+              <ChevronUpIcon className="w-6 h-6" />
+            ) : (
+              <ChevronDownIcon className="w-6 h-6" />
+            )}
+          </button>
+          {sections.visualContext && (
+            <div className="mt-4">
+              {renderVisualContext(artwork.visual_context)}
+            </div>
+          )}
+        </div>
+
         {/* Taxonomy Section */}
-        <div className="border border-gray-300 rounded p-4">
+        <div className="mb-4 border border-gray-300 rounded p-4">
           <button
             onClick={() => toggleSection('taxonomy')}
             className="w-full flex justify-between items-center text-left font-bold text-gray-800"
@@ -212,8 +266,8 @@ const ArtworkCard = ({ artwork }) => {
             )}
           </button>
           {sections.taxonomy && (
-            <div className="mt-2">
-              {renderTaxonomy(artwork.taxonomy || [])}
+            <div className="mt-4">
+              {renderTaxonomy(artwork.taxonomy)}
             </div>
           )}
         </div>
