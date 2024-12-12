@@ -89,6 +89,8 @@ def add_artwork():
         except Exception:
             return jsonify({"error": "Failed to process data with OpenAI for conservation feedback"}), 500
 
+        exhibit_info = {}
+
         # Generate taxonomy feedback if image data is present
         if image_data:
             try:
@@ -96,6 +98,7 @@ def add_artwork():
                     metadata=metadata_without_image,
                     image_data=compressed_image_base64,
                     tax_template=tax_template,
+                    exhibit_info = exhibit_info,
                     model="gpt-4o"
                 )
             except Exception:
@@ -210,6 +213,12 @@ def create_exhibit():
             except Exception as e:
                 print(f"Error processing image {idx}: {str(e)}")
 
+        exhibit_info = {
+            "exhibit_title": exhibit_title,
+            "concept": concept,
+            "subsections": subsections,
+        }
+
         # Run OpenAI functions on the extracted rows
         for idx, row in enumerate(form_data["artworks"]):
             try:
@@ -225,7 +234,7 @@ def create_exhibit():
                     raise ValueError(f"Invalid metadata for row {idx}.")
 
                 row["conservation_guidelines"] = generate_response_conservation(row)
-                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row, {}, "gpt-4o")
+                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row, {},exhibit_info, "gpt-4o")
                 row["visual_context"] = generate_visual_context(row,image_for_row, {}, "gpt-4o")
                 print(f"OpenAI metadata generated for row {idx}")
             except Exception as e:
