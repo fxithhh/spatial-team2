@@ -165,10 +165,13 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
           - If information is insufficent, use the general knowledge you possess along with the metadata of the artwork and general knowledge of artwork conservation and come up with plausible conservation guidelines
           - Account for the nature of the installation, dimensions of the artwork in the generated fire safety guidelines
           - Do not mention the classification alphabets in the guidelines. If required for referencing, cite the relevant materials to the classification 
+          - For guidelines pertaining to fire safety, cite the specific code or regulation if available
           - Synthesise the reccomendations in a readable, succint manner such that it can be easily understood by a museum curator.\n
+          
           **Output Format**
           - Your response should be formatted in JSON with the key "Conservation_Guidelines," containing a python list of 3 to 5 actionable recommendations 
           - Reccomendations must be concise, coherent, specific, and tailored to the context provided.\n
+          - Utilise Markdown syntax for each guideline to enhance its readablity, with italics for building codes. 
           """
       },
        {
@@ -206,12 +209,16 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
             taxonomy_template = json.load(file)
         print(taxonomy_template)
 
-
     except FileNotFoundError:
       print(f"Taxonomy file not found at {taxonomy_path}. Please check the relative path.")
     except json.JSONDecodeError as e:
       print(f"Error decoding JSON from the taxonomy file: {e}")
 
+    # Append defined subsections
+    ex_sections = exhibit_info["subsections"]
+    tax_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
+
+    #Picking From Taxonomy Template
 
     taxonomy_response = client.chat.completions.create(
         model=model,
@@ -258,7 +265,7 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
         max_tokens=300
     )
 
-    # Extract response content
+    #Generating Reccomendations
     tags_temp = taxonomy_response.choices[0].message.content
     tax_tags = json.loads(tags_temp)
     print(tags_temp)
@@ -294,16 +301,17 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
 
         3. **Storytelling Potential**: Highlight the key narrative or thematic elements of the artwork. Suggest how it can be integrated into broader exhibition themes or its potential as a centerpiece for storytelling.
 
-        4. **Emotional Connection Tags**: Analyze the artwork's description and visuals to provide precise tags that reflect its emotional resonance. Ensure that it is relevant to the exhibition concept, artwork description and its historical context.
+        4. **Emotional Connection Tags**: Analyze the artwork's description and image information to provide precise tags that reflect its emotional resonance. Ensure that it is relevant to the exhibition concept, artwork description and its historical context.
 
-        5. **Historical Context**: Provide insights on the artwork's historical and cultural significance based on its creation date, artist, and any notable movements or events it reflects.
+        5. **Historical Context**: Provide insights on the artwork's historical and cultural significance based on its creation date, artist, historical significance and any notable movements or events it reflects.
 
 
 
         **Output Guidelines**:
         - Output format should be in a json format, with title "Reccomendations" and in accordance to the Reccomendation Categories. 
-        - Generate the top 3 reccomendation for each category and place it in a list format mapped to its respective category
-        - Each of the reccomendations must not exceed 6 words, and should not be using any abbrievations. 
+        - Generate the top 5 reccomendation for each category and place it in a list format mapped to its respective category
+        - Each of the reccomendations must not exceed 8 words, and should not be using any abbrievations. 
+        - Each reccomendation for each category must be unique and distinct from each other 
         - If the metadata lacks sufficient detail, infer plausible recommendations based on context and similar known artworks.
 
           
