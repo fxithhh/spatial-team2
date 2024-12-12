@@ -232,10 +232,9 @@ def create_exhibit():
                 metadata = row
                 if not isinstance(metadata, dict):
                     raise ValueError(f"Invalid metadata for row {idx}.")
-
-                row["conservation_guidelines"] = generate_response_conservation(row)
-                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row, {},exhibit_info, "gpt-4o")
                 row["visual_context"] = generate_visual_context(row,image_for_row, {}, "gpt-4o")
+                row["conservation_guidelines"] = generate_response_conservation(row)
+                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row,exhibit_info, "gpt-4o")
                 print(f"OpenAI metadata generated for row {idx}")
             except Exception as e:
                 print(f"Error generating OpenAI metadata for row {idx}: {str(e)}")

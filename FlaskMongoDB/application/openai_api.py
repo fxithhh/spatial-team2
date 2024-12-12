@@ -77,7 +77,6 @@ taxonomy_path = BASE_DIR / 'taxonomy_picklist.json'
 try:
     with taxonomy_path.open("r", encoding="utf-8") as file:
         tax_template = json.load(file)
-        print(tax_template)
     tax_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
     print("Taxonomy template loaded and updated successfully.")
 except FileNotFoundError:
@@ -192,28 +191,57 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
     return answer
 
 # Taxonomy Tagging Function
-def generate_taxonomy_tags(metadata, image_data, tax_template,exhibit_info, model="gpt-4o"):
+def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
     # Call OpenAI API for taxonomy tagging
+    #Set Up Taxonomy Template
+    # Define the base directory using pathlib
+    BASE_DIR = Path(__file__).resolve().parent
+
+    # Construct the relative path to the taxonomy JSON file
+    taxonomy_path = BASE_DIR / 'taxonomy_picklist.json'
+
+    # Load taxonomy template and update exhibition sections
+    try:
+        with taxonomy_path.open("r", encoding="utf-8") as file:
+            taxonomy_template = json.load(file)
+        print(taxonomy_template)
+
+
+    except FileNotFoundError:
+      print(f"Taxonomy file not found at {taxonomy_path}. Please check the relative path.")
+    except json.JSONDecodeError as e:
+      print(f"Error decoding JSON from the taxonomy file: {e}")
+
+
     taxonomy_response = client.chat.completions.create(
         model=model,
          messages=[
       {
         "role": "system",
-        "content": """
-        A system that generates taggings for museums based on the provided artwork image and its metadata. 
+        "content": f"""
+                A system that generates taggings for museums based on the provided artwork image and its metadata. 
                 The system references an established artwork taxonomy to assign appropriate tags according to the provided categories and choices. 
-                Ensure that the answer should strictly adhere to the taxonomy JSON format provided.
+                Ensure that the output should strictly adhere to the taxonomy JSON format provided, and should not repeate fills existing in the metadata
                 
                 Utilise the artwork metadata, artwork image and exhibition information to aid in the tagging process.
+
+                 **Output Guidelines**:
+                 - Output format MUST be in a json format with the title "artwork_taxonomy", with the categories STRICTLY FOLLOWING the JSON Taxonomy Template.
+                 {taxonomy_template}
+                 - Do not include fills from the metadata that are not relevant with the provided format 
+                
+                
                 """
     },
               {
       "role": "user",
       "content": [
-        {"type": "text", "text": f"""
+        {"type": "text", "text": 
+         f"""
         Artwork Metadata: {metadata}  \n
-        Taxonomy Format: {tax_template} \n
-        Exhibition Information: {exhibit_info}
+        Exhibition Information: {exhibit_info} \n
+
+        
         
         
         """},
@@ -233,13 +261,13 @@ def generate_taxonomy_tags(metadata, image_data, tax_template,exhibit_info, mode
     # Extract response content
     tags_temp = taxonomy_response.choices[0].message.content
     tax_tags = json.loads(tags_temp)
-    print(tax_tags)
+    print(tags_temp)
     response_reccs = client.chat.completions.create(
       model="gpt-4o-mini",
       messages=[
               {
           "role": "system",
-          "content": """
+          "content": f"""
         
         You are an expert museum curation assistant specializing in generating actionable insights and recommendations for artwork display, storytelling, and audience engagement. 
         Using the provided metadata about an artwork, provide insightful recommendations for curators.
@@ -279,8 +307,8 @@ def generate_taxonomy_tags(metadata, image_data, tax_template,exhibit_info, mode
         - If the metadata lacks sufficient detail, infer plausible recommendations based on context and similar known artworks.
 
           
-          """
-            },
+          """},
+
             {
               "role": "user",
               "content": [
@@ -302,17 +330,17 @@ def generate_taxonomy_tags(metadata, image_data, tax_template,exhibit_info, mode
     
     recc_tags = json.loads(response_reccs.choices[0].message.content)
 
-    for category, items in recc_tags.items():
-      # Format the category name for artwork_taxonomy (e.g., replace spaces with underscores)
-      formatted_category = category.replace(" ", "_")
-      
-      # Check if the field exists in artwork_taxonomy
-      if formatted_category in tax_tags["artwork_taxonomy"]:
-          # Append to the existing list
-          tax_tags["artwork_taxonomy"][formatted_category].extend(items)
-      else:
-          # Create a new field with the items
-          tax_tags["artwork_taxonomy"][formatted_category] = items
+    for category, items in recc_tags["Recommendations"].items():
+        # Format the category name for artwork_taxonomy (e.g., replace spaces with underscores)
+        formatted_category = category.replace(" ", "_")
+        
+        # Check if the field exists in artwork_taxonomy
+        if formatted_category in tax_tags["artwork_taxonomy"]:
+            # Append to the existing list
+            tax_tags["artwork_taxonomy"][formatted_category].extend(items)
+        else:
+            # Create a new field with the items
+            tax_tags["artwork_taxonomy"][formatted_category] = items
 
     print(tax_tags)
 
