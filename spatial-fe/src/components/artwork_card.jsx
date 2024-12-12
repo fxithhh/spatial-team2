@@ -7,7 +7,7 @@ const ArtworkCard = ({ artwork }) => {
     conservation: false,
     taxonomy: false,
     additionalDetails: false,
-    visualContext: false, // New section for visual context
+    visualContext: false,
   });
 
   const [showFullDescription, setShowFullDescription] = useState(false);
@@ -43,67 +43,28 @@ const ArtworkCard = ({ artwork }) => {
       )}
     </div>
   );
-  
 
   const renderTaxonomy = (taxonomy) => {
-    if (!taxonomy) {
+    if (!taxonomy || Object.keys(taxonomy).length === 0) {
       return <p className="text-red-500">No taxonomy available</p>;
     }
 
     return (
       <div>
-        {taxonomy.Artist && <p><strong>Artist:</strong> {taxonomy.Artist}</p>}
-        {taxonomy.Title && <p><strong>Title:</strong> {taxonomy.Title}</p>}
-        {taxonomy.Dating && <p><strong>Dating:</strong> {taxonomy.Dating}</p>}
-        
-        {Array.isArray(taxonomy.Material) && taxonomy.Material.length > 0 ? (
-          <div>
-            <strong>Material:</strong>
-            <ul className="list-inside list-disc text-gray-500">
-              {taxonomy.Material.map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
+        {Object.entries(taxonomy).map(([key, value]) => (
+          <div key={key} className="mb-4">
+            <p className="font-bold text-gray-700">{key}:</p>
+            {Array.isArray(value) ? (
+              <ul className="list-disc list-inside">
+                {value.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>{value || 'N/A'}</p>
+            )}
           </div>
-        ) : (
-          <p><strong>Material:</strong> N/A</p>
-        )}
-  
-        {taxonomy["Geographical Association"] && (
-          <p><strong>Geographical Association:</strong> {taxonomy["Geographical Association"]}</p>
-        )}
-        
-        {Array.isArray(taxonomy["Style Significance"]) && taxonomy["Style Significance"].length > 0 ? (
-          <div>
-            <strong>Style Significance:</strong>
-            <ul className="list-inside list-disc text-gray-500">
-              {taxonomy["Style Significance"].map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
-          </div>
-        ) : (
-          <p><strong>Style Significance:</strong> N/A</p>
-        )}
-        
-        {Array.isArray(taxonomy["Historical Significance"]) && taxonomy["Historical Significance"].length > 0 ? (
-          <div>
-            <strong>Historical Significance:</strong>
-            <ul className="list-inside list-disc text-gray-500">
-              {taxonomy["Historical Significance"].map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
-          </div>
-        ) : (
-          <p><strong>Historical Significance:</strong> N/A</p>
-        )}
-        {/* New fields added below */}
-      {taxonomy["Display Type"] && (
-        <p><strong>Display Type:</strong> {taxonomy["Display Type"]}</p>
-      )}
-
-      {taxonomy["Exhibition Utilisation"] && (
-        <p><strong>Exhibition Utilisation:</strong> {taxonomy["Exhibition Utilisation"]}</p>
-      )}
-
-      {taxonomy["Acquisition Type"] && (
-        <p><strong>Acquisition Type:</strong> {taxonomy["Acquisition Type"]}</p>
-      )}
+        ))}
       </div>
     );
   };
@@ -161,8 +122,8 @@ const ArtworkCard = ({ artwork }) => {
 
       {/* Artwork Image */}
       <img
-        src={artwork.image || 'placeholder-image-url.jpg'}
-        alt={artwork.title || 'Untitled Artwork'}
+        src={artwork.image}
+        alt={artwork.title || "Untitled Artwork"}
         className="w-full max-w-[400px] mb-4 mx-auto"
       />
 
@@ -278,9 +239,7 @@ const ArtworkCard = ({ artwork }) => {
             )}
           </button>
           {sections.taxonomy && (
-            <div className="mt-4">
-              {renderTaxonomy(artwork.taxonomy)}
-            </div>
+            <div className="mt-4">{renderTaxonomy(artwork.taxonomy)}</div>
           )}
         </div>
       </div>
