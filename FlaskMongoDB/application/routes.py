@@ -403,33 +403,6 @@ def get_graph():
         return jsonify({"error": "Graph data not found"}), 404
 
 
-@app.route('/exhibits/<exhibit_id>/floorplan', methods=['GET'])
-def get_exhibit_floorplan(exhibit_id):
-    try:
-        # Fetch the exhibit from the database
-        exhibit = create_exhibits.find_one({"_id": ObjectId(exhibit_id)}, {"images.floor_plan": 1})
-        if not exhibit:
-            return jsonify({"error": "Exhibit not found"}), 404
-
-        # Extract the floor_plan from the exhibit data
-        images = exhibit.get("images", {})
-        floor_plan = images.get("floor_plan")
-
-        if not floor_plan:
-            return jsonify({"error": "Floor plan not found"}), 404
-
-        # Ensure the floor plan is a proper data URI
-        # If it's just base64 without the data-uri prefix, add it
-        if not floor_plan.startswith("data:image"):
-            floor_plan = f"data:image/png;base64,{floor_plan}"
-
-        # Return the floorplan image in JSON
-        return jsonify({"floor_plan": floor_plan}), 200
-
-    except Exception as e:
-        print(f"Error fetching floor plan: {e}")
-        return jsonify({"error": "Internal server error"}), 500
-    
 # Ensure that the Flask app runs only when executed directly
 if __name__ == "__main__":
     app.run(debug=True)
