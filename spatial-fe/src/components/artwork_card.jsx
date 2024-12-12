@@ -92,6 +92,18 @@ const ArtworkCard = ({ artwork }) => {
         ) : (
           <p><strong>Historical Significance:</strong> N/A</p>
         )}
+        {/* New fields added below */}
+      {taxonomy["Display Type"] && (
+        <p><strong>Display Type:</strong> {taxonomy["Display Type"]}</p>
+      )}
+
+      {taxonomy["Exhibition Utilisation"] && (
+        <p><strong>Exhibition Utilisation:</strong> {taxonomy["Exhibition Utilisation"]}</p>
+      )}
+
+      {taxonomy["Acquisition Type"] && (
+        <p><strong>Acquisition Type:</strong> {taxonomy["Acquisition Type"]}</p>
+      )}
       </div>
     );
   };
