@@ -403,6 +403,4 @@ def get_graph():
         return jsonify({"error": "Graph data not found"}), 404
 
 
-# Ensure that the Flask app runs only when executed directly
-if __name__ == "__main__":
-    app.run(debug=True)
+

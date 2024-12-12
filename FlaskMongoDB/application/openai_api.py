@@ -216,7 +216,7 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
 
     # Append defined subsections
     ex_sections = exhibit_info["subsections"]
-    tax_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
+    taxonomy_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
 
     #Picking From Taxonomy Template
 
