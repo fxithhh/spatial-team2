@@ -305,14 +305,8 @@ function Graph({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <div style={{ width: '100%', height: '70vh', position: 'relative', marginBottom: '4rem' }}>
-        <button
-          onClick={() => setShowInstructions(!showInstructions)}
-          className="info-button"
-          aria-label="Toggle Instructions"
-        >
-          <FaInfoCircle size={24} />
-        </button>
+      <div style={{ width: '100%', height: '90vh', position: 'relative', marginBottom: '4rem' }}>
+
 
         {showInstructions && (
           <div
