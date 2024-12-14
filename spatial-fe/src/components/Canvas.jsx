@@ -3,7 +3,7 @@ import p5 from 'p5';
 import { useParams } from 'react-router-dom'; // Ensure you have react-router-dom installed
 
 function Canvas({ disabled = false }) {
-    const { exhibitId } = useParams(); 
+    const { exhibitId } = useParams();
     const [uploadedImage, setUploadedImage] = useState(null);
     const sketchRef = useRef();
     const p5InstanceRef = useRef(null);
@@ -102,6 +102,7 @@ function Canvas({ disabled = false }) {
             // Variables for scale input
             let scaleInput;
             let setScaleButton;
+            let legendDiv; // Div for the legend text
 
             p.preload = function () {
                 floorplanImg = p.loadImage(currentImage);
@@ -139,8 +140,14 @@ function Canvas({ disabled = false }) {
                 scaleInput.position(10, p.height + 10);
                 scaleInput.size(150);
                 scaleInput.attribute('placeholder', 'Enter scale (cm)');
+                scaleInput.style('border', '1px solid #ccc');
+                scaleInput.style('padding', '1px');
 
                 setScaleButton = p.createButton('Set Scale');
+                setScaleButton.style("background-color", "#f9f9f9");
+                setScaleButton.style("border-radius", "4px");
+                setScaleButton.style('border', '1px solid #ccc');
+                setScaleButton.style('padding', '1px');
                 setScaleButton.position(scaleInput.x + scaleInput.width + 10, p.height + 10);
                 setScaleButton.mousePressed(() => {
                     const scaleValue = parseFloat(scaleInput.value());
@@ -168,9 +175,24 @@ function Canvas({ disabled = false }) {
                 });
 
                 // Create the button which triggers Find Most Secluded Area
-                findSecludedAreaButton = p.createButton('Furthest Corner from Exit');
+                findSecludedAreaButton = p.createButton('Find Furthest Corner from Exit');
+                findSecludedAreaButton.style("background-color", "#f9f9f9");
+                findSecludedAreaButton.style("border-radius", "4px");
+                findSecludedAreaButton.style('border', '1px solid #ccc');
+                findSecludedAreaButton.style('padding', '5px');
                 findSecludedAreaButton.position(10, p.height + 50);
                 findSecludedAreaButton.mousePressed(findMostSecludedArea);
+
+                // Create a div for the legend text to place beside the Furthest Corner button
+                legendDiv = p.createDiv(`
+                                <p>Grid cell: ${cellSize} cm x ${cellSize} cm</p>
+                                <p>Press W: Wall, E: Entrance, F: Fire Escape</p>
+                                <p>Narrow corridors are highlighted in red.</p>
+                            `);
+                legendDiv.style('background', '#f9f9f9');
+                legendDiv.style('border', '1px solid #ccc');
+                legendDiv.style('padding', '5px');
+                legendDiv.position(10, p.height + 90);
             };
 
             p.windowResized = function () {
@@ -256,7 +278,6 @@ function Canvas({ disabled = false }) {
                     drawSecludedCells();
                     drawPaths();
                     drawNarrowCorridors(); // Draw narrow corridors
-                    drawLegend();
 
                     // Highlight checked corner cells
                     p.fill(255, 0, 0, 100); // Red with transparency
@@ -383,9 +404,9 @@ function Canvas({ disabled = false }) {
                 }
             };
             p._mousePressedOrig = p.mousePressed;
-p._mouseDraggedOrig = p.mouseDragged;
-p._mouseReleasedOrig = p.mouseReleased;
-p._keyPressedOrig = p.keyPressed;
+            p._mouseDraggedOrig = p.mouseDragged;
+            p._mouseReleasedOrig = p.mouseReleased;
+            p._keyPressedOrig = p.keyPressed;
 
 
             // ====================
@@ -452,7 +473,7 @@ p._keyPressedOrig = p.keyPressed;
 
             function validateRectangle(pixels) {
                 if (pixels.length === 0) return null;
-            
+
                 // Find bounding box
                 let minX = Infinity,
                     minY = Infinity,
@@ -464,11 +485,11 @@ p._keyPressedOrig = p.keyPressed;
                     if (px.y < minY) minY = px.y;
                     if (px.y > maxY) maxY = px.y;
                 }
-            
+
                 let w = maxX - minX + 1;
                 let h = maxY - minY + 1;
                 let area = w * h;
-            
+
                 // Calculate black pixels in bounding box
                 let blackPixels = 0;
                 for (let yy = minY; yy <= maxY; yy++) {
@@ -479,21 +500,21 @@ p._keyPressedOrig = p.keyPressed;
                         }
                     }
                 }
-            
+
                 let blackPercentage = (blackPixels / area) * 100;
-            
+
                 // Set a tolerance threshold (e.g., 90% black pixels)
                 const tolerancePercentage = 90;
-            
+
                 if (blackPercentage < tolerancePercentage) {
                     // Not a valid rectangle within tolerance
                     return null;
                 }
-            
+
                 // Return rectangle data
                 return { x: minX, y: minY, w: w, h: h };
             }
-            
+
 
             function findLargestSquareRectangle() {
                 // Select the rectangle that is closest to a square and has the largest area
@@ -641,25 +662,6 @@ p._keyPressedOrig = p.keyPressed;
 
                 resizeHandle = null;
                 return false;
-            }
-
-            function drawLegend() {
-                p.fill(0);
-                p.textSize(12);
-                p.textAlign(p.RIGHT);
-                p.text(
-                    `Grid cell: ${cellSize} cm x ${cellSize} cm`,
-                    p.width - 10,
-                    p.height - 70
-                );
-                p.text(`Current tool: ${currentTool}`, p.width - 10, p.height - 55);
-                p.text(
-                    'Press W: Wall, E: Entrance, F: Fire Escape',
-                    p.width - 10,
-                    p.height - 40
-                );
-                p.text('Click the button below to find paths.', p.width - 10, p.height - 25);
-                p.text('Narrow corridors are highlighted in red.', p.width - 10, p.height - 10);
             }
 
             function moveWall(gridPos) {
@@ -1412,10 +1414,10 @@ p._keyPressedOrig = p.keyPressed;
         if (p5InstanceRef.current) {
             if (disabled) {
                 // Disable event handlers
-                p5InstanceRef.current.mousePressed = () => {};
-                p5InstanceRef.current.mouseDragged = () => {};
-                p5InstanceRef.current.mouseReleased = () => {};
-                p5InstanceRef.current.keyPressed = () => {};
+                p5InstanceRef.current.mousePressed = () => { };
+                p5InstanceRef.current.mouseDragged = () => { };
+                p5InstanceRef.current.mouseReleased = () => { };
+                p5InstanceRef.current.keyPressed = () => { };
 
                 // If the sketch relies on continuous drawing, stop looping
                 p5InstanceRef.current.noLoop();
