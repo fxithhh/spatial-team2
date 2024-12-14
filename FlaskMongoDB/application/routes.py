@@ -89,6 +89,8 @@ def add_artwork():
         except Exception:
             return jsonify({"error": "Failed to process data with OpenAI for conservation feedback"}), 500
 
+        exhibit_info = {}
+
         # Generate taxonomy feedback if image data is present
         if image_data:
             try:
@@ -96,6 +98,7 @@ def add_artwork():
                     metadata=metadata_without_image,
                     image_data=compressed_image_base64,
                     tax_template=tax_template,
+                    exhibit_info = exhibit_info,
                     model="gpt-4o"
                 )
             except Exception:
@@ -169,10 +172,28 @@ def create_exhibit():
         if not exhibit_title or not concept:
             return jsonify({"error": "Missing required form data: 'exhibit_title' or 'concept'"}), 400
 
+        # Check the floor_plan file
+        floor_plan_file = request.files.get("floor_plan")
+        if not floor_plan_file:
+            return jsonify({"error": "Missing floor plan file."}), 400
+
+        # Validate floor_plan file type
+        allowed_extensions = {"png", "jpg", "jpeg"}
+        extension = floor_plan_file.filename.rsplit('.', 1)[-1].lower()
+        if extension not in allowed_extensions:
+            return jsonify({"error": "Floor plan must be a PNG, JPG, or JPEG file."}), 400
+
+        # Convert floor_plan to base64 data URL
+        floor_plan_base64 = handle_image_upload(floor_plan_file)
+        # Use "data:image/jpeg;base64," prefix (if extension is jpg/jpeg, use jpeg; if png, use png)
+        mime_type = "image/jpeg" if extension in ["jpg", "jpeg"] else "image/png"
+        floor_plan_data_url = f"data:{mime_type};base64,{floor_plan_base64}"
+
         form_data = {
             "exhibit_title": exhibit_title,
             "concept": concept,
             "subsections": subsections,
+            "floor_plan": floor_plan_data_url
         }
 
         # Process the Excel file
@@ -193,24 +214,27 @@ def create_exhibit():
             print(f"Excel file {artwork_file.filename} processed successfully.")
         except Exception as e:
             return jsonify({"error": f"Error processing artwork Excel file: {str(e)}"}), 400
-        
+
         # Validate and process the images
         valid_images = []
         for idx, image in enumerate(processed_data["images"]):
             try:
                 print(f"Validating image {idx}")
-                
                 # Validate Base64 string
                 if not is_valid_base64(image):
                     raise ValueError(f"Image {idx} is not a valid Base64 string.")
-
                 valid_images.append(image)
                 print(f"Image {idx} validated and processed successfully.")
-
             except Exception as e:
                 print(f"Error processing image {idx}: {str(e)}")
 
-        # Run OpenAI functions on the extracted rows
+        exhibit_info = {
+            "exhibit_title": exhibit_title,
+            "concept": concept,
+            "subsections": subsections,
+        }
+
+        # Run OpenAI functions on the extracted rows (if needed)
         for idx, row in enumerate(form_data["artworks"]):
             try:
                 print(f"Calling OpenAI API for row {idx}")
@@ -223,10 +247,9 @@ def create_exhibit():
                 metadata = row
                 if not isinstance(metadata, dict):
                     raise ValueError(f"Invalid metadata for row {idx}.")
-
+                row["visual_context"] = generate_visual_context(row, image_for_row, {}, "gpt-4o")
                 row["conservation_guidelines"] = generate_response_conservation(row)
-                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row, {}, "gpt-4o")
-                row["visual_context"] = generate_visual_context(row,image_for_row, {}, "gpt-4o")
+                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row, exhibit_info, "gpt-4o")
                 print(f"OpenAI metadata generated for row {idx}")
             except Exception as e:
                 print(f"Error generating OpenAI metadata for row {idx}: {str(e)}")
@@ -253,104 +276,71 @@ def create_exhibit():
         return jsonify({"error": "Internal server error"}), 500
 
 
-@app.route('/exhibits', methods=['GET'])
+@app.route('/exhibits', defaults={'id': None}, methods=['GET'])
 @app.route('/exhibits/<id>', methods=['GET'])
-def get_exhibits(id=None):
+def get_exhibits(id):
     try:
         if id:
-            # Fetch the exhibit with the given ID
+            # Fetch a single exhibit
             exhibit = create_exhibits.find_one({"_id": ObjectId(id)})
-
             if not exhibit:
                 return jsonify({"error": "Exhibit not found"}), 404
 
-            # Process the exhibit fields
-            exhibit["_id"] = str(exhibit["_id"])
-            exhibit["artworks"] = [
-                {
-                    "title": artwork.get("Artwork Title", "Untitled Artwork"),
-                    "description": artwork.get("Artwork Description ", "No Description"),
-                    "artist": artwork.get("Artist Name", "Unknown Artist"),
-                    "dating": artwork.get(" Dating", "Unknown Date"),
-                    "dimension": artwork.get("Dimension", "Unknown Dimensions"),
-                    "material": artwork.get("Material", "Unknown Material"),
-                    "display_type": artwork.get("Display Type", "N/A"),
-                    "geographical_association": artwork.get("Geographical Association ", "N/A"),
-                    "acquisition_type": artwork.get("Acquisition Type ", "N/A"),
-                    "historical_significance": artwork.get("Historical Significance", "N/A"),
-                    "style_significance": artwork.get("Style Significance", "N/A"),
-                    "exhibition_utilization": artwork.get("Exhibition Utilisation ", "N/A"),
-                    "conservation_guidelines": artwork.get("conservation_guidelines", {}).get("Conservation_Guidelines", "N/A"),
-                    "taxonomy": {
-                        "Artist": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Artist", "Unknown"),
-                        "Title": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Title", "Untitled"),
-                        "Dating": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Dating", "Unknown Year"),
-                        "Material": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Material", []),
-                        "Geographical Association": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Geographical Association", "Unknown"),
-                        "Acquisition Type": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Acquisition Type", "Unknown"),
-                        "Display Type": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Display Type", "Unknown"),
-                        "Exhibition Utilisation": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Exhibition Utilisation", "Unknown"),
-                        "Style Significance": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Style Significance", []),
-                        "Historical Significance": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Historical Significance", []),
-                        "Conservation Guidelines": artwork.get("taxonomy_tags", {}).get("tags", {}).get("Conservation Guidelines", []),
-                        },
-                    "visual_context": artwork.get("visual_context", []),
-                    "image": f"data:image/;base64,{artwork.get('excel_images', '')}"
-                }
-                for artwork in exhibit.get("artworks", [])
-            ]
-
+            # Process and return the single exhibit
+            exhibit = process_exhibit(exhibit)
             return jsonify(exhibit), 200
+
         else:
-            # Fetch all exhibits from the MongoDB collection
+            # Fetch all exhibits
             exhibits_cursor = create_exhibits.find()
+            exhibits = [process_exhibit(exhibit) for exhibit in exhibits_cursor]
 
-            # Convert the MongoDB cursor to a list of dictionaries
-            exhibits = []
-            for exhibit in exhibits_cursor:
-                exhibit["_id"] = str(exhibit["_id"])  # Convert ObjectId to string for JSON serialization
-
-                # Extract relevant fields
-                title = exhibit.get("exhibit_title", "Untitled Exhibit")
-                concept = exhibit.get("concept", "")
-                subsections = exhibit.get("subsections", [])
-                images = exhibit.get("images", {})
-                floor_plan = images.get("floor_plan", None)
-
-                # Ensure floor_plan includes Base64 prefix if missing
-                if floor_plan and not floor_plan.startswith("data:image"):
-                    floor_plan = f"data:image/png;base64,{floor_plan}"
-
-                artworks = [
-                    {
-                        "title": artwork.get("Artwork Title", "Untitled Artwork"),
-                        "artist": artwork.get("Artist Name", "Unknown Artist"),
-                        "dimension": artwork.get("Dimension", "Unknown Dimensions"),
-                    }
-                    for artwork in exhibit.get("artworks", [])
-                ]
-
-                # Append processed exhibit to the list
-                exhibits.append({
-                    "_id": exhibit["_id"],
-                    "exhibit_title": title,
-                    "concept": concept,
-                    "subsections": subsections,
-                    "floor_plan": floor_plan,
-                    "artworks": artworks,
-                })
-
-            # If no exhibits are found, return an appropriate message
             if not exhibits:
                 return jsonify({"error": "No exhibits found"}), 404
 
-
-            # Return the list of exhibits as JSON
             return jsonify(exhibits), 200
 
     except Exception as e:
         print(f"Error fetching exhibits: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
+
+def process_exhibit(exhibit):
+    """Helper function to process a single exhibit."""
+    exhibit["_id"] = str(exhibit["_id"])
+    # Artworks processing unchanged...
+    exhibit["artworks"] = [
+        {
+            "title": artwork.get("Artwork Title", "Untitled Artwork"),
+            "description": artwork.get("Artwork Description ", "No Description"),
+            "artist": artwork.get("Artist Name", "Unknown Artist"),
+            "dating": artwork.get(" Dating", "Unknown Date"),
+            "dimension": artwork.get("Dimension", "Unknown Dimensions"),
+            "material": artwork.get("Material", "Unknown Material"),
+            "display_type": artwork.get("Display Type", "N/A"),
+            "geographical_association": artwork.get("Geographical Association ", "N/A"),
+            "acquisition_type": artwork.get("Acquisition Type ", "N/A"),
+            "historical_significance": artwork.get("Historical Significance", "N/A"),
+            "style_significance": artwork.get("Style Significance", "N/A"),
+            "exhibition_utilization": artwork.get("Exhibition Utilisation ", "N/A"),
+            "conservation_guidelines": artwork.get("conservation_guidelines", {}).get("Conservation_Guidelines", "N/A"),
+            "taxonomy": artwork.get("taxonomy_tags", {}).get("artwork_taxonomy", {}),
+            "visual_context": artwork.get("visual_context", []),
+            "image": [
+                f"data:image/jpeg;base64,{img}" if not img.startswith("data:image") else img
+                for img in artwork.get("excel_images", [])
+            ],
+        }
+        for artwork in exhibit.get("artworks", [])
+    ]
+
+    exhibit["exhibit_title"] = exhibit.get("exhibit_title", "Untitled Exhibit")
+    exhibit["concept"] = exhibit.get("concept", "")
+    exhibit["subsections"] = exhibit.get("subsections", [])
+    # floor_plan already stored as data URL
+    # If needed, just leave it as is. It's accessible under exhibit["floor_plan"]
+
+    return exhibit
 
 
 # Helper: Handle image uploads
@@ -395,33 +385,22 @@ def get_graph():
         return jsonify({"error": "Graph data not found"}), 404
 
 
-@app.route('/exhibits/<exhibit_id>/floorplan', methods=['GET'])
-def get_exhibit_floorplan(exhibit_id):
+# Route to retrieve the floor plan for a given exhibit
+@app.route('/exhibits/<id>/floorplan', methods=['GET'])
+def get_floorplan(id):
     try:
-        # Fetch the exhibit from the database
-        exhibit = create_exhibits.find_one({"_id": ObjectId(exhibit_id)}, {"images.floor_plan": 1})
+        exhibit = create_exhibits.find_one({"_id": ObjectId(id)})
         if not exhibit:
             return jsonify({"error": "Exhibit not found"}), 404
 
-        # Extract the floor_plan from the exhibit data
-        images = exhibit.get("images", {})
-        floor_plan = images.get("floor_plan")
-
+        floor_plan = exhibit.get("floor_plan")
         if not floor_plan:
-            return jsonify({"error": "Floor plan not found"}), 404
+            return jsonify({"error": "No floor_plan found for this exhibit"}), 404
 
-        # Ensure the floor plan is a proper data URI
-        # If it's just base64 without the data-uri prefix, add it
-        if not floor_plan.startswith("data:image"):
-            floor_plan = f"data:image/png;base64,{floor_plan}"
-
-        # Return the floorplan image in JSON
+        # Return the floor_plan field as JSON
         return jsonify({"floor_plan": floor_plan}), 200
 
     except Exception as e:
-        print(f"Error fetching floor plan: {e}")
+        print(f"Error fetching floorplan: {e}")
         return jsonify({"error": "Internal server error"}), 500
-    
-# Ensure that the Flask app runs only when executed directly
-if __name__ == "__main__":
-    app.run(debug=True)
+

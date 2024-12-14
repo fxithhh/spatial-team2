@@ -93,6 +93,11 @@ function CreateExhibit() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // Prevent double submissions
+    if (loading) {
+        return;
+    }
+    setLoading(true); // Set loading state at the start
 
         console.log(formData);
         console.log("Title:", formData.exhibit_title);
@@ -150,10 +155,11 @@ function CreateExhibit() {
             }
         } catch (error) {
             console.error('Error submitting form:', error);
-            toast.error('An unexpected error occurred. Please try again.');
+            toast.error('An unexpected error occurred.');
+        } finally {
+            setLoading(false); // Reset loading state after submission
         }
     };
-
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -317,12 +323,15 @@ function CreateExhibit() {
 
                         {/* Submit Button */}
                         <div className='mx-auto flex justify-center'>
-                            <button
-                                type="submit"
-                                className="bg-brand text-white py-2 px-8 hover:bg-brandhover flex items-center"
-                            >
-                                Create Exhibit
-                            </button>
+                        <button
+                            type="submit"
+                            className={`bg-brand text-white py-2 px-8 hover:bg-brandhover flex items-center ${
+                                loading ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                            disabled={loading} // Prevent clicks during loading
+                        >
+                            {loading ? "Submitting..." : "Create Exhibit"}
+                        </button>
                         </div>
 
                     </form>

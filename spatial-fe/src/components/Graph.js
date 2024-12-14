@@ -21,7 +21,9 @@ function Graph() {
   const [narrativeThreshold, setNarrativeThreshold] = useState(6.0);
   const [springLengthModulator, setSpringLengthModulator] = useState(0.7);
   const [springStiffnessModulator, setSpringStiffnessModulator] = useState(0.7);
-  const [repulsionStrength, setRepulsionStrength] = useState(25);
+  const [repulsionStrength, setRepulsionStrength] = useState(10);
+  const [centralGravity, setCentralGravity] = useState(0.001);
+
 
   const [hiddenNodes, setHiddenNodes] = useState([]);
 
@@ -143,7 +145,7 @@ function Graph() {
           enabled: true,
           forceAtlas2Based: {
             gravitationalConstant: -repulsionStrength,
-            centralGravity: 0,
+            centralGravity: 0.001,
             springLength: 100,
             springConstant: 0.1 * springStiffnessModulator,
             damping: 1
@@ -249,14 +251,16 @@ function toggleNodeFixed(nodeId, network) {
 }
 
 
-  function filterAndUpdateEdges() {
-    const edges = networkInstanceRef.current.body.data.edges;
-    edges.clear();
-  
-    const filteredEdges = allEdges.filter(edge =>
+function filterAndUpdateEdges() {
+  const edges = networkInstanceRef.current.body.data.edges;
+  edges.clear();
+
+  const filteredEdges = allEdges
+    .filter(edge =>
       edge.visual_connectivity_score >= visualThreshold &&
       edge.narrative_connectivity_score >= narrativeThreshold
-    ).map(edge => {
+    )
+    .map(edge => {
       const overall_score = computeOverallScore(
         (edge.visual_connectivity_score - minVisual) / (maxVisual - minVisual || 1),
         (edge.narrative_connectivity_score - minNarrative) / (maxNarrative - minNarrative || 1)
@@ -266,45 +270,50 @@ function toggleNodeFixed(nodeId, network) {
       const newColor = getColorFromScore(capped_score);
       const baseLength = 300 * (1 - capped_score) + 100;
       const newLength = baseLength * springLengthModulator;
-  
+
+      // Check if edge is exactly on the threshold
+      const isOnThreshold =
+        Math.abs(edge.visual_connectivity_score - visualThreshold) < 1e-10 ||
+        Math.abs(edge.narrative_connectivity_score - narrativeThreshold) < 1e-10;
+
       return {
         from: edge.from,
         to: edge.to,
         width: newWidth,
-        color: newColor,
+        color: isOnThreshold ? 'grey' : newColor, // If on threshold, use grey
         title: edge.title,
-        length: newLength
+        length: isOnThreshold ? (newLength * 1.5) : newLength,
+        physics: !isOnThreshold
       };
     });
-  
-    edges.add(filteredEdges);
-    // No need to call setData or restart simulation. 
-    // The network will adjust automatically.
-  }
+
+  edges.add(filteredEdges);
+}
+
   
 
-  function updatePhysicsSettings() {
-    const newPhysicsOptions = {
-      physics: {
-        enabled: true,
-        forceAtlas2Based: {
-          gravitationalConstant: -repulsionStrength,
-          centralGravity: 0.0005,
-          springConstant: 0.1 * springStiffnessModulator,
-          damping: 0.4
-        },
-        solver: 'forceAtlas2Based',
-        stabilization: { iterations: 50 }
-      }
-    };
-    networkInstanceRef.current.setOptions(newPhysicsOptions);
-    networkInstanceRef.current.stopSimulation();
-    networkInstanceRef.current.startSimulation();
-  }
+function updatePhysicsSettings() {
+  const newPhysicsOptions = {
+    physics: {
+      enabled: true,
+      forceAtlas2Based: {
+        gravitationalConstant: -repulsionStrength,
+        centralGravity: centralGravity, // Use the centralGravity state
+        springConstant: 0.1 * springStiffnessModulator,
+        damping: 0.4
+      },
+      solver: 'forceAtlas2Based',
+      stabilization: { iterations: 50 }
+    }
+  };
+  networkInstanceRef.current.setOptions(newPhysicsOptions);
+  networkInstanceRef.current.stopSimulation();
+  networkInstanceRef.current.startSimulation();
+}
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <div style={{ width: '100%', height: '100vh', position: 'relative', marginBottom: '4rem' }}>
+      <div style={{ width: '100%', height: '70vh', position: 'relative', marginBottom: '4rem' }}>
         <button
           onClick={() => setShowInstructions(!showInstructions)}
           className="info-button"
@@ -448,9 +457,28 @@ function toggleNodeFixed(nodeId, network) {
           />
           <span className="ml-2 font-medium">{repulsionStrength}</span>
         </div>
+
+        <div className="slider-container flex items-center">
+  <label htmlFor="centralGravity" className="w-1/3 font-medium">
+    Central Gravity:
+  </label>
+  <input
+    type="range"
+    id="centralGravity"
+    name="centralGravity"
+    min="0.0001"
+    max="0.1"
+    value={centralGravity}
+    step="0.0001"
+    onChange={e => setCentralGravity(parseFloat(e.target.value))}
+    className="w-2/3 accent-brand"
+  />
+  <span className="ml-2 font-medium">{centralGravity.toFixed(4)}</span>
+</div>
       </div>
     </div>
   );
 }
 
 export default Graph;
+

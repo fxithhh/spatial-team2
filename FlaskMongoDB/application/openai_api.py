@@ -77,7 +77,6 @@ taxonomy_path = BASE_DIR / 'taxonomy_picklist.json'
 try:
     with taxonomy_path.open("r", encoding="utf-8") as file:
         tax_template = json.load(file)
-        print(tax_template)
     tax_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
     print("Taxonomy template loaded and updated successfully.")
 except FileNotFoundError:
@@ -166,10 +165,13 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
           - If information is insufficent, use the general knowledge you possess along with the metadata of the artwork and general knowledge of artwork conservation and come up with plausible conservation guidelines
           - Account for the nature of the installation, dimensions of the artwork in the generated fire safety guidelines
           - Do not mention the classification alphabets in the guidelines. If required for referencing, cite the relevant materials to the classification 
+          - For guidelines pertaining to fire safety, cite the specific code or regulation if available
           - Synthesise the reccomendations in a readable, succint manner such that it can be easily understood by a museum curator.\n
+          
           **Output Format**
           - Your response should be formatted in JSON with the key "Conservation_Guidelines," containing a python list of 3 to 5 actionable recommendations 
           - Reccomendations must be concise, coherent, specific, and tailored to the context provided.\n
+          - Utilise Markdown syntax for each guideline to enhance its readablity, with italics for building codes. 
           """
       },
        {
@@ -188,42 +190,169 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
     # Extract response content
     answer_temp = guideline_response.choices[0].message.content
     answer = json.loads(answer_temp)
+    print(answer)
     return answer
 
 # Taxonomy Tagging Function
-def generate_taxonomy_tags(metadata, image_data, tax_template, model="gpt-4o"):
+def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
     # Call OpenAI API for taxonomy tagging
+    #Set Up Taxonomy Template
+    # Define the base directory using pathlib
+    BASE_DIR = Path(__file__).resolve().parent
+
+    # Construct the relative path to the taxonomy JSON file
+    taxonomy_path = BASE_DIR / 'taxonomy_picklist.json'
+
+    # Load taxonomy template and update exhibition sections
+    try:
+        with taxonomy_path.open("r", encoding="utf-8") as file:
+            taxonomy_template = json.load(file)
+        print(taxonomy_template)
+
+    except FileNotFoundError:
+      print(f"Taxonomy file not found at {taxonomy_path}. Please check the relative path.")
+    except json.JSONDecodeError as e:
+      print(f"Error decoding JSON from the taxonomy file: {e}")
+
+    # Append defined subsections
+    ex_sections = exhibit_info["subsections"]
+    taxonomy_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
+
+    #Picking From Taxonomy Template
+
     taxonomy_response = client.chat.completions.create(
         model=model,
-        messages=[
-            {
-                "role": "system",
-                "content": "A system that generates taggings for museums based on the provided artwork image and its metadata. The system references an established artwork taxonomy to assign appropriate tags according to the provided categories and choices. Ensure that the answer should strictly adhere to the taxonomy JSON format provided."
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"Given the metadata in the image: {metadata} and the image information, assign its tagging according to this taxonomy format {tax_template}"
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{image_data}"
-                        },
-                    },
-                ]
-            }
+         messages=[
+      {
+        "role": "system",
+        "content": f"""
+                A system that generates taggings for museums based on the provided artwork image and its metadata. 
+                The system references an established artwork taxonomy to assign appropriate tags according to the provided categories and choices. 
+                Ensure that the output should strictly adhere to the taxonomy JSON format provided, and should not repeate fills existing in the metadata
+                
+                Utilise the artwork metadata, artwork image and exhibition information to aid in the tagging process.
+
+                 **Output Guidelines**:
+                 - Output format MUST be in a json format with the title "artwork_taxonomy", with the categories STRICTLY FOLLOWING the JSON Taxonomy Template.
+                 {taxonomy_template}
+                 - Do not include fills from the metadata that are not relevant with the provided format 
+                
+                
+                """
+    },
+              {
+      "role": "user",
+      "content": [
+        {"type": "text", "text": 
+         f"""
+        Artwork Metadata: {metadata}  \n
+        Exhibition Information: {exhibit_info} \n
+
+        
+        
+        
+        """},
+        {
+          "type": "image_url",
+          "image_url": {
+            "url":  f"data:image/jpeg;base64,{image_data}"
+          },
+        },
+      ],
+    }
         ],
         response_format={"type": "json_object"},
         max_tokens=300
     )
 
-    # Extract response content
+    #Generating Reccomendations
     tags_temp = taxonomy_response.choices[0].message.content
-    tags = json.loads(tags_temp)
-    return tags
+    tax_tags = json.loads(tags_temp)
+    print(tags_temp)
+    response_reccs = client.chat.completions.create(
+      model="gpt-4o-mini",
+      messages=[
+              {
+          "role": "system",
+          "content": f"""
+        
+        You are an expert museum curation assistant specializing in generating actionable insights and recommendations for artwork display, storytelling, and audience engagement. 
+        Using the provided metadata about an artwork, provide insightful recommendations for curators.
+        
+        **Input Metadata Template**:
+        - Title:
+        - Description: 
+        - Artist Name: 
+        - Date of Artwork: 
+        - Medium: 
+        - Dimensions: 
+        - Display Type: 
+        - Geographical Association: 
+        - Acquisition Type:
+        - Historical Significance: 
+        - Style Significance: 
+        - Exhibition Utilization:
+
+        **Reccomendation Categories**
+
+        1. **Lighting Requirements**: Suggest the type of lighting setup needed for optimal display, considering the artwork's medium, dimensions,exhibition utilization and material properties. 
+
+        2. **Display Suggestions**: Recommend ideal placements and configurations for the artwork. Include insights on orientation (e.g., vertical or horizontal), display type (e.g., wall-mounted, free-standing), and any spatial requirements.
+
+        3. **Storytelling Potential**: Highlight the key narrative or thematic elements of the artwork. Suggest how it can be integrated into broader exhibition themes or its potential as a centerpiece for storytelling.
+
+        4. **Emotional Connection Tags**: Analyze the artwork's description and image information to provide precise tags that reflect its emotional resonance. Ensure that it is relevant to the exhibition concept, artwork description and its historical context.
+
+        5. **Historical Context**: Provide insights on the artwork's historical and cultural significance based on its creation date, artist, historical significance and any notable movements or events it reflects.
+
+
+
+        **Output Guidelines**:
+        - Output format should be in a json format, with title "Reccomendations" and in accordance to the Reccomendation Categories. 
+        - Generate the top 5 reccomendation for each category and place it in a list format mapped to its respective category
+        - Each of the reccomendations must not exceed 8 words, and should not be using any abbrievations. 
+        - Each reccomendation for each category must be unique and distinct from each other 
+        - If the metadata lacks sufficient detail, infer plausible recommendations based on context and similar known artworks.
+
+          
+          """},
+
+            {
+              "role": "user",
+              "content": [
+                {"type": "text", "text": f"""
+                Artwork Metadata: {metadata}  \n
+                Exhibition Information: {exhibit_info}        
+                """},
+                {
+                  "type": "image_url",
+                  "image_url": {
+                    "url":  f"data:image/jpeg;base64,{image_data}"
+                  },
+                },
+              ],
+            }
+          ],response_format={"type":"json_object"},
+          max_tokens=300,
+        )
+    
+    recc_tags = json.loads(response_reccs.choices[0].message.content)
+
+    for category, items in recc_tags["Recommendations"].items():
+        # Format the category name for artwork_taxonomy (e.g., replace spaces with underscores)
+        formatted_category = category.replace(" ", "_")
+        
+        # Check if the field exists in artwork_taxonomy
+        if formatted_category in tax_tags["artwork_taxonomy"]:
+            # Append to the existing list
+            tax_tags["artwork_taxonomy"][formatted_category].extend(items)
+        else:
+            # Create a new field with the items
+            tax_tags["artwork_taxonomy"][formatted_category] = items
+
+    print(tax_tags)
+
+    return tax_tags
 
 def generate_visual_context(metadata, image_data, tax_template, model="gpt-4o"):
      response_1 = client.chat.completions.create(
@@ -288,4 +417,5 @@ def generate_visual_context(metadata, image_data, tax_template, model="gpt-4o"):
      
      viz_temp = response_2.choices[0].message.content
      viz_info = json.loads(viz_temp)
+     print(viz_info["visual_context"])
      return viz_info["visual_context"]
