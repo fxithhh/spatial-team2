@@ -95,27 +95,33 @@ const ExhibitDetail = () => {
             }
             const data = await response.json();
             console.log("Fetched exhibit data:", data);
-            // Extract excel_images and debug
+
             const excelImages = data.excel_images || [];
             console.log("Excel Images at Exhibit Level:", excelImages);
-            // Debugging for excel_images
+
             if (data.artworks && data.artworks.length > 0) {
-                data.artworks.forEach((artwork, index) => {
-                    console.log(`Artwork ${index} excel_images:`, artwork.excel_images);
+                // Assign each exhibit-level excel_image to the corresponding artwork
+                data.artworks = data.artworks.map((artwork, index) => {
+                    // Assign the corresponding excel image from the exhibit-level images
+                    const artworkExcelImage = excelImages[index] || ''; // If no corresponding image, fallback to empty string
+                    return {
+                        ...artwork,
+                        excel_images: artworkExcelImage ? [artworkExcelImage] : [], // Wrap it in an array for consistency
+                    };
                 });
+                console.log("Updated Artwork Data with Excel Images Assigned:", data.artworks);
+            } else {
+                console.log("No artworks available or empty artworks array.");
             }
 
-            // Update state with the exhibit and its artworks
-            setSelectedExhibit(data);
+            setExhibit(data);
             setArtworks(data.artworks || []);
-            setFloorplanImage(data.floor_plan);
             setExcelImages(excelImages);
         } catch (err) {
             setError('Error fetching exhibit');
         }
     };
 
-    // Fetch data on component mount
     useEffect(() => {
         if (exhibitId) {
             fetchArtworks();
@@ -413,31 +419,30 @@ const ExhibitDetail = () => {
                                         key={artwork._id}
                                         onClick={() => {
                                             setSelectedArtwork(artwork); // Pass artwork data to ArtworkCard
-                                            console.log(`Selected artwork: ${artwork.title || "Untitled"}`);
                                         }}
-                                        className="grid grid-rows-3 px-2 py-2 border-b-2 cursor-pointer overflow-y-auto items-center hover:border-2 hover:bg-linkhover hover:border-brand"
+                                        className="flex flex-col px-2 py-2 border-b-2 cursor-pointer hover:border-2 hover:bg-linkhover hover:border-brand"
                                     >
-                                        <span className="font-semibold text-xl text-black mr-4 font-['Roboto_Condensed']">
+                                        <span className="font-semibold text-xl text-black h-fit font-['Roboto_Condensed']">
                                             {artwork.title || "Untitled"}
                                         </span>
-                                        <span className="font-normal text-base text-brand mr-4 font-['Roboto']">
+                                        <span className="font-normal text-base text-brand h-fit font-['Roboto']">
                                             {artwork.artist || "Unknown Artist"}
                                         </span>
-                                        <span className="font-normal text-sm text-gray-400 mr-4 font-['Roboto']">
+                                        <span className="font-normal text-sm text-gray-400 h-fit font-['Roboto']">
                                             {artwork.dimension || "Unknown Dimensions"}
                                         </span>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        {/*Artwork Details Section*/}
+                        {/* Artwork Details Section */}
                         <div className="mt-4 border-2 border-black py-4 px-8 mb-8 h-auto">
-                        {selectedArtwork ? (
-                            <ArtworkCard artwork={selectedArtwork} />
-                        ) : (
-                            <p className="text-lg text-red-500">Select an artwork to display its information.</p>
-                        )}
-                        </div>;
+                            {selectedArtwork ? (
+                                <ArtworkCard artwork={selectedArtwork} /> // Pass selectedArtwork directly
+                            ) : (
+                                <p className="text-lg text-red-500">Select an artwork to display its information.</p>
+                            )}
+                        </div>
                     </aside>
                 )}
 
