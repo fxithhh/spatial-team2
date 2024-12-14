@@ -180,19 +180,17 @@ function Canvas({ disabled = false }) {
                 findSecludedAreaButton.style("border-radius", "4px");
                 findSecludedAreaButton.style('border', '1px solid #ccc');
                 findSecludedAreaButton.style('padding', '5px');
-                findSecludedAreaButton.position(10, p.height + 50);
+                findSecludedAreaButton.position(400, p.height + 10);
                 findSecludedAreaButton.mousePressed(findMostSecludedArea);
 
                 // Create a div for the legend text to place beside the Furthest Corner button
                 legendDiv = p.createDiv(`
                                 <p>Grid cell: ${cellSize} cm x ${cellSize} cm</p>
-                                <p>Press W: Wall, E: Entrance, F: Fire Escape</p>
                                 <p>Narrow corridors are highlighted in red.</p>
                             `);
-                legendDiv.style('background', '#f9f9f9');
                 legendDiv.style('border', '1px solid #ccc');
                 legendDiv.style('padding', '5px');
-                legendDiv.position(10, p.height + 90);
+                legendDiv.position(850, p.height + 10);
             };
 
             p.windowResized = function () {
@@ -260,7 +258,7 @@ function Canvas({ disabled = false }) {
                         p.textSize(16);
                         p.textAlign(p.LEFT, p.TOP);
                         p.text(
-                            '<-- Enter its real size below',
+                            '<-- Click to enter its real size',
                             mostSquareRect.x + mostSquareRect.w + 10,
                             mostSquareRect.y
                         );

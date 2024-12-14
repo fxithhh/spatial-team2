@@ -286,8 +286,9 @@ const ExhibitDetail = () => {
                             <>
                                 <h2 className="text-2xl font-bold text-black mb-2">Fire Safety Guidelines</h2>
                                 <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">
-                                    Settings for fire safety & emergency compliance.
-                                    Press W: Wall, E: Entrance, F: Fire Escape
+                                    <strong>Tool Hotkeys</strong> 
+                                    <br/>
+                                    <strong>W: Wall, E: Entrance, F: Fire Escape</strong>
                                 </p>
                                 <div className="space-y-4">
                                     {/* Safety Travel Distance Slider */}
