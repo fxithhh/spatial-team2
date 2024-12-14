@@ -9,7 +9,7 @@ function OverlayComponent({
     springStiffnessModulator,
     repulsionStrength,
     centralGravity,
-    onViewModeChange // Adding the callback prop
+    onViewModeChange
 }) {
     // State order:
     // 0: Floorplan Only
@@ -17,6 +17,8 @@ function OverlayComponent({
     // 2: Graph Over Floorplan
     // 3: Floorplan Over Graph
     const [viewMode, setViewMode] = useState(0);
+    const [cursorColor, setCursorColor] = useState('default'); 
+    // cursorColor will help determine which cursor to display.
 
     const states = [
         "1) Floorplan only",
@@ -25,19 +27,36 @@ function OverlayComponent({
         "4) Floorplan over Graph"
     ];
 
-    // Handle keyboard shortcuts: 1,2,3,4 to set states
     useEffect(() => {
         const handleKeyDown = (e) => {
+            // Handle viewMode changes
             if (e.key === '1') setViewMode(0); // Floorplan Only
             if (e.key === '2') setViewMode(1); // Graph Only
             if (e.key === '3') setViewMode(2); // Graph Over Floorplan
             if (e.key === '4') setViewMode(3); // Floorplan Over Graph
+
+            // Handle cursor color changes if viewMode is 0 or 3
+            if (viewMode === 0 || viewMode === 3) {
+                if (e.key === 'F' || e.key === 'f') {
+                    // Make cursor red
+                    setCursorColor('red');
+                }
+                if (e.key === 'W' || e.key === 'w') {
+                    // Make cursor black
+                    setCursorColor('black');
+                }
+                if (e.key === 'E' || e.key === 'e') {
+                    // Make cursor green
+                    setCursorColor('green');
+                }
+            }
         };
+
         window.addEventListener('keydown', handleKeyDown);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [viewMode]);
 
     // Call the onViewModeChange callback whenever viewMode changes, if provided
     useEffect(() => {
@@ -61,11 +80,28 @@ function OverlayComponent({
     // Translucent overlay: visible in "Graph Over Floorplan"(2) and "Floorplan Over Graph"(3)
     const showOverlay = (viewMode === 2 || viewMode === 3);
 
-    // Determine cursors:
-    // If floorplan is interactive: use crosshair
-    // If graph is interactive: use grab
-    // Otherwise: default
-    const floorplanCursor = floorplanPointerEvents === 'auto' ? 'crosshair' : 'default';
+    // Determine the cursor appearance for the floorplan
+    // We will choose the cursor image based on the cursorColor state.
+    let floorplanCursor = 'default';
+
+    // Only set custom cursors if floorplan is interactive
+    if (floorplanPointerEvents === 'auto') {
+        if (cursorColor === 'red') {
+            // Replace 'redCursor.png' with an actual red cursor image (or a data URI)
+            floorplanCursor = 'url(/CrosshairRed.cur), crosshair';
+        } else if (cursorColor === 'black') {
+            // Replace 'blackCursor.png' with an actual black cursor image
+            floorplanCursor = 'url(blackCursor.png), crosshair';
+        } else if (cursorColor === 'green') {
+            // Replace 'greenCursor.png' with an actual green cursor image
+            floorplanCursor = 'url(/CrosshairGreen.cur), crosshair';
+        } else {
+            // Default to crosshair if no custom color is set
+            floorplanCursor = 'crosshair';
+        }
+    }
+
+    // Graph cursor remains the same:
     const graphCursor = graphPointerEvents === 'auto' ? 'grab' : 'default';
 
     return (
