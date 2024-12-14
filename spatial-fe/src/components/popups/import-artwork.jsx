@@ -9,7 +9,8 @@ import { FaAngleDown } from "react-icons/fa6";
 import { FaAngleUp } from "react-icons/fa6";
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-function ImportArtWork({ isOpen, closeAddArtwork }) {
+function ImportArtWork({ isOpen, closeAddArtwork, exhibitionId }) {
+    console.log("Exhibition ID passed to ImportArtWork:", exhibitionId);
     // Style popup
     const contentStyle = {
         borderRadius: '0.5em',
@@ -36,13 +37,13 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         historical_significance: "",
         style_significance: "",
         exhibition_utilisation: "",
-        image: null
+        image: null,
     });
 
-    const displayOptions = ["Wall Hanging", "Floor", "Ceiling Hanging", "Screen",];
+    const displayOptions = ["Wall Hanging", "Floor", "Ceiling Hanging", "Screen"];
     const [isDisplayDropdownOpen, setIsDisplayDropdownOpen] = useState(false);
 
-    // preview uploaded image
+    // Preview uploaded image
     const [previewImage, setPreviewImage] = useState(null);
 
     // Handle multi-select dropdown toggle for display type
@@ -53,7 +54,6 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
     // Handle multi-select dropdown for display type
     const handleDisplaySelect = (option) => {
         setFormData((prevFormData) => {
-            // Check if option is already selected, if so, remove it; otherwise, add it
             const updatedDisplay = prevFormData.display_type.includes(option)
                 ? prevFormData.display_type.filter(item => item !== option)
                 : [...prevFormData.display_type, option];
@@ -72,20 +72,21 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         }));
     };
 
-    // Handle image upload with PNG validation
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.type === "image/png") {
+            // Validate file type
+            const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+            if (allowedTypes.includes(file.type)) {
                 setFormData((prevFormData) => ({
                     ...prevFormData,
                     image: file,
                 }));
-                setPreviewImage(URL.createObjectURL(file));
+                setPreviewImage(URL.createObjectURL(file)); // Preview the uploaded image
             } else {
-                // Show toast error for non-PNG files
-                toast.error("Only PNG files are allowed.");
-                e.target.value = "";  // Clear the input field
+                // Show toast error for unsupported file types
+                toast.error("Only PNG, JPG, and JPEG files are allowed.");
+                e.target.value = ""; // Clear the input field
             }
         }
     };
@@ -112,13 +113,14 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
         }));
     };
 
-
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
-            const dataToSend = { ...formData };
+            // Add the exhibitionId to the form data
+            const dataToSend = { ...formData, exhibition_id: exhibitionId };
+            console.log("Payload sent to backend:", dataToSend);
 
             // Convert the image file to raw Base64 if it exists
             if (formData.image && formData.image instanceof File) {
@@ -135,14 +137,18 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
             });
 
             if (response.ok) {
-                console.log("Image uploaded successfully");
+                toast.success("Artwork uploaded successfully!");
+                console.log("Artwork uploaded successfully");
+                closeAddArtwork(); // Close the popup on success
             } else {
-                console.error("Failed to upload image");
+                toast.error("Failed to upload artwork.");
+                console.error("Failed to upload artwork");
             }
         } catch (error) {
+            toast.error("Submission Error. Please try again.");
             console.error("Submission Error:", error);
         }
-    };
+    }
 
     return (
         <div>
@@ -387,7 +393,7 @@ function ImportArtWork({ isOpen, closeAddArtwork }) {
                             <div className='my-8 pb-4 flex flex-col'>
                                 <label className="font-medium text-gray-400 text-xl font-['Roboto']">Artwork Image <span className='text-brand'>*</span></label>
                                 <span className="font-normal text-gray-400 text-m">
-                                    Upload the artwork image. Accepted format: PNG.
+                                    Upload the artwork image. Accepted format: JPG, JPEG, PNG.
                                 </span>
                                 <label
                                     htmlFor="artwork-image"

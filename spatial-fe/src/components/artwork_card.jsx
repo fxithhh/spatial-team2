@@ -191,7 +191,7 @@ const ArtworkCard = ({ artwork }) => {
               {artwork.conservation_guidelines ? (
                 <ReactMarkdown
                   children={Array.isArray(artwork.conservation_guidelines)
-                    ? artwork.conservation_guidelines.join("\n") // Join array elements with newline
+                    ? artwork.conservation_guidelines.join("\n\n") // Join array elements with newline
                     : artwork.conservation_guidelines // Use string as-is
                   }
                   remarkPlugins={[remarkGfm]}

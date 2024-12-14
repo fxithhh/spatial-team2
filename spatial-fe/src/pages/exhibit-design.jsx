@@ -18,7 +18,6 @@ const ExhibitDetail = () => {
     const { id } = useParams();
     const [exhibit, setExhibit] = useState(null);
     const { exhibitId } = useParams();
-    console.log("Exhibit ID:", exhibitId);
     const [error, setError] = useState(null);
 
     // Toggle between connection and floor plan views
@@ -405,6 +404,7 @@ const ExhibitDetail = () => {
                     <ImportArtWork
                         isOpen={isAddArtworkOpen}
                         closeAddArtwork={closeAddArtwork}
+                        exhibitionId={exhibitId}
                     />
                 )}
             </div>
