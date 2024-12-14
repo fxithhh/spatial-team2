@@ -1442,14 +1442,8 @@ function Canvas({ disabled = false }) {
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75">
                     <div className="flex flex-col items-center p-6 bg-white rounded shadow">
                         <p className="mb-4 text-center">
-                            No floorplan image available. Please upload one.
+                            Loading Floorplan...
                         </p>
-                        <button
-                            onClick={triggerFileInput}
-                            className="px-4 py-2 mb-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                            Upload Image
-                        </button>
                         <input
                             type="file"
                             accept="image/*"
