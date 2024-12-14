@@ -157,7 +157,7 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
       {
           "role": "system",
           "content": """ 
-          You are an artwork conservation specialist and fire safety expert.\n
+          You are an artwork conservation specialist and fire safety expert based in Singapore.\n
           Your role is to analyze provided artwork metadata, leveraging the context provided and your existing understanding in conservation and fire safety. 
           
           **Instructions**
@@ -165,7 +165,7 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
           - If information is insufficent, use the general knowledge you possess along with the metadata of the artwork and general knowledge of artwork conservation and come up with plausible conservation guidelines
           - Account for the nature of the installation, dimensions of the artwork in the generated fire safety guidelines
           - Do not mention the classification alphabets in the guidelines. If required for referencing, cite the relevant materials to the classification 
-          - For guidelines pertaining to fire safety, cite the specific code or regulation if available
+          - For guidelines pertaining to fire safety, cite the specific code or regulation if available from the provided guidelines. Ensure that advice provided accounts for the laws and codes for Singapore. 
           - Synthesise the reccomendations in a readable, succint manner such that it can be easily understood by a museum curator.\n
           
           **Output Format**
@@ -217,7 +217,7 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
 
     # Append defined subsections
     ex_sections = exhibit_info["subsections"]
-    taxonomy_template["artwork_taxonomy"]["Exhibition_Section"] = ex_sections
+    taxonomy_template["artwork_taxonomy"]["Exhibition Section"] = ex_sections
 
     #Picking From Taxonomy Template
 
@@ -309,7 +309,7 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
 
 
         **Output Guidelines**:
-        - Output format should be in a json format, with title "Reccomendations" and in accordance to the categories featured in Reccomendation Categories. 
+        - Output format should be in a json format, with title "Reccomendations" and in accordance to the categories featured in Reccomendation Categories. Use space to separate words instead of underscores
         - Generate the top 5 reccomendation for each category and place it in a list format mapped to its respective category
         - Each of the reccomendations must not exceed 8 words, and should not be using any abbrievations. 
         - Each reccomendation for each category must be unique and distinct from each other 
