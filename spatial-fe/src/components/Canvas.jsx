@@ -167,8 +167,8 @@ function Canvas({ disabled = false }) {
                     }
                 });
 
-                // Create the "Find Most Secluded Area" button
-                findSecludedAreaButton = p.createButton('Find Most Secluded Area');
+                // Create the button which triggers Find Most Secluded Area
+                findSecludedAreaButton = p.createButton('Furthest ');
                 findSecludedAreaButton.position(10, p.height + 50);
                 findSecludedAreaButton.mousePressed(findMostSecludedArea);
             };

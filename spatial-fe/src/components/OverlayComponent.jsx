@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Canvas from './Canvas';
 import Graph from './Graph';
 
@@ -10,47 +10,55 @@ function OverlayComponent({
     repulsionStrength,
     centralGravity
 }) {
-    // States:
+    // State order:
     // 0: Floorplan Only
-    // 1: Graph Over Floorplan (interactive)
-    // 2: Graph Only
-    // 3: Graph Over Floorplan (No Interaction)
+    // 1: Graph Only
+    // 2: Graph Over Floorplan
+    // 3: Floorplan Over Graph
     const [viewMode, setViewMode] = useState(0);
 
     const states = [
-        "Floorplan Only",
-        "Interactive Graph > Floorplan ",
-        "Graph Only",
-        "Interactive Floorplan > Graph"
+        "1) Floorplan only",
+        "2) Graph only",
+        "3) Graph over Floorplan",
+        "4) Floorplan over Graph"
     ];
 
-    // Visibility conditions
-    // Floorplan is hidden only in state 2
-    const hideFloorplan = (viewMode === 2);
+    // Handle keyboard shortcuts: 1,2,3,4 to set states
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === '1') setViewMode(0); // Floorplan Only
+            if (e.key === '2') setViewMode(1); // Graph Only
+            if (e.key === '3') setViewMode(2); // Graph Over Floorplan
+            if (e.key === '4') setViewMode(3); // Floorplan Over Graph
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
 
-    // Graph is always mounted now, but we control visibility via CSS.
-    // Determine graph opacity and pointer events:
-    // State 0: Graph invisible (opacity 0), no pointer events
-    // State 1: Graph visible and interactive
-    // State 2: Graph visible and interactive
-    // State 3: Graph visible but not interactive
-    let graphOpacity = 0;
-    let graphPointerEvents = 'none';
-    if (viewMode === 1 || viewMode === 2 || viewMode === 3) {
-        graphOpacity = 1;
-    }
-    if (viewMode === 1 || viewMode === 2) {
-        graphPointerEvents = 'auto';
-    }
+    // Floorplan visibility: hide in "Graph Only" mode
+    const hideFloorplan = (viewMode === 1);
 
-    // Floorplan pointer events:
-    // States 0 and 3: floorplan interactive
-    // States 1 and 2: floorplan not interactive
+    // Graph visibility: hide in "Floorplan Only" mode
+    const graphOpacity = (viewMode === 0) ? 0 : 1;
+
+    // Graph interactivity: interactive in "Graph Only"(1) and "Graph Over Floorplan"(2)
+    const graphPointerEvents = (viewMode === 1 || viewMode === 2) ? 'auto' : 'none';
+
+    // Floorplan interactivity: interactive in "Floorplan Only"(0) and "Floorplan Over Graph"(3)
     const floorplanPointerEvents = (viewMode === 0 || viewMode === 3) ? 'auto' : 'none';
 
-    // Translucent overlay visible if graph over floorplan and floorplan visible:
-    // This occurs in states 1 and 3
-    const showOverlay = ((viewMode === 1 || viewMode === 3) && !hideFloorplan);
+    // Translucent overlay: visible in "Graph Over Floorplan"(2) and "Floorplan Over Graph"(3)
+    const showOverlay = (viewMode === 2 || viewMode === 3);
+
+    // Determine cursors:
+    // If floorplan is interactive: use crosshair
+    // If graph is interactive: use grab
+    // Otherwise: default
+    const floorplanCursor = floorplanPointerEvents === 'auto' ? 'crosshair' : 'default';
+    const graphCursor = graphPointerEvents === 'auto' ? 'grab' : 'default';
 
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -61,10 +69,11 @@ function OverlayComponent({
                     inset: 0,
                     zIndex: 1,
                     pointerEvents: floorplanPointerEvents,
-                    visibility: hideFloorplan ? 'hidden' : 'visible'
+                    visibility: hideFloorplan ? 'hidden' : 'visible',
+                    cursor: floorplanCursor
                 }}
             >
-                <Canvas disabled={hideFloorplan || (viewMode === 1)} />
+                <Canvas disabled={hideFloorplan || (viewMode === 2)} />
             </div>
 
             {/* Translucent overlay */}
@@ -86,7 +95,8 @@ function OverlayComponent({
                     zIndex: 3,
                     opacity: graphOpacity,
                     pointerEvents: graphPointerEvents,
-                    transition: 'opacity 0.3s ease-in-out'
+                    transition: 'opacity 0.3s ease-in-out',
+                    cursor: graphCursor
                 }}
             >
                 <Graph
@@ -117,8 +127,7 @@ function OverlayComponent({
                     overflow: 'hidden',
                     userSelect: 'none',
                     fontFamily: 'sans-serif',
-                    fontSize: '0.9rem',
-                    position: 'absolute'
+                    fontSize: '0.9rem'
                 }}
                 title="Click a state to switch view mode"
             >
