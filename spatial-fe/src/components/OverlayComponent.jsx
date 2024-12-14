@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import Canvas from './Canvas';
 import Graph from './Graph';
 
-function OverlayComponent() {
+function OverlayComponent({
+    visualThreshold,
+    narrativeThreshold,
+    springLengthModulator,
+    springStiffnessModulator,
+    repulsionStrength,
+    centralGravity
+}) {
     // 0: Floorplan Only
     // 1: Graph Over Floorplan
     // 2: Graph Only (default)
@@ -54,7 +61,14 @@ function OverlayComponent() {
                     transition: 'opacity 0.3s ease-in-out'
                 }}
             >
-                <Graph />
+                <Graph
+                    visualThreshold={visualThreshold}
+                    narrativeThreshold={narrativeThreshold}
+                    springLengthModulator={springLengthModulator}
+                    springStiffnessModulator={springStiffnessModulator}
+                    repulsionStrength={repulsionStrength}
+                    centralGravity={centralGravity}
+                />
             </div>
 
             {/* 3-State Segmented Control */}
@@ -94,7 +108,7 @@ function OverlayComponent() {
                     }}
                 />
 
-                {/* State Labels - now clickable individually */}
+                {/* State Labels */}
                 {states.map((label, i) => (
                     <div
                         key={i}

@@ -5,7 +5,14 @@ import 'vis-network/styles/vis-network.css';
 import './Graph.css'; 
 import { FaInfoCircle } from 'react-icons/fa';
 
-function Graph() {
+function Graph({ 
+  visualThreshold, 
+  narrativeThreshold, 
+  springLengthModulator, 
+  springStiffnessModulator, 
+  repulsionStrength, 
+  centralGravity 
+}) {
   const networkRef = useRef(null);
   const networkInstanceRef = useRef(null);
 
@@ -16,17 +23,7 @@ function Graph() {
   const [minNarrative, setMinNarrative] = useState(0);
   const [maxNarrative, setMaxNarrative] = useState(10);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
-  
-  const [visualThreshold, setVisualThreshold] = useState(4.0);
-  const [narrativeThreshold, setNarrativeThreshold] = useState(6.0);
-  const [springLengthModulator, setSpringLengthModulator] = useState(0.7);
-  const [springStiffnessModulator, setSpringStiffnessModulator] = useState(0.7);
-  const [repulsionStrength, setRepulsionStrength] = useState(10);
-  const [centralGravity, setCentralGravity] = useState(0.001);
-
-
   const [hiddenNodes, setHiddenNodes] = useState([]);
-
   const [useImageNodes, setUseImageNodes] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
 
@@ -86,7 +83,6 @@ function Graph() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [selectedNodeId]);
-  
 
   useEffect(() => {
     // Fetch initial graph data
@@ -163,7 +159,7 @@ function Graph() {
         nodes: { font: { size: 16 }, borderWidth: 1 }
       };
 
-    networkInstanceRef.current = new Network(networkRef.current, data, options);
+      networkInstanceRef.current = new Network(networkRef.current, data, options);
 
       networkInstanceRef.current.on('click', params => {
         if (params.nodes.length > 0) {
@@ -175,7 +171,7 @@ function Graph() {
         }
       });
     }
-  }, [allNodes, allEdges]);
+  }, [allNodes, allEdges, repulsionStrength, springStiffnessModulator]);
 
   useEffect(() => {
     // Handle drag events for refixing nodes if necessary
@@ -204,14 +200,14 @@ function Graph() {
     if (networkInstanceRef.current && allEdges.length > 0) {
       filterAndUpdateEdges();
     }
-  }, [visualThreshold, narrativeThreshold, springLengthModulator, allEdges]);
+  }, [visualThreshold, narrativeThreshold, springLengthModulator, allEdges, minVisual, maxVisual, minNarrative, maxNarrative]);
 
   useEffect(() => {
     // Update physics when stiffness or repulsion changes
     if (networkInstanceRef.current) {
       updatePhysicsSettings();
     }
-  }, [springStiffnessModulator, repulsionStrength]);
+  }, [springStiffnessModulator, repulsionStrength, centralGravity]);
 
   function computeOverallScore(visualScore, narrativeScore) {
     const visualWeight = 0.5;
@@ -225,91 +221,87 @@ function Graph() {
     return `rgb(${red}, 0, ${blue})`;
   }
 
-function highlightSelectedNode(network, nodeId) {
-  network.body.data.nodes.update({ id: nodeId, borderWidth: 3, borderColor: 'orange' });
-}
+  function highlightSelectedNode(network, nodeId) {
+    network.body.data.nodes.update({ id: nodeId, borderWidth: 3, borderColor: 'orange' });
+  }
 
-function clearNodeHighlights(network) {
-  network.body.data.nodes.forEach(node => {
-    network.body.data.nodes.update({ id: node.id, borderWidth: 1, borderColor: undefined });
-  });
-}
-
-
-function toggleNodeFixed(nodeId, network) {
-  const node = network.body.data.nodes.get(nodeId);
-  if (node) {
-    const isFixed = node.fixed || false;
-    const isFullyFixed = typeof isFixed === 'object' ? (node.fixed.x && node.fixed.y) : isFixed;
-
-    network.body.data.nodes.update({
-      id: nodeId,
-      fixed: !isFullyFixed ? { x: true, y: true } : false,
-      color: !isFullyFixed ? 'orange' : 'lightgreen'
+  function clearNodeHighlights(network) {
+    network.body.data.nodes.forEach(node => {
+      network.body.data.nodes.update({ id: node.id, borderWidth: 1, borderColor: undefined });
     });
   }
-}
 
+  function toggleNodeFixed(nodeId, network) {
+    const node = network.body.data.nodes.get(nodeId);
+    if (node) {
+      const isFixed = node.fixed || false;
+      const isFullyFixed = typeof isFixed === 'object' ? (node.fixed.x && node.fixed.y) : isFixed;
 
-function filterAndUpdateEdges() {
-  const edges = networkInstanceRef.current.body.data.edges;
-  edges.clear();
-
-  const filteredEdges = allEdges
-    .filter(edge =>
-      edge.visual_connectivity_score >= visualThreshold &&
-      edge.narrative_connectivity_score >= narrativeThreshold
-    )
-    .map(edge => {
-      const overall_score = computeOverallScore(
-        (edge.visual_connectivity_score - minVisual) / (maxVisual - minVisual || 1),
-        (edge.narrative_connectivity_score - minNarrative) / (maxNarrative - minNarrative || 1)
-      );
-      const capped_score = Math.min(overall_score, 1.0);
-      const newWidth = 1 + capped_score * 5;
-      const newColor = getColorFromScore(capped_score);
-      const baseLength = 300 * (1 - capped_score) + 100;
-      const newLength = baseLength * springLengthModulator;
-
-      // Check if edge is exactly on the threshold
-      const isOnThreshold =
-        Math.abs(edge.visual_connectivity_score - visualThreshold) < 1e-10 ||
-        Math.abs(edge.narrative_connectivity_score - narrativeThreshold) < 1e-10;
-
-      return {
-        from: edge.from,
-        to: edge.to,
-        width: newWidth,
-        color: isOnThreshold ? 'grey' : newColor, // If on threshold, use grey
-        title: edge.title,
-        length: isOnThreshold ? (newLength * 1.5) : newLength,
-        physics: !isOnThreshold
-      };
-    });
-
-  edges.add(filteredEdges);
-}
-
-  
-
-function updatePhysicsSettings() {
-  const newPhysicsOptions = {
-    physics: {
-      enabled: true,
-      forceAtlas2Based: {
-        gravitationalConstant: -repulsionStrength,
-        centralGravity: centralGravity, // Use the centralGravity state
-        springConstant: 0.1 * springStiffnessModulator,
-        damping: 0.4
-      },
-      solver: 'forceAtlas2Based',
-      stabilization: { iterations: 50 }
+      network.body.data.nodes.update({
+        id: nodeId,
+        fixed: !isFullyFixed ? { x: true, y: true } : false,
+        color: !isFullyFixed ? 'orange' : 'lightgreen'
+      });
     }
-  };
-  networkInstanceRef.current.setOptions(newPhysicsOptions);
-  networkInstanceRef.current.stopSimulation();
-  networkInstanceRef.current.startSimulation();
-}
+  }
+
+  function filterAndUpdateEdges() {
+    const edges = networkInstanceRef.current.body.data.edges;
+    edges.clear();
+
+    const filteredEdges = allEdges
+      .filter(edge =>
+        edge.visual_connectivity_score >= visualThreshold &&
+        edge.narrative_connectivity_score >= narrativeThreshold
+      )
+      .map(edge => {
+        const overall_score = computeOverallScore(
+          (edge.visual_connectivity_score - minVisual) / (maxVisual - minVisual || 1),
+          (edge.narrative_connectivity_score - minNarrative) / (maxNarrative - minNarrative || 1)
+        );
+        const capped_score = Math.min(overall_score, 1.0);
+        const newWidth = 1 + capped_score * 5;
+        const newColor = getColorFromScore(capped_score);
+        const baseLength = 300 * (1 - capped_score) + 100;
+        const newLength = baseLength * springLengthModulator;
+
+        // Check if edge is exactly on the threshold
+        const isOnThreshold =
+          Math.abs(edge.visual_connectivity_score - visualThreshold) < 1e-10 ||
+          Math.abs(edge.narrative_connectivity_score - narrativeThreshold) < 1e-10;
+
+        return {
+          from: edge.from,
+          to: edge.to,
+          width: newWidth,
+          color: isOnThreshold ? 'grey' : newColor, // If on threshold, use grey
+          title: edge.title,
+          length: isOnThreshold ? (newLength * 1.5) : newLength,
+          physics: !isOnThreshold
+        };
+      });
+
+    edges.add(filteredEdges);
+  }
+
+  function updatePhysicsSettings() {
+    const newPhysicsOptions = {
+      physics: {
+        enabled: true,
+        forceAtlas2Based: {
+          gravitationalConstant: -repulsionStrength,
+          centralGravity: centralGravity,
+          springConstant: 0.1 * springStiffnessModulator,
+          damping: 0.4
+        },
+        solver: 'forceAtlas2Based',
+        stabilization: { iterations: 50 }
+      }
+    };
+    networkInstanceRef.current.setOptions(newPhysicsOptions);
+    networkInstanceRef.current.stopSimulation();
+    networkInstanceRef.current.startSimulation();
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -350,121 +342,8 @@ function updatePhysicsSettings() {
           }}
         ></div>
       </div>
-
-      <h2 className="text-xl font-semibold mt-4">Artworks Connectivity Graph</h2>
-
-      <div className="sliders-section space-y-4">
-        <div className="slider-container flex items-center">
-          <label htmlFor="visualThreshold" className="w-1/3 font-medium">
-            Visual Connectivity Threshold:
-          </label>
-          <input
-            type="range"
-            id="visualThreshold"
-            name="visualThreshold"
-            min="0"
-            max="10"
-            value={visualThreshold}
-            step="0.1"
-            onChange={e => setVisualThreshold(parseFloat(e.target.value))}
-            className="w-2/3 accent-brand"
-          />
-          <span className="ml-2 font-medium">{visualThreshold.toFixed(1)}</span>
-        </div>
-
-        <div className="slider-container flex items-center">
-          <label htmlFor="narrativeThreshold" className="w-1/3 font-medium">
-            Narrative Connectivity Threshold:
-          </label>
-          <input
-            type="range"
-            id="narrativeThreshold"
-            name="narrativeThreshold"
-            min="0"
-            max="10"
-            value={narrativeThreshold}
-            step="0.1"
-            onChange={e => setNarrativeThreshold(parseFloat(e.target.value))}
-            className="w-2/3 accent-brand"
-          />
-          <span className="ml-2 font-medium">{narrativeThreshold.toFixed(1)}</span>
-        </div>
-
-        <div className="slider-container flex items-center">
-          <label htmlFor="springLengthModulator" className="w-1/3 font-medium">
-            Spring Length Modulator:
-          </label>
-          <input
-            type="range"
-            id="springLengthModulator"
-            name="springLengthModulator"
-            min="0"
-            max="3.0"
-            value={springLengthModulator}
-            step="0.1"
-            onChange={e => setSpringLengthModulator(parseFloat(e.target.value))}
-            className="w-2/3 accent-brand"
-          />
-          <span className="ml-2 font-medium">{springLengthModulator.toFixed(1)}</span>
-        </div>
-
-        <div className="slider-container flex items-center">
-          <label htmlFor="springStiffnessModulator" className="w-1/3 font-medium">
-            Spring Stiffness Modulator:
-          </label>
-          <input
-            type="range"
-            id="springStiffnessModulator"
-            name="springStiffnessModulator"
-            min="0.1"
-            max="3.0"
-            value={springStiffnessModulator}
-            step="0.1"
-            onChange={e => setSpringStiffnessModulator(parseFloat(e.target.value))}
-            className="w-2/3 accent-brand"
-          />
-          <span className="ml-2 font-medium">{springStiffnessModulator.toFixed(1)}</span>
-        </div>
-
-        <div className="slider-container flex items-center">
-          <label htmlFor="repulsionStrength" className="w-1/3 font-medium">
-            Repulsion Strength:
-          </label>
-          <input
-            type="range"
-            id="repulsionStrength"
-            name="repulsionStrength"
-            min="0"
-            max="200"
-            value={repulsionStrength}
-            step="1"
-            onChange={e => setRepulsionStrength(parseInt(e.target.value))}
-            className="w-2/3 accent-brand"
-          />
-          <span className="ml-2 font-medium">{repulsionStrength}</span>
-        </div>
-
-        <div className="slider-container flex items-center">
-  <label htmlFor="centralGravity" className="w-1/3 font-medium">
-    Central Gravity:
-  </label>
-  <input
-    type="range"
-    id="centralGravity"
-    name="centralGravity"
-    min="0.0001"
-    max="0.1"
-    value={centralGravity}
-    step="0.0001"
-    onChange={e => setCentralGravity(parseFloat(e.target.value))}
-    className="w-2/3 accent-brand"
-  />
-  <span className="ml-2 font-medium">{centralGravity.toFixed(4)}</span>
-</div>
-      </div>
     </div>
   );
 }
 
 export default Graph;
-

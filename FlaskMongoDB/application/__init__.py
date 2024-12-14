@@ -32,6 +32,7 @@ except Exception as e:
     print(f"Could not connect to MongoDB: {e}")
 
 from application import routes
+from FlaskMongoDB.application import connectivity_routes
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8000, debug=False)

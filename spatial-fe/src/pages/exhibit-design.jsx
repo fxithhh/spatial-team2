@@ -16,8 +16,8 @@ const ExhibitDetail = () => {
     const [view, setView] = useState("connection");
     const [artworks, setArtworks] = useState([]);
     const { id } = useParams();
-    const [exhibit, setExhibit] = useState(null);
     const { exhibitId } = useParams();
+    const [exhibit, setExhibit] = useState(null);
     const [error, setError] = useState(null);
 
     // Toggle between connection and floor plan views
@@ -25,14 +25,15 @@ const ExhibitDetail = () => {
         setView((prevView) => (prevView === "connection" ? "floorPlan" : "connection"));
     };
 
-    // State to hold the values of each slider
+    // State to hold the values of each slider (renamed to match Graph.js props)
     const [values, setValues] = useState({
-        narrative: 4,
-        visual: 5,
-        repelling_strength: 4,
-        spring_length: 4,
-        spring_strength: 4,
-        safety_distance: 25, // Added to match the settings in the UI
+        narrativeThreshold: 6.0,         // was narrative
+        visualThreshold: 4.0,           // was visual
+        repulsionStrength: 10,          // was repelling_strength
+        springLengthModulator: 0.7,     // was spring_length
+        springStiffnessModulator: 0.7,  // was spring_strength
+        centralGravity: 0.001,          // newly added to match Graph
+        safety_distance: 25, 
         corridor_width: 2.5,
         hose_length: 50,
         hose_radius: 200,
@@ -96,17 +97,13 @@ const ExhibitDetail = () => {
             }
             const data = await response.json();
             console.log("Fetched exhibit data:", data);
-            // Extract excel_images and debug
             const excelImages = data.excel_images || [];
             console.log("Excel Images at Exhibit Level:", excelImages);
-            // Debugging for excel_images
             if (data.artworks && data.artworks.length > 0) {
                 data.artworks.forEach((artwork, index) => {
                     console.log(`Artwork ${index} excel_images:`, artwork.excel_images);
                 });
             }
-
-            // Update state with the exhibit and its artworks
             setSelectedExhibit(data);
             setArtworks(data.artworks || []);
             setFloorplanImage(data.floor_plan);
@@ -144,13 +141,18 @@ const ExhibitDetail = () => {
                 {/* Main View Area */}
                 <div className="flex w-3/4 bg-white relative border-black border-2">
                     {/* Main View */}
-                    <OverlayComponent />
-                            {/* <Canvas floorplanImage={floorplanImage} /> */}
+                    <OverlayComponent
+                        visualThreshold={values.visualThreshold}
+                        narrativeThreshold={values.narrativeThreshold}
+                        springLengthModulator={values.springLengthModulator}
+                        springStiffnessModulator={values.springStiffnessModulator}
+                        repulsionStrength={values.repulsionStrength}
+                        centralGravity={values.centralGravity}
+                    />
                 </div>
 
                 {/* Side Panel */}
                 <aside className="w-1/4 flex flex-col gap-y-10">
-
                     {/* Settings Panel */}
                     <div className="flex-grow p-4 border-black border-2 overflow-y-auto">
                         {view === "connection" ? (
@@ -160,58 +162,58 @@ const ExhibitDetail = () => {
                                     Settings to adjust connection graphs.
                                 </p>
                                 <div className="space-y-4">
-                                    {/* Narrative Connectivity Passing Score */}
+                                    {/* Narrative Connectivity Threshold */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
                                             <label className="font-bold text-gray-800 text-xl">Narrative Connectivity Passing Score</label>
-                                            <p className="font-bold text-gray-800 text-xl text-right">{values.narrative}</p>
+                                            <p className="font-bold text-gray-800 text-xl text-right">{values.narrativeThreshold}</p>
                                         </div>
                                         <p className="text-gray-500 text-lg">Maximum allowable travel distance in case of an emergency.</p>
                                         <input
                                             type="range"
-                                            name="narrative"
+                                            name="narrativeThreshold"
                                             min="0"
                                             max="10"
                                             step={0.1}
-                                            value={values.narrative}
+                                            value={values.narrativeThreshold}
                                             onChange={handleChange}
                                             className="w-full accent-brand mt-4"
                                         />
                                     </div>
 
-                                    {/* Visual Connectivity Passing Score */}
+                                    {/* Visual Connectivity Threshold */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
                                             <label className="font-bold text-gray-800 text-xl">Visual Connectivity Passing Score</label>
-                                            <p className="font-bold text-gray-800 text-xl text-right">{values.visual}</p>
+                                            <p className="font-bold text-gray-800 text-xl text-right">{values.visualThreshold}</p>
                                         </div>
                                         <p className="text-gray-500 text-lg">Passing score to display edges.</p>
                                         <input
                                             type="range"
-                                            name="visual"
+                                            name="visualThreshold"
                                             min="0"
                                             max="10"
                                             step={0.1}
-                                            value={values.visual}
+                                            value={values.visualThreshold}
                                             onChange={handleChange}
                                             className="w-full accent-brand mt-4"
                                         />
                                     </div>
 
-                                    {/* Repelling Strength */}
+                                    {/* Repulsion Strength */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
-                                            <label className="font-bold text-gray-800 text-xl">Repelling Strength</label>
-                                            <p className="font-bold text-gray-800 text-xl text-right">{values.repelling_strength}</p>
+                                            <label className="font-bold text-gray-800 text-xl">Repulsion Strength</label>
+                                            <p className="font-bold text-gray-800 text-xl text-right">{values.repulsionStrength}</p>
                                         </div>
                                         <p className="text-gray-500 text-lg">Subtitle.</p>
                                         <input
                                             type="range"
-                                            name="repelling_strength"
+                                            name="repulsionStrength"
                                             min="0"
-                                            max="10"
-                                            step={0.1}
-                                            value={values.repelling_strength}
+                                            max="200"
+                                            step={1}
+                                            value={values.repulsionStrength}
                                             onChange={handleChange}
                                             className="w-full accent-brand mt-4"
                                         />
@@ -221,39 +223,59 @@ const ExhibitDetail = () => {
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
                                             <label className="font-bold text-gray-800 text-xl">Spring Length Modulator</label>
-                                            <p className="font-bold text-gray-800 text-xl text-right">{values.spring_length}</p>
+                                            <p className="font-bold text-gray-800 text-xl text-right">{values.springLengthModulator}</p>
                                         </div>
                                         <p className="text-gray-500 text-lg">Subtitle.</p>
                                         <input
                                             type="range"
-                                            name="spring_length"
+                                            name="springLengthModulator"
                                             min="0"
-                                            max="10"
+                                            max="3.0"
                                             step={0.1}
-                                            value={values.spring_length}
+                                            value={values.springLengthModulator}
                                             onChange={handleChange}
                                             className="w-full accent-brand my-4"
                                         />
                                     </div>
 
-                                    {/* Spring Strength Modulator */}
+                                    {/* Spring Stiffness Modulator */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
-                                            <label className="font-bold text-gray-800 text-xl">Spring Strength Modulator</label>
-                                            <p className="font-bold text-gray-800 text-xl text-right">{values.spring_strength}</p>
+                                            <label className="font-bold text-gray-800 text-xl">Spring Stiffness Modulator</label>
+                                            <p className="font-bold text-gray-800 text-xl text-right">{values.springStiffnessModulator}</p>
                                         </div>
                                         <p className="text-gray-500 text-lg">Subtitle.</p>
                                         <input
                                             type="range"
-                                            name="spring_strength"
-                                            min="0"
-                                            max="10"
+                                            name="springStiffnessModulator"
+                                            min="0.1"
+                                            max="3.0"
                                             step={0.1}
-                                            value={values.spring_strength}
+                                            value={values.springStiffnessModulator}
                                             onChange={handleChange}
                                             className="w-full accent-brand my-4"
                                         />
                                     </div>
+
+                                    {/* Central Gravity */}
+                                    <div className='my-4'>
+                                        <div className='grid grid-cols-[3fr_1fr]'>
+                                            <label className="font-bold text-gray-800 text-xl">Central Gravity</label>
+                                            <p className="font-bold text-gray-800 text-xl text-right">{values.centralGravity.toFixed(4)}</p>
+                                        </div>
+                                        <p className="text-gray-500 text-lg">Central gravity setting for the graph layout.</p>
+                                        <input
+                                            type="range"
+                                            name="centralGravity"
+                                            min="0.0001"
+                                            max="0.1"
+                                            step="0.0001"
+                                            value={values.centralGravity}
+                                            onChange={handleChange}
+                                            className="w-full accent-brand mt-4"
+                                        />
+                                    </div>
+
                                 </div>
                             </>
                         ) : (
@@ -370,7 +392,7 @@ const ExhibitDetail = () => {
                                     <div
                                         key={artwork._id}
                                         onClick={() => {
-                                            setSelectedArtwork(artwork); // Pass artwork data to ArtworkCard
+                                            setSelectedArtwork(artwork); 
                                             console.log(`Selected artwork: ${artwork.title || "Untitled"}`);
                                         }}
                                         className="grid grid-rows-3 px-2 py-2 border-b-2 cursor-pointer overflow-y-auto items-center hover:border-2 hover:bg-linkhover hover:border-brand"
