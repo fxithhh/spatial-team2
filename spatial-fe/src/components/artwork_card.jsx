@@ -19,18 +19,19 @@ const ArtworkCard = ({ artwork }) => {
     styleSignificance: false,
     exhibitionUtilization: false,
   });
+  console.log("Selected Artwork:", artwork); // Log selected artwork
+  console.log("Artwork Data:", artwork);
+  console.log("Excel Images:", artwork.excel_images)
+  const { title, artist, description, excel_images = [] } = artwork;
 
-  // Toggle the visibility of a section
   const toggleSection = (section) => {
     setSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // Toggle expanded content for specific fields
   const toggleField = (field) => {
     setExpandedFields((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  // Render a general section with expandable content
   const renderSection = (title, content, field) => (
     <div className="mb-4">
       <span className="font-bold text-gray-400 mr-8 w-32">{title}</span>
@@ -48,7 +49,6 @@ const ArtworkCard = ({ artwork }) => {
     </div>
   );
 
-  // Render taxonomy details dynamically
   const renderTaxonomy = (taxonomy) => {
     if (!taxonomy || Object.keys(taxonomy).length === 0) {
       return <p className="text-red-500">No taxonomy available</p>;
@@ -74,7 +74,6 @@ const ArtworkCard = ({ artwork }) => {
     );
   };
 
-  // Render guidelines or visual context as a list
   const renderList = (items, emptyMessage) => {
     if (!Array.isArray(items) || items.length === 0) {
       return <p className="text-red-500">{emptyMessage}</p>;
@@ -89,34 +88,10 @@ const ArtworkCard = ({ artwork }) => {
     );
   };
 
-  // Render Excel images from the backend
-  const renderExcelImages = (images) => {
-    if (!images || images.length === 0) {
-      return <p className="text-lg text-gray-500">No Additional Images Available</p>;
-    }
-
-    return (
-      <div className="grid grid-cols-2 gap-4">
-        {images.slice(1).map((img, index) => (
-          <div key={index} className="border rounded shadow-sm p-2">
-            <img
-              src={img}
-              alt={`Excel Image ${index + 1}`}
-              className="w-full h-auto object-cover"
-              onError={(e) => {
-                console.error(`Error loading excel image ${index + 1}:`, img, e.target.error);
-              }}
-            />
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Handle empty artwork data
   if (!artwork) {
     return <div>Loading...</div>;
   }
+
 
   return (
     <div className="flex flex-col">
@@ -130,26 +105,19 @@ const ArtworkCard = ({ artwork }) => {
         {artwork.artist || 'Unknown Artist'}
       </p>
       <p className="font-normal text-lg text-gray-400 mr-4 font-['Roboto']">
-        {artwork.geographical_association || 'Unknown Location'}
+        {artwork.geographical_association || 'Unknown Location'}, {artwork.dating || 'Unknown Date'}
       </p>
 
       {/* Main Artwork Image */}
-      {artwork.excel_images && artwork.excel_images.length > 0 ? (
-        <img
-          src={artwork.excel_images[0]} // Use the first image in excel_images as the main image
-          alt={artwork.title || 'Artwork'}
-          className="max-w-full h-auto mb-4"
-          onError={(e) => {
-            console.error('Error loading main artwork image:', artwork.excel_images[0], e.target.error);
-          }}
-        />
+      {excel_images && excel_images.length > 0 ? (
+        excel_images.map((image, index) => (
+          <div key={index}>
+            <img src={image} alt={`Artwork image ${index + 1}`} />
+          </div>
+        ))
       ) : (
-        <p className="text-lg">No Main Image Available</p>
+        <p>No images available for this artwork.</p>
       )}
-
-      {/* Additional Excel Images */}
-      <h2 className="font-semibold text-lg text-gray-800 mb-2">Additional Images</h2>
-      {renderExcelImages(artwork.excel_images)}
 
       {/* Scrollable Content Section */}
       <div className="h-full overflow-y-auto mb-4">
@@ -213,9 +181,7 @@ const ArtworkCard = ({ artwork }) => {
             {sections.visualContext ? <ChevronUpIcon className="w-6 h-6" /> : <ChevronDownIcon className="w-6 h-6" />}
           </button>
           {sections.visualContext && (
-            <div className="mt-4">
-              {renderList(artwork.visual_context, 'No visual context available')}
-            </div>
+            <div className="mt-4">{renderList(artwork.visual_context, 'No visual context available')}</div>
           )}
         </div>
 
@@ -228,7 +194,7 @@ const ArtworkCard = ({ artwork }) => {
             Taxonomy
             {sections.taxonomy ? <ChevronUpIcon className="w-6 h-6" /> : <ChevronDownIcon className="w-6 h-6" />}
           </button>
-          {sections.taxonomy && <div className="mt-4">{renderTaxonomy(artwork.taxonomy)}</div>}
+          {sections.taxonomy && renderTaxonomy(artwork.taxonomy)}
         </div>
       </div>
     </div>
