@@ -171,7 +171,8 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
           **Output Format**
           - Your response should be formatted in JSON with the key "Conservation_Guidelines," containing a python list of 3 to 5 actionable recommendations 
           - Reccomendations must be concise, coherent, specific, and tailored to the context provided.\n
-          - Utilise Markdown syntax for each guideline to enhance its readablity, with italics for building codes. 
+          - Each reccomendation should begin with a title mentioning its nature before following up with the description. For example : "Title of reccomendation: Description"
+          - Utilise Markdown syntax for each guideline to enhance its readablity, with bold words for the title of the reccomendations and italics for building codes. 
           """
       },
        {
@@ -303,12 +304,12 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
 
         4. **Emotional Connection Tags**: Analyze the artwork's description and image information to provide precise tags that reflect its emotional resonance. Ensure that it is relevant to the exhibition concept, artwork description and its historical context.
 
-        5. **Historical Context**: Provide insights on the artwork's historical and cultural significance based on its creation date, artist, historical significance and any notable movements or events it reflects.
+        5. **Historical Context**: Provide insights on the artwork's historical and cultural significance based on its creation date of artwork, artist, historical significance and any notable movements or events it reflects.
 
 
 
         **Output Guidelines**:
-        - Output format should be in a json format, with title "Reccomendations" and in accordance to the Reccomendation Categories. 
+        - Output format should be in a json format, with title "Reccomendations" and in accordance to the categories featured in Reccomendation Categories. 
         - Generate the top 5 reccomendation for each category and place it in a list format mapped to its respective category
         - Each of the reccomendations must not exceed 8 words, and should not be using any abbrievations. 
         - Each reccomendation for each category must be unique and distinct from each other 
@@ -362,11 +363,12 @@ def generate_visual_context(metadata, image_data, tax_template, model="gpt-4o"):
       "role": "system",
      "content": """ You are a visual analysis assistant intended help with visual aid. 
      Your task is to evaluate  images and provide an objective and concise description of their visible content. 
-     Focus exclusively on describing tangible elements such as color, content, and prominent objects or figures in a specific manner without irrelevant discourse. 
-     Do not mention lighting conditions, inferred visual effects and dynamics created by the object, atmospheric style of descriptions or any language that speculates or interprets the image's context. 
-     Do not include details about the background unless it contains distinct, visible elements relevant to the artwork itself and can be visibly recognized to be beyond an art gallery. 
-     Exclude speculative commentary and any background descriptions if its in a gallery settings. 
-     Provide the description in up to 5 bullet pointers, be concise and succinct to the point with each describing the visual features in a neutral and precise tone. Pointers need not be in complete sentences but ensure formatting is consistent.
+     **Instructions**
+     - Focus exclusively on describing tangible elements such as color, content, and prominent objects or figures in a specific manner without irrelevant discourse. 
+     - Do not mention lighting conditions, inferred visual effects and dynamics created by the object, atmospheric style of descriptions or any language that speculates or interprets the image's context. 
+     - Do not include details about the background unless it contains distinct, visible elements relevant to the artwork itself and can be visibly recognized to be beyond an art gallery. 
+     - Exclude speculative commentary and any background descriptions if its in a gallery settings. 
+     - Provide the description in up to 5 bullet pointers, be concise and succinct to the point with each describing the visual features in a neutral and precise tone. Pointers need not be in complete sentences but ensure formatting is consistent.
      """    },
         {
           "role": "user",
