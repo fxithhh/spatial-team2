@@ -168,6 +168,13 @@ def create_exhibit():
         exhibit_title = request.form.get("exhibit_title")
         concept = request.form.get("concept")
         subsections = request.form.getlist("subsections")
+        floor_plan_file = request.files.get("floor_plan")
+        if floor_plan_file:
+            # Read file content and encode it as Base64
+            floor_plan_binary = floor_plan_file.read()
+            floor_plan_base64 = base64.b64encode(floor_plan_binary).decode('utf-8')  # Convert to string
+        else:
+            return jsonify({"error": "Floor plan file is missing."}), 400
 
         if not exhibit_title or not concept:
             return jsonify({"error": "Missing required form data: 'exhibit_title' or 'concept'"}), 400
@@ -176,11 +183,13 @@ def create_exhibit():
             "exhibit_title": exhibit_title,
             "concept": concept,
             "subsections": subsections,
+            "floor_plan": floor_plan_base64,
         }
 
         # Process the Excel file
         if "artwork_list" not in request.files:
             return jsonify({"error": "Missing artwork Excel file."}), 400
+        
 
         try:
             artwork_file = request.files["artwork_list"]
@@ -217,6 +226,7 @@ def create_exhibit():
             "exhibit_title": exhibit_title,
             "concept": concept,
             "subsections": subsections,
+            "floor_plan" : floor_plan_file,
         }
 
         # Run OpenAI functions on the extracted rows
@@ -315,13 +325,30 @@ def process_exhibit(exhibit):
             ),
             "taxonomy": artwork.get("taxonomy_tags", {}).get("artwork_taxonomy", {}),
             "visual_context": artwork.get("visual_context", []),
-            "image": [
-                f"data:image/jpeg;base64,{img}" if not img.startswith("data:image") else img
-                for img in artwork.get("excel_images", [])
-            ],
         }
         for artwork in exhibit.get("artworks", [])
     ]
+
+    # Process excel_images at the exhibit level
+    excel_images = exhibit.get("excel_images", [])
+    if excel_images:
+        processed_images = [
+            f"data:image/jpeg;base64,{img}" if not img.startswith("data:image") else img
+            for img in excel_images
+        ]
+        exhibit["excel_images"] = processed_images
+    else:
+        exhibit["excel_images"] = []  # Default to empty list if no images are present
+
+    # Process floor plan
+    floor_plan = exhibit.get("floor_plan")
+    if floor_plan:
+        # Check if the floor_plan already has the Base64 prefix
+        if not floor_plan.startswith("data:image"):
+            floor_plan = f"data:image/jpeg;base64,{floor_plan}"  # Default to JPEG
+        exhibit["floor_plan"] = floor_plan
+    else:
+        exhibit["floor_plan"] = None
 
     # Process other fields
     exhibit["exhibit_title"] = exhibit.get("exhibit_title", "Untitled Exhibit")
@@ -329,6 +356,7 @@ def process_exhibit(exhibit):
     exhibit["subsections"] = exhibit.get("subsections", [])
 
     return exhibit
+
 
 
 

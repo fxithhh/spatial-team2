@@ -7,6 +7,14 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
     const sketchRef = useRef();
     const p5InstanceRef = useRef(null);
     const fileInputRef = useRef(null);
+    
+
+    useEffect(() => {
+        console.log("Canvas received floorplanImage:", propFloorplanImage); // Debugging
+        if (propFloorplanImage) {
+            setUploadedImage(propFloorplanImage);
+        }
+    }, [propFloorplanImage]);
 
     // Handle image upload via file input
     const handleImageUpload = (event) => {

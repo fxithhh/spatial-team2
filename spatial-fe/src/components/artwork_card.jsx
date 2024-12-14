@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const ArtworkCard = ({ artwork }) => {
   const [sections, setSections] = useState({
@@ -87,6 +89,30 @@ const ArtworkCard = ({ artwork }) => {
     );
   };
 
+  // Render Excel images from the backend
+  const renderExcelImages = (images) => {
+    if (!images || images.length === 0) {
+      return <p className="text-lg text-gray-500">No Additional Images Available</p>;
+    }
+
+    return (
+      <div className="grid grid-cols-2 gap-4">
+        {images.slice(1).map((img, index) => (
+          <div key={index} className="border rounded shadow-sm p-2">
+            <img
+              src={img}
+              alt={`Excel Image ${index + 1}`}
+              className="w-full h-auto object-cover"
+              onError={(e) => {
+                console.error(`Error loading excel image ${index + 1}:`, img, e.target.error);
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // Handle empty artwork data
   if (!artwork) {
     return <div>Loading...</div>;
@@ -107,16 +133,23 @@ const ArtworkCard = ({ artwork }) => {
         {artwork.geographical_association || 'Unknown Location'}
       </p>
 
-      {artwork.image && artwork.image.length > 0 ? (
-    <img
-        src={Array.isArray(artwork.image) ? artwork.image[0] : artwork.image}
-        alt={artwork.title || 'Artwork'}
-        className="max-w-full h-auto"
+      {/* Main Artwork Image */}
+      {artwork.excel_images && artwork.excel_images.length > 0 ? (
+        <img
+          src={artwork.excel_images[0]} // Use the first image in excel_images as the main image
+          alt={artwork.title || 'Artwork'}
+          className="max-w-full h-auto mb-4"
+          onError={(e) => {
+            console.error('Error loading main artwork image:', artwork.excel_images[0], e.target.error);
+          }}
         />
-        ) : (
-            <p className="text-lg">No Image Available</p>
-        )}
+      ) : (
+        <p className="text-lg">No Main Image Available</p>
+      )}
 
+      {/* Additional Excel Images */}
+      <h2 className="font-semibold text-lg text-gray-800 mb-2">Additional Images</h2>
+      {renderExcelImages(artwork.excel_images)}
 
       {/* Scrollable Content Section */}
       <div className="h-full overflow-y-auto mb-4">
@@ -155,7 +188,17 @@ const ArtworkCard = ({ artwork }) => {
           </button>
           {sections.conservation && (
             <div className="mt-4">
-              {renderList(artwork.conservation_guidelines, 'No conservation guidelines available')}
+              {artwork.conservation_guidelines ? (
+                <ReactMarkdown
+                  children={Array.isArray(artwork.conservation_guidelines)
+                    ? artwork.conservation_guidelines.join("\n\n") // Join array elements with newline
+                    : artwork.conservation_guidelines // Use string as-is
+                  }
+                  remarkPlugins={[remarkGfm]}
+                />
+              ) : (
+                'No conservation guidelines available'
+              )}
             </div>
           )}
         </div>
