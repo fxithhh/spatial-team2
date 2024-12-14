@@ -35,7 +35,7 @@ def home():
 def favicon():
     return app.send_static_file('favicon.ico')
 
-# Route to handle JSON file upload and store it in MongoDB
+
 @app.route("/add_artwork", methods=["POST"])
 def add_artwork():
     # Check if the request is JSON
@@ -45,10 +45,13 @@ def add_artwork():
     try:
         # Parse the incoming JSON
         original_metadata = request.get_json()
+
+        # Validate and fetch the exhibition ID
         exhibition_id = original_metadata.get("exhibition_id")
         if not exhibition_id:
             return jsonify({"error": "Exhibition ID is required"}), 400
-        
+
+        # Fetch the exhibition data from the database
         try:
             exhibition = create_exhibits.find_one({"_id": ObjectId(exhibition_id)})
             if not exhibition:
@@ -56,24 +59,26 @@ def add_artwork():
         except Exception:
             return jsonify({"error": "Invalid exhibition ID format"}), 400
 
-        # Extract and process image data
+        # Extract exhibit_info from the fetched exhibition
+        exhibit_title = exhibition.get("title", "Untitled Exhibit")
+        concept = exhibition.get("concept", "No concept available")
+        subsections = exhibition.get("subsections", [])
+        exhibit_info = {
+            "exhibit_title": exhibit_title,
+            "concept": concept,
+            "subsections": subsections,
+        }
+
+        # Extract and validate image data
         image_data = original_metadata.get("image")
         if image_data:
             try:
                 base64_data = image_data.split(",")[1] if "," in image_data else image_data
-                image_binary = base64.b64decode(base64_data, validate=True)
-
-                # Convert to JPEG
-                compressed_image = convert_image_to_jpeg(image_binary)
-                if compressed_image is None:
-                    raise ValueError("Image conversion failed.")
-
-                # Encode back to Base64
-                compressed_image_base64 = base64.b64encode(compressed_image).decode("utf-8")
+                base64.b64decode(base64_data, validate=True)  # Ensure valid Base64 data
             except Exception:
-                return jsonify({"error": "Invalid image data or conversion failed"}), 400
+                return jsonify({"error": "Invalid image data"}), 400
         else:
-            compressed_image_base64 = None
+            image_data = None
 
         # Prepare metadata without the image
         metadata_without_image = {key: value for key, value in original_metadata.items() if key != "image"}
@@ -86,75 +91,73 @@ def add_artwork():
                 vectorstore=vectorstore,
                 model="gpt-4o"
             )
-        except Exception:
-            return jsonify({"error": "Failed to process data with OpenAI for conservation feedback"}), 500
-
-        exhibit_info = {}
+        except Exception as e:
+            return jsonify({"error": f"Failed to process conservation feedback: {str(e)}"}), 500
 
         # Generate taxonomy feedback if image data is present
+        taxonomy_feedback = None
         if image_data:
             try:
                 taxonomy_feedback = generate_taxonomy_tags(
                     metadata=metadata_without_image,
-                    image_data=compressed_image_base64,
-                    tax_template=tax_template,
-                    exhibit_info = exhibit_info,
+                    image_data=image_data,
+                    exhibit_info=exhibit_info,
                     model="gpt-4o"
                 )
-            except Exception:
-                return jsonify({"error": "Failed to process data with OpenAI for taxonomy feedback"}), 500
-        else:
-            taxonomy_feedback = None
-        
-        # Generate visual_context if image data is present
+            except Exception as e:
+                return jsonify({"error": f"Failed to process taxonomy feedback: {str(e)}"}), 500
+
+        # Generate visual context if image data is present
+        visual_context = None
         if image_data:
             try:
                 visual_context = generate_visual_context(
                     metadata=metadata_without_image,
-                    image_data=compressed_image_base64,
+                    image_data=image_data,
                     tax_template=tax_template,
                     model="gpt-4o"
                 )
-            except Exception:
-                return jsonify({"error": "Failed to process data with OpenAI for visual context"}), 500
-        else:
-            taxonomy_feedback = None
+            except Exception as e:
+                return jsonify({"error": f"Failed to process visual context: {str(e)}"}), 500
 
-        # Combine data for MongoDB insertion
-        combined_data = {
-            **original_metadata,
+        # Prepare new artwork data
+        new_artwork = {
+            **metadata_without_image,
             "openai_feedback": openai_feedback,
             "taxonomy_feedback": taxonomy_feedback,
-            "visual_context": visual_context,
-            "exhibition_id": exhibition_id
+            "visual_context": visual_context
         }
+        # Prepared new artwork data
 
-        # Insert into MongoDB
+        # Update MongoDB: Add new artwork and image to separate fields
         try:
-            insertion_result = artworks_collection.insert_one(combined_data)
-            inserted_id = str(insertion_result.inserted_id)
-        except Exception:
-            return jsonify({"error": "Failed to insert data into MongoDB"}), 500
-        
-        try:
+            # Updating MongoDB with new artwork and image
             create_exhibits.update_one(
                 {"_id": ObjectId(exhibition_id)},
-                {"$push": {"artworks": inserted_id}}
+                {
+                    "$push": {"artworks": new_artwork},  # Add to artworks array
+                    "$addToSet": {"Excel_images": image_data}  # Add image to Excel_images field
+                }
             )
-        except Exception:
-            return jsonify({"error": "Failed to link artwork to exhibition"}), 500
+            # Artwork and image successfully added to MongoDB
+        except Exception as e:
+            # Error updating MongoDB
+            return jsonify({"error": f"Failed to update exhibition with artwork and image: {str(e)}"}), 500
 
         # Return success response
+        # Returning success response
         return jsonify({
             "message": "Artwork uploaded and processed successfully",
-            "artwork_id": inserted_id,
+            "artwork_data": new_artwork,
+            "image_stored": image_data is not None,
             "openai_feedback": openai_feedback,
             "taxonomy_feedback": taxonomy_feedback,
             "visual_context": visual_context
         }), 200
 
-    except Exception:
-        return jsonify({"error": "Failed to process JSON object"}), 500
+    except Exception as e:
+        # An unexpected error occurred
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 
 @app.route("/create_exhibit", methods=["POST"])
