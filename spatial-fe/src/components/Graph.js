@@ -100,8 +100,8 @@ function Graph() {
 
         const nodesData = data.nodes.map(node => ({
           id: node.id,
-          label: `${node.artist}\n ${node.id.toString()}`,
-          title: `Artist: ${node.artist}\nDescription: ${node.description}`,
+          label: node.id.toString(),
+          title: `<b>${node.name}</b><br>Artist: ${node.artist}<br>Description: ${node.description}`,
           color: 'lightgreen',
           value: 10,
           shape: 'dot',
@@ -163,7 +163,7 @@ function Graph() {
         nodes: { font: { size: 16 }, borderWidth: 1 }
       };
 
-      networkInstanceRef.current = new Network(networkRef.current, data, options);
+    networkInstanceRef.current = new Network(networkRef.current, data, options);
 
       networkInstanceRef.current.on('click', params => {
         if (params.nodes.length > 0) {
@@ -345,24 +345,10 @@ function updatePhysicsSettings() {
           style={{
             width: '100%',
             height: '100%',
-            border: '0px solid lightgray',
+            border: '1px solid lightgray',
             overflow: 'hidden'
           }}
         ></div>
-      </div>
-      <div className="hidden-nodes-container">
-        Hidden Nodes (Click to Unhide):
-        {hiddenNodes.map(node => (
-          <button 
-            key={node.id} 
-            onClick={() => {
-              setHiddenNodes(hiddenNodes.filter(n => n.id !== node.id));
-              networkInstanceRef.current.body.data.nodes.add(node);
-            }}
-          >
-            {node.label}
-          </button>
-        ))}
       </div>
 
       <h2 className="text-xl font-semibold mt-4">Artworks Connectivity Graph</h2>

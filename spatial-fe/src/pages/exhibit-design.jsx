@@ -67,6 +67,7 @@ const ExhibitDetail = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedArtwork, setSelectedArtwork] = useState(null);
     const [selectedExhibit, setSelectedExhibit] = useState(null);
+    const [excelImages, setExcelImages] = useState([]);
     const [isAddArtworkOpen, setIsAddArtworkOpen] = useState(false); // Add artwork popup
 
     // Dropdown toggle
@@ -95,10 +96,22 @@ const ExhibitDetail = () => {
                 throw new Error(`Failed to fetch exhibit: ${response.status}`);
             }
             const data = await response.json();
+            console.log("Fetched exhibit data:", data);
+            // Extract excel_images and debug
+            const excelImages = data.excel_images || [];
+            console.log("Excel Images at Exhibit Level:", excelImages);
+            // Debugging for excel_images
+            if (data.artworks && data.artworks.length > 0) {
+                data.artworks.forEach((artwork, index) => {
+                    console.log(`Artwork ${index} excel_images:`, artwork.excel_images);
+                });
+            }
 
             // Update state with the exhibit and its artworks
             setSelectedExhibit(data);
             setArtworks(data.artworks || []);
+            setFloorplanImage(data.floor_plan);
+            setExcelImages(excelImages);
         } catch (err) {
             setError('Error fetching exhibit');
         }
