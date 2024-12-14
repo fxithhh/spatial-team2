@@ -20,6 +20,9 @@ const ExhibitDetail = () => {
     const [exhibit, setExhibit] = useState(null);
     const [error, setError] = useState(null);
 
+    // Track overlay viewMode
+    const [overlayViewMode, setOverlayViewMode] = useState(0);
+
     // Toggle between connection and floor plan views
     const toggleView = () => {
         setView((prevView) => (prevView === "connection" ? "floorPlan" : "connection"));
@@ -148,6 +151,7 @@ const ExhibitDetail = () => {
                         springStiffnessModulator={values.springStiffnessModulator}
                         repulsionStrength={values.repulsionStrength}
                         centralGravity={values.centralGravity}
+                        onViewModeChange={setOverlayViewMode}
                     />
                 </div>
 
@@ -155,7 +159,7 @@ const ExhibitDetail = () => {
                 <aside className="w-1/4 flex flex-col gap-y-10">
                     {/* Settings Panel */}
                     <div className="flex-grow p-4 border-black border-2 overflow-y-auto">
-                        {view === "connection" ? (
+                        {(view === "connection" && overlayViewMode !== 0 && overlayViewMode !== 3) ? (
                             <>
                                 <h2 className="text-2xl font-bold text-black mb-2">Artwork Connections</h2>
                                 <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">

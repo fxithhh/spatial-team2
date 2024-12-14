@@ -168,7 +168,7 @@ function Canvas({ disabled = false }) {
                 });
 
                 // Create the button which triggers Find Most Secluded Area
-                findSecludedAreaButton = p.createButton('Furthest ');
+                findSecludedAreaButton = p.createButton('Furthest Corner from Exit');
                 findSecludedAreaButton.position(10, p.height + 50);
                 findSecludedAreaButton.mousePressed(findMostSecludedArea);
             };

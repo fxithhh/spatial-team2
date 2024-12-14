@@ -8,7 +8,8 @@ function OverlayComponent({
     springLengthModulator,
     springStiffnessModulator,
     repulsionStrength,
-    centralGravity
+    centralGravity,
+    onViewModeChange // Adding the callback prop
 }) {
     // State order:
     // 0: Floorplan Only
@@ -37,6 +38,13 @@ function OverlayComponent({
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, []);
+
+    // Call the onViewModeChange callback whenever viewMode changes, if provided
+    useEffect(() => {
+        if (onViewModeChange) {
+            onViewModeChange(viewMode);
+        }
+    }, [viewMode, onViewModeChange]);
 
     // Floorplan visibility: hide in "Graph Only" mode
     const hideFloorplan = (viewMode === 1);
