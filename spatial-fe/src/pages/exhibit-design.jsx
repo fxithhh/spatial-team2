@@ -391,7 +391,7 @@ const ExhibitDetail = () => {
 
                 {/* Artwork Library Sidebar */}
                 {isArtworkLibraryOpen && (
-                    <aside className="top-16 right-0 max-w-1/3 w-[500px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
+                    <aside className="top-16 right-0 max-w-1/3 w-[600px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
                         <div className="flex items-center justify-between mb-8 mt-12">
                             <h2 className="font-bold">Artwork Library</h2>
                             <button

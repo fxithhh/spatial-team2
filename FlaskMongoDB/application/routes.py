@@ -213,7 +213,7 @@ def create_exhibit():
         # Process the Excel file
         if "artwork_list" not in request.files:
             return jsonify({"error": "Missing artwork Excel file."}), 400
-        
+
 
         try:
             artwork_file = request.files["artwork_list"]
@@ -229,13 +229,13 @@ def create_exhibit():
             print(f"Excel file {artwork_file.filename} processed successfully.")
         except Exception as e:
             return jsonify({"error": f"Error processing artwork Excel file: {str(e)}"}), 400
-        
+
         # Validate and process the images
         valid_images = []
         for idx, image in enumerate(processed_data["images"]):
             try:
                 print(f"Validating image {idx}")
-                
+
                 # Validate Base64 string
                 if not is_valid_base64(image):
                     raise ValueError(f"Image {idx} is not a valid Base64 string.")
@@ -293,7 +293,7 @@ def create_exhibit():
     except Exception as e:
         print("Unexpected error:", str(e))
         return jsonify({"error": "Internal server error"}), 500
-    
+
 @app.route('/exhibits', defaults={'id': None}, methods=['GET'])
 @app.route('/exhibits/<id>', methods=['GET'])
 def get_exhibits(id):
@@ -354,17 +354,17 @@ def process_artwork(artwork):
     """Process a single artwork entry."""
     return {
         "title": artwork.get("Artwork Title", "Untitled Artwork"),
-        "description": artwork.get("Artwork Description", "No Description"),
+        "description": artwork.get("Artwork Description ", "No Description"),
         "artist": artwork.get("Artist Name", "Unknown Artist"),
-        "dating": artwork.get("Dating", "Unknown Date"),
+        "dating": artwork.get(" Dating", "Unknown Date"),
         "dimension": artwork.get("Dimension", "Unknown Dimensions"),
         "material": artwork.get("Material", "Unknown Material"),
         "display_type": artwork.get("Display Type", "N/A"),
-        "geographical_association": artwork.get("Geographical Association", "N/A"),
-        "acquisition_type": artwork.get("Acquisition Type", "N/A"),
+        "geographical_association": artwork.get("Geographical Association ", "N/A"),
+        "acquisition_type": artwork.get("Acquisition Type ", "N/A"),
         "historical_significance": artwork.get("Historical Significance", "N/A"),
         "style_significance": artwork.get("Style Significance", "N/A"),
-        "exhibition_utilization": artwork.get("Exhibition Utilisation", "N/A"),
+        "exhibition_utilization": artwork.get("Exhibition Utilisation ", "N/A"),
         "conservation_guidelines": artwork.get("conservation_guidelines", {}).get("Conservation_Guidelines", "N/A"),
         "taxonomy": artwork.get("taxonomy_tags", {}).get("artwork_taxonomy", {}),
         "visual_context": artwork.get("visual_context", []),
