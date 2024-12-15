@@ -32,6 +32,10 @@ except Exception as e:
     print(f"Could not connect to MongoDB: {e}")
 
 from application import routes
+from application import connectivity_routes
+
+app.register_blueprint(connectivity_routes.api, url_prefix='/api')
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8000, debug=True)
