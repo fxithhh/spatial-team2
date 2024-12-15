@@ -220,7 +220,7 @@ const ExhibitDetail = () => {
                                             <label className="font-bold text-gray-800 text-xl">Repulsion Strength</label>
                                             <p className="font-bold text-gray-800 text-xl text-right">{values.repulsionStrength}</p>
                                         </div>
-                                        <p className="text-gray-500 text-lg">Subtitle.</p>
+                                        <p className="text-gray-500 text-lg">How much the nodes repel one another</p>
                                         <input
                                             type="range"
                                             name="repulsionStrength"
@@ -239,7 +239,7 @@ const ExhibitDetail = () => {
                                             <label className="font-bold text-gray-800 text-xl">Spring Length Modulator</label>
                                             <p className="font-bold text-gray-800 text-xl text-right">{values.springLengthModulator}</p>
                                         </div>
-                                        <p className="text-gray-500 text-lg">Subtitle.</p>
+                                        <p className="text-gray-500 text-lg">How long the edges are</p>
                                         <input
                                             type="range"
                                             name="springLengthModulator"
@@ -258,7 +258,7 @@ const ExhibitDetail = () => {
                                             <label className="font-bold text-gray-800 text-xl">Spring Stiffness Modulator</label>
                                             <p className="font-bold text-gray-800 text-xl text-right">{values.springStiffnessModulator}</p>
                                         </div>
-                                        <p className="text-gray-500 text-lg">Subtitle.</p>
+                                        <p className="text-gray-500 text-lg">How stiff the edges are</p>
                                         <input
                                             type="range"
                                             name="springStiffnessModulator"
@@ -282,14 +282,14 @@ const ExhibitDetail = () => {
                                             type="range"
                                             name="centralGravity"
                                             min="0.0001"
-                                            max="0.1"
+                                            max="0.005"
                                             step="0.0001"
                                             value={values.centralGravity}
                                             onChange={handleChange}
                                             className="w-full accent-brand mt-4"
                                         />
                                     </div>
-
+                                    <div><br></br></div>
                                 </div>
                             </>
                         ) : (

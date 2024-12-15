@@ -533,3 +533,15 @@ def get_floorplan(id):
     except Exception as e:
         print(f"Error fetching floorplan: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/get_graph/<id>", methods=["GET"])
+def get_graph_by_id(id):
+    """
+    Retrieves the graph data from MongoDB by exhibit_id and returns it as JSON.
+    """
+    graph_data = db['ArtworksGraph'].find_one({"exhibit_id": str(id)})
+    if graph_data:
+        graph_data["_id"] = str(graph_data["_id"])
+        return jsonify(graph_data["graph"])
+    else:
+        return jsonify({"error": "Graph data not found for this exhibit"}), 404
