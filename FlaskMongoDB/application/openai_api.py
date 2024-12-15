@@ -172,7 +172,7 @@ def generate_response_conservation(metadata, vectorstore=None, model="gpt-4o"):
           - Your response should be formatted in JSON with the key "Conservation_Guidelines," containing a python list of 3 to 5 actionable recommendations 
           - Reccomendations must be concise, coherent, specific, and tailored to the context provided.\n
           - Each reccomendation should begin with a title mentioning its nature before following up with the description. For example : "Title of reccomendation: Description"
-          - Utilise Markdown syntax for each guideline to enhance its readablity, with bold words for the title of the reccomendations and italics for building codes. 
+          - Utilise Markdown syntax for each guideline to enhance its readablity, with bold words for the title of the recommendations and italics for building codes. 
           """
       },
        {
@@ -266,7 +266,7 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
         max_tokens=300
     )
 
-    #Generating Reccomendations
+    #Generating Recommendations
     tags_temp = taxonomy_response.choices[0].message.content
     tax_tags = json.loads(tags_temp)
     print(tags_temp)
@@ -294,7 +294,7 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
         - Style Significance: 
         - Exhibition Utilization:
 
-        **Reccomendation Categories**
+        **Recommendations Categories**
 
         1. **Lighting Requirements**: Suggest the type of lighting setup needed for optimal display, considering the artwork's medium, dimensions,exhibition utilization and material properties. 
 
@@ -309,10 +309,10 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
 
 
         **Output Guidelines**:
-        - Output format should be in a json format, with title "Reccomendations" and in accordance to the categories featured in Reccomendation Categories. Use space to separate words instead of underscores
-        - Generate the top 5 reccomendation for each category and place it in a list format mapped to its respective category
-        - Each of the reccomendations must not exceed 8 words, and should not be using any abbrievations. 
-        - Each reccomendation for each category must be unique and distinct from each other 
+        - Output format should be in a json format, with title "Recommendations" and in accordance to the categories featured in Recommendations Categories. Use space to separate words instead of underscores
+        - Generate the top 5 recommendations for each category and place it in a list format mapped to its respective category
+        - Each of the recommendations must not exceed 8 words, and should not be using any abbrievations. 
+        - Each recommendations for each category must be unique and distinct from each other 
         - If the metadata lacks sufficient detail, infer plausible recommendations based on context and similar known artworks.
 
           
