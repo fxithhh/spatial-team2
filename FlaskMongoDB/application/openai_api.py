@@ -309,7 +309,7 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
 
 
         **Output Guidelines**:
-        - Output format should be in a json format, with title "Recommendations" and in accordance to the categories featured in Recommendations Categories. Use space to separate words instead of underscores
+        - Output format MUST be in a json object format, with title "Recommendations" and its items in accordance to the categories featured in Recommendations Categories. Use space to separate words instead of underscores
         - Generate the top 5 recommendations for each category and place it in a list format mapped to its respective category
         - Each of the recommendations must not exceed 8 words, and should not be using any abbrievations. 
         - Each recommendations for each category must be unique and distinct from each other 
@@ -337,19 +337,23 @@ def generate_taxonomy_tags(metadata, image_data,exhibit_info, model="gpt-4o"):
           max_tokens=300,
         )
     
-    recc_tags = json.loads(response_reccs.choices[0].message.content)
+    print(response_reccs.choices[0].message.content)
 
-    for category, items in recc_tags["Recommendations"].items():
-        # Format the category name for artwork_taxonomy (e.g., replace spaces with underscores)
-        formatted_category = category.replace(" ", "_")
-        
-        # Check if the field exists in artwork_taxonomy
-        if formatted_category in tax_tags["artwork_taxonomy"]:
-            # Append to the existing list
-            tax_tags["artwork_taxonomy"][formatted_category].extend(items)
-        else:
-            # Create a new field with the items
-            tax_tags["artwork_taxonomy"][formatted_category] = items
+    recc_tags = json.loads(response_reccs.choices[0].message.content)
+    if recc_tags["Recommendations"]:
+      for category, items in recc_tags["Recommendations"].items():
+          # Format the category name for artwork_taxonomy (e.g., replace spaces with underscores)
+          formatted_category = category.replace(" ", "_")
+          
+          # Check if the field exists in artwork_taxonomy
+          if formatted_category in tax_tags["artwork_taxonomy"]:
+              # Append to the existing list
+              tax_tags["artwork_taxonomy"][formatted_category].extend(items)
+          else:
+              # Create a new field with the items
+              tax_tags["artwork_taxonomy"][formatted_category] = items
+    else: 
+        print(" Error Generating Recommendations")
 
     print(tax_tags)
 
