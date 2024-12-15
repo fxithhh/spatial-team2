@@ -217,27 +217,19 @@ def create_exhibit():
         if "artwork_list" not in request.files:
             return jsonify({"error": "Missing artwork Excel file."}), 400
 
-
+        # Process the Excel file
         try:
             artwork_file = request.files["artwork_list"]
             print(f"Processing Excel file: {artwork_file.filename}")
             processed_data = process_excel_file(artwork_file)
 
-        artwork_file = request.files["artwork_list"]
-        print(f"Processing Excel file: {artwork_file.filename}")
-        processed_data = process_excel_file(artwork_file)
-
-        if "data" not in processed_data or "images" not in processed_data:
-            return jsonify({"error": "Invalid data structure from Excel processing."}), 400
-
-            form_data["artworks"] = processed_data["data"]
-            form_data["excel_images"] = processed_data["images"]
+            if "data" not in processed_data or "images" not in processed_data:
+                return jsonify({"error": "Invalid data structure from Excel processing."}), 400
 
             print(f"Excel file {artwork_file.filename} processed successfully.")
         except Exception as e:
             return jsonify({"error": f"Error processing artwork Excel file: {str(e)}"}), 400
 
-        # Validate and process the images
         # Prepare form_data
         form_data = {
             "exhibit_title": exhibit_title,
@@ -248,22 +240,18 @@ def create_exhibit():
             "excel_images": processed_data["images"]
         }
 
-        # Validate and process images from processed_data["images"] if needed
+        # Validate and process images from processed_data["images"]
         valid_images = []
         for idx, image in enumerate(processed_data["images"]):
             try:
                 print(f"Validating image {idx}")
-
                 # Validate Base64 string
                 if not is_valid_base64(image):
                     raise ValueError(f"Image {idx} is not a valid Base64 string.")
-
                 valid_images.append(image)
                 print(f"Image {idx} validated and processed successfully.")
-            if not is_valid_base64(image):
-                print(f"Image {idx} is not a valid Base64 string.")
-                # Handle invalid image case if necessary
-            valid_images.append(image)
+            except Exception as e:
+                print(f"Image {idx} validation failed: {str(e)}")
 
         # Run OpenAI functions on the extracted artworks
         exhibit_info = {

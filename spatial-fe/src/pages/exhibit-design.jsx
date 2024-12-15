@@ -36,7 +36,7 @@ const ExhibitDetail = () => {
         springLengthModulator: 0.7,     // was spring_length
         springStiffnessModulator: 0.7,  // was spring_strength
         centralGravity: 0.001,          // newly added to match Graph
-        safety_distance: 25, 
+        safety_distance: 25,
         corridor_width: 2.5,
         hose_length: 50,
         hose_radius: 200,
@@ -152,7 +152,7 @@ const ExhibitDetail = () => {
             {/* Main Content */}
             <div className="flex flex-grow gap-x-10 z-0">
                 {/* Main View Area */}
-                <div className="flex w-3/4 bg-white relative border-black border-2">
+                <div className="flex w-3/4 bg-white relative border-black border-2 z-40">
                     {/* Main View */}
                     <OverlayComponent
                         visualThreshold={values.visualThreshold}
@@ -296,7 +296,7 @@ const ExhibitDetail = () => {
                             <>
                                 <h2 className="text-2xl font-bold text-black mb-2">Fire Safety Guidelines</h2>
                                 <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">
-                                    <strong>Tool Hotkeys</strong> 
+                                    <strong>Tool Hotkeys</strong>
                                     <br/>
                                     <strong>W: Wall, E: Entrance, F: Fire Escape</strong>
                                 </p>
@@ -381,7 +381,7 @@ const ExhibitDetail = () => {
 
                 {/* Artwork Library Sidebar */}
                 {isArtworkLibraryOpen && (
-                    <aside className="top-16 right-0 max-w-1/3 w-[600px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
+                    <aside className="top-16 right-0 max-w-1/3 w-[500px] bg-white border-black border-l-2 px-12 z-50 h-[calc(100vh-64px)] ease-in-out duration-300 overflow-y-auto fixed">
                         <div className="flex items-center justify-between mb-8 mt-12">
                             <h2 className="font-bold">Artwork Library</h2>
                             <button
