@@ -1,22 +1,40 @@
 import React, { useRef, useEffect, useState } from 'react';
 import p5 from 'p5';
+import { useParams } from 'react-router-dom'; // Ensure you have react-router-dom installed
 
-function Canvas({ floorplanImage: propFloorplanImage }) {
-    // State to manage the uploaded image
-    const [uploadedImage, setUploadedImage] = useState(propFloorplanImage || null);
+function Canvas({ disabled = false }) {
+    const { exhibitId } = useParams();
+    const [uploadedImage, setUploadedImage] = useState(null);
     const sketchRef = useRef();
     const p5InstanceRef = useRef(null);
     const fileInputRef = useRef(null);
-    
 
+    // Fetch the floorplan image from the backend when the component mounts
     useEffect(() => {
-        console.log("Canvas received floorplanImage:", propFloorplanImage); // Debugging
-        if (propFloorplanImage) {
-            setUploadedImage(propFloorplanImage);
-        }
-    }, [propFloorplanImage]);
+        if (!exhibitId) return; // If no exhibitId in the URL, don't fetch
 
-    // Handle image upload via file input
+        async function fetchFloorplan() {
+            try {
+                const response = await fetch(`http://localhost:5000/exhibits/${exhibitId}/floorplan`);
+                if (!response.ok) {
+                    console.error('Failed to load floorplan:', response.statusText);
+                    return;
+                }
+                const data = await response.json();
+                if (data.floor_plan) {
+                    setUploadedImage(data.floor_plan); // e.g. "data:image/png;base64,<encoded>"
+                } else {
+                    console.error('No floor_plan field found in response.');
+                }
+            } catch (error) {
+                console.error('Error fetching floorplan:', error);
+            }
+        }
+
+        fetchFloorplan();
+    }, [exhibitId]);
+
+    // Handle manual image upload (if desired)
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -58,8 +76,8 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             let imgWidth, imgHeight;
             let rectangles = [];
             let walls = [];
-            let pixelsPerCm;
-            let cellSize = 10;
+            let pixelsPerCm = null; // Initialize as null
+            const cellSize = 10; // in cm
             let cellSizePx;
             let isScaleDefined = false;
             let minX, minY, maxX, maxY;
@@ -81,42 +99,98 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             let wallsChanged = false; // Flag to indicate walls have changed
             let currentTool = 'wall'; // Initialize currentTool
 
+            // Variables for scale input
+            let scaleInput;
+            let setScaleButton;
+            let legendDiv; // Div for the legend text
+
             p.preload = function () {
                 floorplanImg = p.loadImage(currentImage);
             };
 
             p.setup = function () {
-                floorplanImg = p.loadImage(currentImage, () => {
-                    let aspectRatio = floorplanImg.width / floorplanImg.height;
+                // Calculate canvas size based on image aspect ratio and container size
+                let aspectRatio = floorplanImg.width / floorplanImg.height;
 
-                    let containerWidth = sketchRef.current.clientWidth;
-                    let containerHeight = sketchRef.current.clientHeight;
-                    let canvasWidth = containerWidth;
-                    let canvasHeight = canvasWidth / aspectRatio;
+                let containerWidth = sketchRef.current.clientWidth;
+                let containerHeight = sketchRef.current.clientHeight;
+                let canvasWidth = containerWidth;
+                let canvasHeight = canvasWidth / aspectRatio;
 
-                    if (canvasHeight > containerHeight) {
-                        canvasHeight = containerHeight;
-                        canvasWidth = canvasHeight * aspectRatio;
+                if (canvasHeight > containerHeight) {
+                    canvasHeight = containerHeight;
+                    canvasWidth = canvasHeight * aspectRatio;
+                }
+
+                p.createCanvas(canvasWidth, canvasHeight);
+
+                imgWidth = canvasWidth;
+                imgHeight = canvasHeight;
+
+                floorplanImg.resize(imgWidth, imgHeight);
+
+                // Improved rectangle tracing
+                findRectangles();
+
+                calculateExtremeEdges();
+                findLargestSquareRectangle();
+
+                // Create the input field and button for scale definition
+                scaleInput = p.createInput('');
+                scaleInput.position(10, p.height + 10);
+                scaleInput.size(150);
+                scaleInput.attribute('placeholder', 'Enter scale (cm)');
+                scaleInput.style('border', '1px solid #ccc');
+                scaleInput.style('padding', '1px');
+
+                setScaleButton = p.createButton('Set Scale');
+                setScaleButton.style("background-color", "#f9f9f9");
+                setScaleButton.style("border-radius", "4px");
+                setScaleButton.style('border', '1px solid #ccc');
+                setScaleButton.style('padding', '1px');
+                setScaleButton.position(scaleInput.x + scaleInput.width + 10, p.height + 10);
+                setScaleButton.mousePressed(() => {
+                    const scaleValue = parseFloat(scaleInput.value());
+                    if (isNaN(scaleValue) || scaleValue <= 0) {
+                        alert('Please enter a valid positive number for scale.');
+                        return;
                     }
+                    // Define pixelsPerCm and proceed
+                    pixelsPerCm = mostSquareRect ? mostSquareRect.w / scaleValue : null;
+                    if (pixelsPerCm) {
+                        cellSizePx = cellSize * pixelsPerCm;
+                        defineGridFromExtremes();
+                        isScaleDefined = true;
 
-                    p.createCanvas(canvasWidth, canvasHeight);
+                        // Detect autowalls from the floorplan image
+                        detectAutowallsFromImage();
 
-                    imgWidth = canvasWidth;
-                    imgHeight = canvasHeight;
+                        wallsChanged = true;
 
-                    floorplanImg.resize(imgWidth, imgHeight);
-
-                    // Improved rectangle tracing
-                    findRectangles();
-
-                    calculateExtremeEdges();
-                    findLargestSquareRectangle();
-
-                    // Create the button after canvas is created
-                    findSecludedAreaButton = p.createButton('Find Most Secluded Area');
-                    findSecludedAreaButton.position(10, p.height + 10);
-                    findSecludedAreaButton.mousePressed(findMostSecludedArea);
+                        // Remove the image after processing
+                        showImage = false;
+                    } else {
+                        alert('Unable to define scale. Ensure the most square rectangle is detected.');
+                    }
                 });
+
+                // Create the button which triggers Find Most Secluded Area
+                findSecludedAreaButton = p.createButton('Find Furthest Corner from Exit');
+                findSecludedAreaButton.style("background-color", "#f9f9f9");
+                findSecludedAreaButton.style("border-radius", "4px");
+                findSecludedAreaButton.style('border', '1px solid #ccc');
+                findSecludedAreaButton.style('padding', '5px');
+                findSecludedAreaButton.position(400, p.height + 10);
+                findSecludedAreaButton.mousePressed(findMostSecludedArea);
+
+                // Create a div for the legend text to place beside the Furthest Corner button
+                legendDiv = p.createDiv(`
+                                <p>Grid cell: ${cellSize} cm x ${cellSize} cm</p>
+                                <p>Narrow corridors are highlighted in red.</p>
+                            `);
+                legendDiv.style('border', '1px solid #ccc');
+                legendDiv.style('padding', '5px');
+                legendDiv.position(850, p.height + 10);
             };
 
             p.windowResized = function () {
@@ -145,9 +219,15 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                     wallsChanged = true; // Indicate walls need to be reprocessed
                 }
 
-                // Adjust button position
+                // Adjust button positions
+                if (scaleInput) {
+                    scaleInput.position(10, p.height + 10);
+                }
+                if (setScaleButton) {
+                    setScaleButton.position(scaleInput.x + scaleInput.width + 10, p.height + 10);
+                }
                 if (findSecludedAreaButton) {
-                    findSecludedAreaButton.position(10, p.height + 10);
+                    findSecludedAreaButton.position(10, p.height + 50);
                 }
             };
 
@@ -178,7 +258,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                         p.textSize(16);
                         p.textAlign(p.LEFT, p.TOP);
                         p.text(
-                            '<-- Click to define size',
+                            '<-- Click to enter its real size',
                             mostSquareRect.x + mostSquareRect.w + 10,
                             mostSquareRect.y
                         );
@@ -196,7 +276,6 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                     drawSecludedCells();
                     drawPaths();
                     drawNarrowCorridors(); // Draw narrow corridors
-                    drawLegend();
 
                     // Highlight checked corner cells
                     p.fill(255, 0, 0, 100); // Red with transparency
@@ -209,7 +288,25 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 }
             };
 
+            // Remove the previous mousePressed interaction
+            p.mouseDragged = function () {
+                if (disabled) return;
+                if (isScaleDefined && currentWall) {
+                    let gridPos = getGridPosition(p.mouseX, p.mouseY);
+                    if (gridPos) {
+                        if (isDrawing) {
+                            currentWall.w = gridPos.col - currentWall.x + 1;
+                            currentWall.h = gridPos.row - currentWall.y + 1;
+                        } else if (isResizing) {
+                            resizeWall(gridPos);
+                        } else {
+                            moveWall(gridPos);
+                        }
+                    }
+                }
+            };
             p.mousePressed = function () {
+                if (disabled) return;
                 if (mostSquareRect && !isScaleDefined) {
                     if (
                         p.mouseX >= mostSquareRect.x &&
@@ -228,12 +325,9 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                                 cellSizePx = cellSize * pixelsPerCm;
                                 defineGridFromExtremes();
                                 isScaleDefined = true;
-
                                 // Detect autowalls from the floorplan image
                                 detectAutowallsFromImage();
-
                                 wallsChanged = true;
-
                                 // Remove the image after processing
                                 showImage = false;
                             }
@@ -272,23 +366,8 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 }
             };
 
-            p.mouseDragged = function () {
-                if (isScaleDefined && currentWall) {
-                    let gridPos = getGridPosition(p.mouseX, p.mouseY);
-                    if (gridPos) {
-                        if (isDrawing) {
-                            currentWall.w = gridPos.col - currentWall.x + 1;
-                            currentWall.h = gridPos.row - currentWall.y + 1;
-                        } else if (isResizing) {
-                            resizeWall(gridPos);
-                        } else {
-                            moveWall(gridPos);
-                        }
-                    }
-                }
-            };
-
             p.mouseReleased = function () {
+                if (disabled) return;
                 if (isDrawing) {
                     adjustWallPositionAndSize(currentWall);
                     isDrawing = false;
@@ -306,6 +385,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
             };
 
             p.keyPressed = function () {
+                if (disabled) return;
                 if (p.key === 'E' || p.key === 'e') {
                     currentTool = 'entrance';
                 } else if (p.key === 'F' || p.key === 'f') {
@@ -321,6 +401,11 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                     }
                 }
             };
+            p._mousePressedOrig = p.mousePressed;
+            p._mouseDraggedOrig = p.mouseDragged;
+            p._mouseReleasedOrig = p.mouseReleased;
+            p._keyPressedOrig = p.keyPressed;
+
 
             // ====================
             // Improved Rectangle Detection
@@ -386,7 +471,7 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
 
             function validateRectangle(pixels) {
                 if (pixels.length === 0) return null;
-            
+
                 // Find bounding box
                 let minX = Infinity,
                     minY = Infinity,
@@ -398,11 +483,11 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                     if (px.y < minY) minY = px.y;
                     if (px.y > maxY) maxY = px.y;
                 }
-            
+
                 let w = maxX - minX + 1;
                 let h = maxY - minY + 1;
                 let area = w * h;
-            
+
                 // Calculate black pixels in bounding box
                 let blackPixels = 0;
                 for (let yy = minY; yy <= maxY; yy++) {
@@ -413,21 +498,21 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                         }
                     }
                 }
-            
+
                 let blackPercentage = (blackPixels / area) * 100;
-            
+
                 // Set a tolerance threshold (e.g., 90% black pixels)
                 const tolerancePercentage = 90;
-            
+
                 if (blackPercentage < tolerancePercentage) {
                     // Not a valid rectangle within tolerance
                     return null;
                 }
-            
+
                 // Return rectangle data
                 return { x: minX, y: minY, w: w, h: h };
             }
-            
+
 
             function findLargestSquareRectangle() {
                 // Select the rectangle that is closest to a square and has the largest area
@@ -575,25 +660,6 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
 
                 resizeHandle = null;
                 return false;
-            }
-
-            function drawLegend() {
-                p.fill(0);
-                p.textSize(12);
-                p.textAlign(p.RIGHT);
-                p.text(
-                    `Grid cell: ${cellSize} cm x ${cellSize} cm`,
-                    p.width - 10,
-                    p.height - 70
-                );
-                p.text(`Current tool: ${currentTool}`, p.width - 10, p.height - 55);
-                p.text(
-                    'Press W: Wall, E: Entrance, F: Fire Escape',
-                    p.width - 10,
-                    p.height - 40
-                );
-                p.text('Click the button below to find paths.', p.width - 10, p.height - 25);
-                p.text('Narrow corridors are highlighted in red.', p.width - 10, p.height - 10);
             }
 
             function moveWall(gridPos) {
@@ -1342,8 +1408,32 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
         };
     }, [uploadedImage]);
 
+    useEffect(() => {
+        if (p5InstanceRef.current) {
+            if (disabled) {
+                // Disable event handlers
+                p5InstanceRef.current.mousePressed = () => { };
+                p5InstanceRef.current.mouseDragged = () => { };
+                p5InstanceRef.current.mouseReleased = () => { };
+                p5InstanceRef.current.keyPressed = () => { };
+
+                // If the sketch relies on continuous drawing, stop looping
+                p5InstanceRef.current.noLoop();
+            } else {
+                // Restore original event handlers when enabled
+                p5InstanceRef.current.mousePressed = p5InstanceRef.current._mousePressedOrig;
+                p5InstanceRef.current.mouseDragged = p5InstanceRef.current._mouseDraggedOrig;
+                p5InstanceRef.current.mouseReleased = p5InstanceRef.current._mouseReleasedOrig;
+                p5InstanceRef.current.keyPressed = p5InstanceRef.current._keyPressedOrig;
+
+                // Resume looping if previously stopped
+                p5InstanceRef.current.loop();
+            }
+        }
+    }, [disabled]);
+
     return (
-        <div className="relative w-full h-full border-2 border-gray-300">
+        <div className="relative w-full h-full">
             {/* p5.js Sketch Container */}
             <div ref={sketchRef} className="w-full h-full"></div>
 
@@ -1352,14 +1442,8 @@ function Canvas({ floorplanImage: propFloorplanImage }) {
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75">
                     <div className="flex flex-col items-center p-6 bg-white rounded shadow">
                         <p className="mb-4 text-center">
-                            No floorplan image available. Please upload one.
+                            Loading Floorplan...
                         </p>
-                        <button
-                            onClick={triggerFileInput}
-                            className="px-4 py-2 mb-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                            Upload Image
-                        </button>
                         <input
                             type="file"
                             accept="image/*"

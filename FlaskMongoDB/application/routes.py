@@ -184,33 +184,36 @@ def add_artwork():
 @app.route("/create_exhibit", methods=["POST"])
 def create_exhibit():
     try:
-        # Debug incoming form data and files
         print("Incoming form data:", request.form.to_dict())
         print("Incoming files:", list(request.files.keys()))
 
         # Extract form data
         exhibit_title = request.form.get("exhibit_title")
         concept = request.form.get("concept")
-        subsections = request.form.getlist("subsections")
+        subsections = json.loads(request.form.get("subsections", "[]")) \
+            if "subsections" in request.form else []
+
         floor_plan_file = request.files.get("floor_plan")
-        if floor_plan_file:
-            # Read file content and encode it as Base64
-            floor_plan_binary = floor_plan_file.read()
-            floor_plan_base64 = base64.b64encode(floor_plan_binary).decode('utf-8')  # Convert to string
-        else:
+        if not floor_plan_file:
             return jsonify({"error": "Floor plan file is missing."}), 400
 
+        # Validate exhibit title and concept
         if not exhibit_title or not concept:
-            return jsonify({"error": "Missing required form data: 'exhibit_title' or 'concept'"}), 400
+            return jsonify({"error": "Missing required fields: 'exhibit_title' or 'concept'"}), 400
 
-        form_data = {
-            "exhibit_title": exhibit_title,
-            "concept": concept,
-            "subsections": subsections,
-            "floor_plan": floor_plan_base64,
-        }
+        # Validate floor_plan file type
+        allowed_extensions = {"png", "jpg", "jpeg"}
+        extension = floor_plan_file.filename.rsplit('.', 1)[-1].lower()
+        if extension not in allowed_extensions:
+            return jsonify({"error": "Floor plan must be PNG, JPG, or JPEG."}), 400
 
-        # Process the Excel file
+        # Read and convert floor_plan once
+        floor_plan_binary = floor_plan_file.read()
+        floor_plan_base64 = base64.b64encode(floor_plan_binary).decode('utf-8')
+        mime_type = "image/jpeg" if extension in ["jpg", "jpeg"] else "image/png"
+        floor_plan_data_url = f"data:{mime_type};base64,{floor_plan_base64}"
+
+        # Check artwork list file
         if "artwork_list" not in request.files:
             return jsonify({"error": "Missing artwork Excel file."}), 400
 
@@ -220,8 +223,12 @@ def create_exhibit():
             print(f"Processing Excel file: {artwork_file.filename}")
             processed_data = process_excel_file(artwork_file)
 
-            if "data" not in processed_data or "images" not in processed_data:
-                return jsonify({"error": "Invalid data structure from Excel processing."}), 400
+        artwork_file = request.files["artwork_list"]
+        print(f"Processing Excel file: {artwork_file.filename}")
+        processed_data = process_excel_file(artwork_file)
+
+        if "data" not in processed_data or "images" not in processed_data:
+            return jsonify({"error": "Invalid data structure from Excel processing."}), 400
 
             form_data["artworks"] = processed_data["data"]
             form_data["excel_images"] = processed_data["images"]
@@ -231,6 +238,17 @@ def create_exhibit():
             return jsonify({"error": f"Error processing artwork Excel file: {str(e)}"}), 400
 
         # Validate and process the images
+        # Prepare form_data
+        form_data = {
+            "exhibit_title": exhibit_title,
+            "concept": concept,
+            "subsections": subsections,
+            "floor_plan": floor_plan_data_url,
+            "artworks": processed_data["data"],
+            "excel_images": processed_data["images"]
+        }
+
+        # Validate and process images from processed_data["images"] if needed
         valid_images = []
         for idx, image in enumerate(processed_data["images"]):
             try:
@@ -242,48 +260,43 @@ def create_exhibit():
 
                 valid_images.append(image)
                 print(f"Image {idx} validated and processed successfully.")
+            if not is_valid_base64(image):
+                print(f"Image {idx} is not a valid Base64 string.")
+                # Handle invalid image case if necessary
+            valid_images.append(image)
 
-            except Exception as e:
-                print(f"Error processing image {idx}: {str(e)}")
-
+        # Run OpenAI functions on the extracted artworks
         exhibit_info = {
             "exhibit_title": exhibit_title,
             "concept": concept,
             "subsections": subsections,
-            "floor_plan" : floor_plan_file,
+            "floor_plan": floor_plan_data_url,
         }
 
-        # Run OpenAI functions on the extracted rows
         for idx, row in enumerate(form_data["artworks"]):
             try:
-                print(f"Calling OpenAI API for row {idx}")
-                # Use the validated image for this row
-                image_for_row = valid_images[idx] if idx < len(valid_images) else None
-                if not image_for_row:
-                    raise ValueError(f"No valid image for row {idx}. Skipping OpenAI API call.")
+                if idx < len(valid_images):
+                    image_for_row = valid_images[idx]
+                else:
+                    image_for_row = None
 
-                # Validate metadata
-                metadata = row
-                if not isinstance(metadata, dict):
-                    raise ValueError(f"Invalid metadata for row {idx}.")
-                row["visual_context"] = generate_visual_context(row,image_for_row, {}, "gpt-4o")
+                if not image_for_row:
+                    row["error"] = f"No valid image for row {idx}. Skipping OpenAI calls."
+                    continue
+
+                # Run OpenAI-based functions
+                row["visual_context"] = generate_visual_context(row, image_for_row, exhibit_info, "gpt-4o")
                 row["conservation_guidelines"] = generate_response_conservation(row)
-                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row,exhibit_info, "gpt-4o")
-                print(f"OpenAI metadata generated for row {idx}")
+                row["taxonomy_tags"] = generate_taxonomy_tags(row, image_for_row, exhibit_info, "gpt-4o")
             except Exception as e:
                 print(f"Error generating OpenAI metadata for row {idx}: {str(e)}")
                 row["error"] = f"OpenAI metadata generation failed: {str(e)}"
 
-        # Insert the complete form data into MongoDB
-        try:
-            print("Inserting data into MongoDB...")
-            result = create_exhibits.insert_one(form_data)
-            form_data["_id"] = str(result.inserted_id)
-            print(f"Data inserted into MongoDB with ID: {form_data['_id']}")
-        except Exception as e:
-            return jsonify({"error": "Failed to save data to MongoDB"}), 500
+        # Insert into MongoDB
+        result = create_exhibits.insert_one(form_data)
+        form_data["_id"] = str(result.inserted_id)
+        print(f"Data inserted into MongoDB with ID: {form_data['_id']}")
 
-        # Return success response
         return jsonify({
             "message": "Form submitted successfully",
             "data": form_data,
@@ -513,3 +526,45 @@ def get_graph():
         return jsonify({"error": "Graph data not found"}), 404
 
 
+@app.route('/exhibits/<id>/floorplan', methods=['GET'])
+def get_floorplan(id):
+    try:
+        exhibit = create_exhibits.find_one({"_id": ObjectId(id)})
+        if not exhibit:
+            return jsonify({"error": "Exhibit not found"}), 404
+
+        floor_plan = exhibit.get("floor_plan")
+        if not floor_plan:
+            return jsonify({"error": "No floor_plan found for this exhibit"}), 404
+
+        # Determine MIME type based on Base64 signature
+        # Common checks:
+        # PNG typically starts with "iVBORw0KGgo"
+        # JPEG/JPG often start with "/9j"
+        if floor_plan.startswith("iVBORw0KGgo"):
+            mime_type = "image/png"
+        elif floor_plan.startswith("/9j"):
+            mime_type = "image/jpeg"
+        else:
+            # Default fallback if unrecognized; you can log or handle differently
+            mime_type = "image/jpeg"  # or image/png as a fallback
+
+        data_url = f"data:{mime_type};base64,{floor_plan}"
+
+        return jsonify({"floor_plan": data_url}), 200
+
+    except Exception as e:
+        print(f"Error fetching floorplan: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/get_graph/<id>", methods=["GET"])
+def get_graph_by_id(id):
+    """
+    Retrieves the graph data from MongoDB by exhibit_id and returns it as JSON.
+    """
+    graph_data = db['ArtworksGraph'].find_one({"exhibit_id": str(id)})
+    if graph_data:
+        graph_data["_id"] = str(graph_data["_id"])
+        return jsonify(graph_data["graph"])
+    else:
+        return jsonify({"error": "Graph data not found for this exhibit"}), 404
