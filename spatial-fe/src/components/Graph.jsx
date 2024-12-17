@@ -365,6 +365,33 @@ function Graph({
     }
   }, [springStiffnessModulator, repulsionStrength, centralGravity]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (selectedNodeId !== null && networkInstanceRef.current) {
+        const node = networkInstanceRef.current.body.data.nodes.get(selectedNodeId);
+        if (node) {
+          let newSize = node.size || 20; // Default size
+          if (event.key === '=') {
+            newSize = Math.min(newSize + 4, 100); // Increment by 4, max 100
+          } else if (event.key === '-') {
+            newSize = Math.max(newSize - 4, 2); // Decrement by 4, min 0
+          }
+          // Update the node with the new size
+          networkInstanceRef.current.body.data.nodes.update({
+            id: selectedNodeId,
+            size: newSize,
+          });
+        }
+      }
+    };
+  
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedNodeId]);
+  
+
   function computeOverallScore(visualScore, narrativeScore) {
     const visualWeight = 0.5;
     const narrativeWeight = 0.5;
