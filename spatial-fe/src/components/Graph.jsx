@@ -1,6 +1,6 @@
 // src/components/Graph.js
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom'; 
+import { useParams } from 'react-router-dom';
 import { Network, DataSet } from 'vis-network/standalone/esm/vis-network';
 import 'vis-network/styles/vis-network.css';
 import './Graph.css';
@@ -13,7 +13,7 @@ function Graph({
   repulsionStrength,
   centralGravity
 }) {
-  const { exhibitId } = useParams(); 
+  const { exhibitId } = useParams();
   const networkRef = useRef(null);
   const networkInstanceRef = useRef(null);
 
@@ -27,6 +27,10 @@ function Graph({
   const [hiddenNodes, setHiddenNodes] = useState([]);
   const [useImageNodes, setUseImageNodes] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
+  const [originalNodes, setOriginalNodes] = useState([]);
+
+
 
   const [loading, setLoading] = useState(false);
   const [pairCount, setPairCount] = useState(0);
@@ -115,7 +119,7 @@ function Graph({
         id: node.id,
         label: `${node.name}\n ${node.artist}`,
         color: 'lightgreen',
-        value: 10,
+        size: ['0', '1', '3', '10', '11'].includes(node.id) ? 50 : 20, // Correct and scalable
         shape: 'dot',
         imageurl: node.imageurl,
         fixed: false
@@ -140,6 +144,7 @@ function Graph({
       }
 
       setAllNodes(nodesData);
+      setOriginalNodes(nodesData); // Save a backup of the nodes
       setAllEdges(edgesData);
       setLoading(false);
       stopProgressInterval(); // Stop the progress if it was running
@@ -172,15 +177,58 @@ function Graph({
   };
 
   // Inside your Graph component, add this function
-const handleUnhideNode = (nodeId) => {
-  const nodeToUnhide = hiddenNodes.find(node => node.id === nodeId);
-  if (nodeToUnhide && networkInstanceRef.current) {
-    // Add the node back to the network
-    networkInstanceRef.current.body.data.nodes.add(nodeToUnhide);
-    // Remove the node from hiddenNodes state
-    setHiddenNodes(hiddenNodes.filter(node => node.id !== nodeId));
-  }
-};
+  const handleUnhideNode = (nodeId) => {
+    const nodeToUnhide = hiddenNodes.find(node => node.id === nodeId);
+    if (nodeToUnhide && networkInstanceRef.current) {
+      // Add the node back to the network
+      networkInstanceRef.current.body.data.nodes.add(nodeToUnhide);
+      // Remove the node from hiddenNodes state
+      setHiddenNodes(hiddenNodes.filter(node => node.id !== nodeId));
+    }
+  };
+
+  const calculateAverageSpringEnergy = () => {
+    if (!networkInstanceRef.current) return;
+
+    const nodes = networkInstanceRef.current.body.nodes;
+    const edges = networkInstanceRef.current.body.edges;
+
+    let totalEnergy = 0;
+    let edgeCount = 0;
+
+    Object.values(edges).forEach(edge => {
+      const fromNode = nodes[edge.fromId];
+      const toNode = nodes[edge.toId];
+
+      if (fromNode && toNode) {
+        // Get positions of the nodes
+        const x1 = fromNode.x, y1 = fromNode.y;
+        const x2 = toNode.x, y2 = toNode.y;
+
+        // Calculate Euclidean distance (actual length of the spring)
+        const actualLength = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+        // Retrieve the target spring length and spring constant
+        const springLength = edge.options.length || 100; // Default spring length
+        const springConstant = 0.1 * springStiffnessModulator;
+
+        // Calculate spring displacement (Delta L)
+        const deltaL = actualLength - springLength;
+
+        // Calculate energy for this edge and add to total energy
+        const energy = 0.5 * springConstant * deltaL * deltaL;
+        totalEnergy += energy;
+        edgeCount++;
+      }
+    });
+
+    const averageEnergy = edgeCount > 0 ? totalEnergy / edgeCount : 0;
+
+    console.log(`Total Spring Energy: ${totalEnergy.toFixed(2)}`);
+    console.log(`Average Spring Energy: ${averageEnergy.toFixed(2)}`);
+    alert(`Total Spring Energy: ${totalEnergy.toFixed(2)}\nAverage Spring Energy: ${averageEnergy.toFixed(2)}`);
+  };
+
 
 
   useEffect(() => {
@@ -438,7 +486,7 @@ const handleUnhideNode = (nodeId) => {
               >
                 &times;
               </button>
-              <strong>Instructions:</strong> Click on a node to select it, then press <strong>F</strong> to fix/unfix its position. 
+              <strong>Instructions:</strong> Click on a node to select it, then press <strong>F</strong> to fix/unfix its position.
               Drag fixed nodes to temporarily unfix them. Press <strong>H</strong> to hide a node, and <strong>I</strong> to toggle image mode.
             </div>
           )}
@@ -455,31 +503,48 @@ const handleUnhideNode = (nodeId) => {
           ></div>
         </div>
       )}
-      {/* Hidden Nodes Section */}
-    {hiddenNodes.length > 0 && (
-      <div className="hidden-nodes-container" style={{ padding: '1rem' }}>
-        <h3>Hidden Nodes:</h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-          {hiddenNodes.map(node => (
+          <div className="flex justify-center gap-4">
             <button
-              key={node.id}
-              onClick={() => handleUnhideNode(node.id)}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#76c7c0',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.9rem'
-              }}
+              onClick={calculateAverageSpringEnergy}
+              className="px-4 py-2 border border-gray-200 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition-colors duration-150"
             >
-              {node.label} {/* Display only the node name */}
+              Calculate Total and Average Spring Energy
             </button>
-          ))}
+            <button
+  onClick={() => {
+    setShowLabels((prev) => !prev); // Toggle the state
+    if (networkInstanceRef.current) {
+      const updatedNodes = showLabels
+        ? allNodes.map((node) => ({ id: node.id, label: "" })) // Hide labels
+        : originalNodes.map((node) => ({ id: node.id, label: node.label })); // Restore labels
+      networkInstanceRef.current.body.data.nodes.update(updatedNodes);
+    }
+  }}
+  className="px-4 py-2 border border-gray-200 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition-colors duration-150"
+>
+  {showLabels ? "Hide Names" : "Show Names"}
+</button>
+
+          </div>
+      {/* Hidden Nodes Section */}
+      {hiddenNodes.length > 0 && (
+        <div className="hidden-nodes-container p-4 border border-gray-200 rounded-md mt-6">
+
+          <h3 className="text-sm font-semibold text-gray-800 mb-3">Hidden Nodes</h3>
+          <div className="flex flex-wrap gap-2">
+            {hiddenNodes.map((node) => (
+              <button
+                key={node.id}
+                onClick={() => handleUnhideNode(node.id)}
+                className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+              >
+                {node.label} {/* Display only the node name */}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-    )}
+      )}
+
     </div>
   );
 }

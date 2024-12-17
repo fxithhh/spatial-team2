@@ -37,20 +37,20 @@ graph_collection = db['ArtworksGraph']
 # Initialize OpenAI client
 client = OpenAI(api_key=API_KEY)
 
-rubrics = """Visual Connectivity Rubric (The criteria for the AI to score the visual connectiveness between two artworks):
+rubrics = """Visual Connectivity Rubric:
 Color, Composition, Texture, Line, Shape, and Form
 Recurring visual motifs or symbolic representations
 Symbolic and Aesthetic Themes
 
-Score Visual Connectivity out of 10
+Give reasoning, then score Visual Connectivity out of 10
 
-Narrative Connectivity Rubric (The criteria for the AI to score the narrative connectiveness between two artworks):
+Narrative Connectivity Rubric:
 Historical or Cultural Context
 Subject Matter (themes, stories, or subjects)
 Emotional and Intellectual Resonance
 Intended Audience and Purpose
 
-Score Narrative Connectivity out of 10
+Give reasoning, then score Narrative Connectivity out of 10
 """
 
 computation_in_progress = {}
@@ -60,7 +60,7 @@ def compute_connectivity_scores(artwork_a, artwork_b):
     messages = [
         {
             "role": "system",
-            "content": "You are an art expert who evaluates the connectivity between two artworks based on their visual and narrative aspects. You are provided a rubric, but feel free to evaluate freely as well."
+            "content": "You are an art expert who evaluates the connectivity between two artworks based on their visual and narrative aspects."
         },
         {
             "role": "user",
