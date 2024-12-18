@@ -173,7 +173,7 @@ const ExhibitDetail = () => {
                             <>
                                 <h2 className="text-2xl font-bold text-black mb-2">Artwork Connections</h2>
                                 <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">
-                                Instructions: Click on a node to select it, then press F to fix/unfix its position. Drag fixed nodes to temporarily unfix them. Press H to hide a node, and I to toggle image mode.
+                                Instructions: Click on a node to select it, then press F to fix/unfix its position. Drag fixed nodes to temporarily unfix them. Press H to hide a node, and I to toggle image mode. Press +/- to grow or shrink a node. 
                                 </p>
                                 <div className="space-y-4">
                                     {/* Narrative Connectivity Threshold */}
