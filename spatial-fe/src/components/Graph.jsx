@@ -119,7 +119,7 @@ function Graph({
         id: node.id,
         label: `${node.name}\n ${node.artist}`,
         color: 'lightgreen',
-        size: ['0', '1', '3', '10', '11'].includes(node.id) ? 50 : 20, // Correct and scalable
+        size: 20,
         shape: 'dot',
         imageurl: node.imageurl,
         fixed: false
@@ -176,16 +176,19 @@ function Graph({
     }
   };
 
-  // Inside your Graph component, add this function
   const handleUnhideNode = (nodeId) => {
-    const nodeToUnhide = hiddenNodes.find(node => node.id === nodeId);
+    const nodeToUnhide = hiddenNodes.find((node) => node.id === nodeId);
     if (nodeToUnhide && networkInstanceRef.current) {
-      // Add the node back to the network
-      networkInstanceRef.current.body.data.nodes.add(nodeToUnhide);
-      // Remove the node from hiddenNodes state
-      setHiddenNodes(hiddenNodes.filter(node => node.id !== nodeId));
+      // Add the node back to the network with the correct label based on the current showLabels state
+      networkInstanceRef.current.body.data.nodes.add({
+        ...nodeToUnhide,
+        label: showLabels ? nodeToUnhide.label : "", // Show or hide label as needed
+      });
+      setHiddenNodes(hiddenNodes.filter((node) => node.id !== nodeId)); // Update hidden nodes state
     }
   };
+  
+  
 
   const calculateAverageSpringEnergy = () => {
     if (!networkInstanceRef.current) return;
@@ -259,23 +262,31 @@ function Graph({
   }, [useImageNodes]);
 
   useEffect(() => {
-    const handleKeyDown = event => {
-      if ((event.key === 'h' || event.key === 'H') && selectedNodeId !== null && networkInstanceRef.current) {
+    const handleKeyDown = (event) => {
+      if ((event.key === "h" || event.key === "H") && selectedNodeId !== null) {
         const node = networkInstanceRef.current.body.data.nodes.get(selectedNodeId);
         if (node) {
-          if (hiddenNodes.some(n => n.id === selectedNodeId)) {
-            setHiddenNodes(hiddenNodes.filter(n => n.id !== selectedNodeId));
-            networkInstanceRef.current.body.data.nodes.add(node);
+          const isHidden = hiddenNodes.some((hidden) => hidden.id === selectedNodeId);
+          if (isHidden) {
+            handleUnhideNode(selectedNodeId); // Unhide the node
           } else {
-            setHiddenNodes([...hiddenNodes, node]);
-            networkInstanceRef.current.body.data.nodes.remove(selectedNodeId);
+            // Preserve the label regardless of showLabels state
+            const hiddenNode = {
+              ...node,
+              label: originalNodes.find((n) => n.id === node.id)?.label || "", // Ensure original label is saved
+            };
+  
+            setHiddenNodes([...hiddenNodes, hiddenNode]); // Add to hidden list
+            networkInstanceRef.current.body.data.nodes.remove(selectedNodeId); // Remove from network
           }
         }
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, hiddenNodes]);
+  
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [selectedNodeId, hiddenNodes, showLabels, originalNodes]);
+  
 
   useEffect(() => {
     const handleKeyDown = event => {
@@ -539,11 +550,15 @@ function Graph({
             </button>
             <button
   onClick={() => {
-    setShowLabels((prev) => !prev); // Toggle the state
+    setShowLabels((prev) => !prev); // Toggle label visibility
     if (networkInstanceRef.current) {
-      const updatedNodes = showLabels
-        ? allNodes.map((node) => ({ id: node.id, label: "" })) // Hide labels
-        : originalNodes.map((node) => ({ id: node.id, label: node.label })); // Restore labels
+      const updatedNodes = networkInstanceRef.current.body.data.nodes.getIds().map((id) => {
+        const node = networkInstanceRef.current.body.data.nodes.get(id);
+        return {
+          id: node.id,
+          label: !showLabels ? originalNodes.find((n) => n.id === id)?.label : "", // Restore original label when showing
+        };
+      });
       networkInstanceRef.current.body.data.nodes.update(updatedNodes);
     }
   }}
@@ -552,6 +567,8 @@ function Graph({
   {showLabels ? "Hide Names" : "Show Names"}
 </button>
 
+
+
           </div>
       {/* Hidden Nodes Section */}
       {hiddenNodes.length > 0 && (
@@ -559,15 +576,16 @@ function Graph({
 
           <h3 className="text-sm font-semibold text-gray-800 mb-3">Hidden Nodes</h3>
           <div className="flex flex-wrap gap-2">
-            {hiddenNodes.map((node) => (
-              <button
-                key={node.id}
-                onClick={() => handleUnhideNode(node.id)}
-                className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors duration-150"
-              >
-                {node.label} {/* Display only the node name */}
-              </button>
-            ))}
+          {hiddenNodes.map((node) => (
+  <button
+    key={node.id}
+    onClick={() => handleUnhideNode(node.id)}
+    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+  >
+    {node.label || "Unnamed Node"} {/* Always display stored label */}
+  </button>
+))}
+
           </div>
         </div>
       )}
