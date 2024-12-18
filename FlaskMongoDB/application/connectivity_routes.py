@@ -1,6 +1,4 @@
 # connectivity_routes.py
-from .openai_api import generate_response_conservation, tax_template, generate_taxonomy_tags, generate_visual_context, load_vectorstore_from_mongo
-from .read_excel import process_excel_file
 from io import BytesIO
 from application import app, mongo, db
 from flask import request, jsonify, Blueprint, render_template, redirect
@@ -10,7 +8,6 @@ import json
 import base64
 from bson import ObjectId
 from pymongo import MongoClient
-import hashlib
 import networkx as nx
 from networkx.readwrite import json_graph
 from datetime import datetime
@@ -42,7 +39,10 @@ Color, Composition, Texture, Line, Shape, and Form
 Recurring visual motifs or symbolic representations
 Symbolic and Aesthetic Themes
 
-Give reasoning, then score Visual Connectivity out of 10
+For Visual Connectivity:
+1. Provide detailed reasoning.
+2. Assign a score out of 10.
+3. Provide a concise summary of the reasoning in 10 words or less.
 
 Narrative Connectivity Rubric:
 Historical or Cultural Context
@@ -50,7 +50,11 @@ Subject Matter (themes, stories, or subjects)
 Emotional and Intellectual Resonance
 Intended Audience and Purpose
 
-Give reasoning, then score Narrative Connectivity out of 10
+For Narrative Connectivity:
+1. Provide detailed reasoning.
+2. Assign a score out of 10.
+3. Provide a concise summary of the reasoning in 10 words or less.
+
 """
 
 computation_in_progress = {}
@@ -87,14 +91,18 @@ def compute_connectivity_scores(artwork_a, artwork_b):
                 "properties": {
                     "visual_reasoning": {"type": "string"},
                     "visual_connectivity_score": {"type": "number"},
+                    "visual_connectivity_summary": {"type": "string"},
                     "narrative_reasoning": {"type": "string"},
-                    "narrative_connectivity_score": {"type": "number"}
+                    "narrative_connectivity_score": {"type": "number"},
+                    "narrative_connectivity_summary": {"type": "string"}
                 },
                 "required": [
                     "visual_reasoning",
                     "visual_connectivity_score",
+                    "visual_connectivity_summary",
                     "narrative_reasoning",
                     "narrative_connectivity_score",
+                    "narrative_connectivity_summary"
                 ],
                 "additionalProperties": False
             }
@@ -108,6 +116,7 @@ def compute_connectivity_scores(artwork_a, artwork_b):
             response_format=response_format
         )
         response_content = completion.choices[0].message.content
+        print(f"Raw response from OpenAI: {response_content}")  # Debugging line
         connectivity_data = json.loads(response_content)
         return connectivity_data
     except Exception as e:
@@ -210,8 +219,10 @@ def compute_pairwise_for_exhibit(id):
                     str(b_idx),
                     visual_connectivity_score=connectivity_data['visual_connectivity_score'],
                     visual_reasoning=connectivity_data['visual_reasoning'],
+                    visual_connectivity_summary=connectivity_data['visual_connectivity_summary'],
                     narrative_connectivity_score=connectivity_data['narrative_connectivity_score'],
-                    narrative_reasoning=connectivity_data['narrative_reasoning']
+                    narrative_reasoning=connectivity_data['narrative_reasoning'],
+                    narrative_connectivity_summary=connectivity_data['narrative_connectivity_summary']
                 )
                 edge_count += 1
             else:

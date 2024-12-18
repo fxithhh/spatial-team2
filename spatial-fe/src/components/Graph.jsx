@@ -11,7 +11,8 @@ function Graph({
   springLengthModulator,
   springStiffnessModulator,
   repulsionStrength,
-  centralGravity
+  centralGravity,
+  p
 }) {
   const { exhibitId } = useParams();
   const networkRef = useRef(null);
@@ -29,6 +30,7 @@ function Graph({
   const [showInstructions, setShowInstructions] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
   const [originalNodes, setOriginalNodes] = useState([]);
+  const [selectedEdgeId, setSelectedEdgeId] = useState(null);
 
 
 
@@ -125,15 +127,30 @@ function Graph({
         fixed: false
       }));
 
-      const edgesData = data.links.map(link => ({
-        from: link.source,
-        to: link.target,
-        visual_connectivity_score: link.visual_connectivity_score,
-        narrative_connectivity_score: link.narrative_connectivity_score,
-        color: getColorFromScore(0),
-        width: 1,
-        title: `Visual Score: ${link.visual_connectivity_score}\nNarrative Score: ${link.narrative_connectivity_score}`
-      }));
+      const edgesData = data.links.map((link, index) => {
+        const visualReasoningText = link.visual_connectivity_summary || link.visual_reasoning;
+        const narrativeReasoningText = link.narrative_connectivity_summary || link.narrative_reasoning;
+      
+        return {
+          id: `${link.source}-${link.target}`, // Unique edge ID
+          from: link.source,
+          to: link.target,
+          visual_connectivity_score: link.visual_connectivity_score,
+          narrative_connectivity_score: link.narrative_connectivity_score,
+          color: getColorFromScore(0),
+          width: 1,
+          title: `
+            (${index}) ${link.source}-${link.target}\n
+            Visual Score: ${link.visual_connectivity_score}\n
+            Visual Reasoning: ${visualReasoningText}\n
+            Narrative Score: ${link.narrative_connectivity_score}\n
+            Narrative Reasoning: ${narrativeReasoningText}
+          `
+        };
+      });
+      
+      
+      
 
       // Update min/max scores
       if (edgesData.length > 0) {
@@ -368,7 +385,7 @@ function Graph({
     if (networkInstanceRef.current && allEdges.length > 0) {
       filterAndUpdateEdges();
     }
-  }, [visualThreshold, narrativeThreshold, springLengthModulator, allEdges, minVisual, maxVisual, minNarrative, maxNarrative]);
+  }, [visualThreshold, narrativeThreshold, springLengthModulator, allEdges, minVisual, maxVisual, minNarrative, maxNarrative, p]);
 
   useEffect(() => {
     if (networkInstanceRef.current) {
@@ -402,6 +419,44 @@ function Graph({
     };
   }, [selectedNodeId]);
   
+  useEffect(() => {
+    if (networkInstanceRef.current) {
+      networkInstanceRef.current.on('selectEdge', (params) => {
+        if (params.edges.length > 0) {
+          const edgeId = params.edges[0];
+          const edge = networkInstanceRef.current.body.data.edges.get(edgeId);
+          setSelectedEdgeId(edgeId);
+          console.log("Selected Edge Title:", edge.title); // Debug
+        } else {
+          setSelectedEdgeId(null);
+        }
+      });
+  
+      networkInstanceRef.current.on('deselectEdge', () => {
+        setSelectedEdgeId(null);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'c' && selectedEdgeId !== null && networkInstanceRef.current) {
+        const edge = networkInstanceRef.current.body.data.edges.get(selectedEdgeId);
+        if (edge && edge.title) {
+          navigator.clipboard.writeText(edge.title)
+            .then(() => alert('Edge title copied to clipboard!'))
+            .catch((err) => console.error('Failed to copy edge title:', err));
+        }
+      }
+    };
+  
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedEdgeId]);
+  
+  
 
   function computeOverallScore(visualScore, narrativeScore) {
     const visualWeight = 0.5;
@@ -433,43 +488,49 @@ function Graph({
     }
   }
 
-  function filterAndUpdateEdges() {
-    const edges = networkInstanceRef.current.body.data.edges;
-    edges.clear();
 
-    const filteredEdges = allEdges
-      .filter(edge =>
-        edge.visual_connectivity_score >= visualThreshold &&
-        edge.narrative_connectivity_score >= narrativeThreshold
-      )
-      .map(edge => {
-        const overall_score = computeOverallScore(
-          (edge.visual_connectivity_score - minVisual) / (maxVisual - minVisual || 1),
-          (edge.narrative_connectivity_score - minNarrative) / (maxNarrative - minNarrative || 1)
-        );
-        const capped_score = Math.min(overall_score, 1.0);
-        const newWidth = 1 + capped_score * 5;
-        const newColor = getColorFromScore(capped_score);
-        const baseLength = 300 * (1 - capped_score) + 100;
-        const newLength = baseLength * springLengthModulator;
+function filterAndUpdateEdges() {
+  const edges = networkInstanceRef.current.body.data.edges;
+  edges.clear();
 
-        const isOnThreshold =
-          Math.abs(edge.visual_connectivity_score - visualThreshold) < 1e-10 ||
-          Math.abs(edge.narrative_connectivity_score - narrativeThreshold) < 1e-10;
+  // Use the dynamic p value from props
+  const exponent = p; // Renamed for clarity
 
-        return {
-          from: edge.from,
-          to: edge.to,
-          width: newWidth,
-          color: isOnThreshold ? 'silver' : newColor,
-          title: edge.title,
-          length: isOnThreshold ? (newLength * 1.5) : newLength,
-          physics: !isOnThreshold
-        };
-      });
+  const filteredEdges = allEdges
+    .filter(edge =>
+      edge.visual_connectivity_score >= visualThreshold &&
+      edge.narrative_connectivity_score >= narrativeThreshold
+    )
+    .map(edge => {
+      const overall_score = computeOverallScore(
+        (edge.visual_connectivity_score - minVisual) / (maxVisual - minVisual || 1),
+        (edge.narrative_connectivity_score - minNarrative) / (maxNarrative - minNarrative || 1)
+      );
+      const capped_score = Math.min(overall_score, 1.0);
+      const newWidth = 1 + capped_score * 5;
+      const newColor = getColorFromScore(capped_score);
+      const baseLength = 1000 * Math.pow(1 - capped_score, exponent) + 30; // Updated to use exponent
+      const newLength = baseLength * springLengthModulator;
 
-    edges.add(filteredEdges);
-  }
+      const isOnThreshold =
+        Math.abs(edge.visual_connectivity_score - visualThreshold) < 1e-10 ||
+        Math.abs(edge.narrative_connectivity_score - narrativeThreshold) < 1e-10;
+
+      return {
+        from: edge.from,
+        to: edge.to,
+        width: newWidth,
+        color: isOnThreshold ? 'silver' : newColor,
+        title: edge.title,
+        length: isOnThreshold ? (newLength * 1.5) : newLength,
+        physics: !isOnThreshold
+      };
+    });
+
+  edges.add(filteredEdges);
+}
+
+  
 
   function updatePhysicsSettings() {
     const newPhysicsOptions = {

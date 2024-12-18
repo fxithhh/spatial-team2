@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 // Components
-import Graph from '../components/Graph';
-import Canvas from '../components/Canvas';
 import OverlayComponent from '../components/OverlayComponent';
 import Breadcrumb from '../components/breadcrumb';
 import { ArrowsRightLeftIcon, ListBulletIcon, XMarkIcon } from '@heroicons/react/24/outline';
@@ -30,17 +28,18 @@ const ExhibitDetail = () => {
 
     // State to hold the values of each slider (renamed to match Graph.js props)
     const [values, setValues] = useState({
-        narrativeThreshold: 6.0,         // was narrative
-        visualThreshold: 4.0,           // was visual
-        repulsionStrength: 10,          // was repelling_strength
-        springLengthModulator: 0.7,     // was spring_length
-        springStiffnessModulator: 0.7,  // was spring_strength
-        centralGravity: 0.001,          // newly added to match Graph
+        narrativeThreshold: 6.0,
+        visualThreshold: 4.0,
+        repulsionStrength: 10,
+        springLengthModulator: 0.7,
+        springStiffnessModulator: 0.7,
+        centralGravity: 0.001,
         safety_distance: 25,
         corridor_width: 2.5,
         hose_length: 50,
         hose_radius: 200,
         selectedExhibit: null,
+        p: 2.5, // Added p with default value
     });
 
     // Handler to update state when slider value changes
@@ -154,15 +153,17 @@ const ExhibitDetail = () => {
                 {/* Main View Area */}
                 <div className="flex w-3/4 bg-white relative border-black border-2 z-40">
                     {/* Main View */}
-                    <OverlayComponent
-                        visualThreshold={values.visualThreshold}
-                        narrativeThreshold={values.narrativeThreshold}
-                        springLengthModulator={values.springLengthModulator}
-                        springStiffnessModulator={values.springStiffnessModulator}
-                        repulsionStrength={values.repulsionStrength}
-                        centralGravity={values.centralGravity}
-                        onViewModeChange={setOverlayViewMode}
-                    />
+<OverlayComponent
+    visualThreshold={values.visualThreshold}
+    narrativeThreshold={values.narrativeThreshold}
+    springLengthModulator={values.springLengthModulator}
+    springStiffnessModulator={values.springStiffnessModulator}
+    repulsionStrength={values.repulsionStrength}
+    centralGravity={values.centralGravity}
+    p={values.p} // Passing p as a prop
+    onViewModeChange={setOverlayViewMode}
+/>
+
                 </div>
 
                 {/* Side Panel */}
@@ -173,7 +174,7 @@ const ExhibitDetail = () => {
                             <>
                                 <h2 className="text-2xl font-bold text-black mb-2">Artwork Connections</h2>
                                 <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">
-                                Instructions: Click on a node to select it, then press F to fix/unfix its position. Drag fixed nodes to temporarily unfix them. Press H to hide a node, and I to toggle image mode. Press +/- to grow or shrink a node. 
+                                    Instructions: Click on a node to select it, then press F to fix/unfix its position. Drag fixed nodes to temporarily unfix them. Press H to hide a node, and I to toggle image mode. Press +/- to grow or shrink a node.
                                 </p>
                                 <div className="space-y-4">
                                     {/* Narrative Connectivity Threshold */}
@@ -182,7 +183,7 @@ const ExhibitDetail = () => {
                                             <label className="font-bold text-gray-800 text-xl">Narrative Connectivity Passing Score</label>
                                             <p className="font-bold text-gray-800 text-xl text-right">{values.narrativeThreshold}</p>
                                         </div>
-                                        <p className="text-gray-500 text-lg">Maximum allowable travel distance in case of an emergency.</p>
+                                        <p className="text-gray-500 text-lg">Passing score to display edges.</p>
                                         <input
                                             type="range"
                                             name="narrativeThreshold"
@@ -233,6 +234,26 @@ const ExhibitDetail = () => {
                                         />
                                     </div>
 
+                                    {/* Exponent (p) Slider */}
+                                    <div className='my-4'>
+                                        <div className='grid grid-cols-[3fr_1fr]'>
+                                            <label className="font-bold text-gray-800 text-xl">Exponent (p)</label>
+                                            <p className="font-bold text-gray-800 text-xl text-right">{values.p.toFixed(1)}</p>
+                                        </div>
+                                        <p className="text-gray-500 text-lg">Adjust the exponent for exponential scaling of edge lengths.</p>
+                                        <input
+                                            type="range"
+                                            name="p"
+                                            min="0"
+                                            max="10"
+                                            step="0.01"
+                                            value={values.p}
+                                            onChange={handleChange}
+                                            className="w-full accent-brand mt-4"
+                                        />
+                                    </div>
+
+
                                     {/* Spring Length Modulator */}
                                     <div className='my-4'>
                                         <div className='grid grid-cols-[3fr_1fr]'>
@@ -245,7 +266,7 @@ const ExhibitDetail = () => {
                                             name="springLengthModulator"
                                             min="0"
                                             max="3.0"
-                                            step={0.1}
+                                            step={0.01}
                                             value={values.springLengthModulator}
                                             onChange={handleChange}
                                             className="w-full accent-brand my-4"
@@ -264,7 +285,7 @@ const ExhibitDetail = () => {
                                             name="springStiffnessModulator"
                                             min="0.1"
                                             max="3.0"
-                                            step={0.1}
+                                            step={0.01}
                                             value={values.springStiffnessModulator}
                                             onChange={handleChange}
                                             className="w-full accent-brand my-4"
@@ -297,7 +318,7 @@ const ExhibitDetail = () => {
                                 <h2 className="text-2xl font-bold text-black mb-2">Fire Safety Guidelines</h2>
                                 <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">
                                     <strong>Tool Hotkeys</strong>
-                                    <br/>
+                                    <br />
                                     <strong>W: Wall, E: Entrance, F: Fire Escape</strong>
                                 </p>
                                 <div className="space-y-4">

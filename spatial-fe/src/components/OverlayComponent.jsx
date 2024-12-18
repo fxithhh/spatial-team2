@@ -9,7 +9,8 @@ function OverlayComponent({
     springStiffnessModulator,
     repulsionStrength,
     centralGravity,
-    onViewModeChange
+    onViewModeChange,
+    p
 }) {
     // State order:
     // 0: Floorplan Only
@@ -150,6 +151,7 @@ function OverlayComponent({
                     springStiffnessModulator={springStiffnessModulator}
                     repulsionStrength={repulsionStrength}
                     centralGravity={centralGravity}
+                    p={p}
                 />
             </div>
 
