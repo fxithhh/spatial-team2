@@ -124,8 +124,10 @@ function Graph({
         size: 20,
         shape: 'dot',
         imageurl: node.imageurl,
-        fixed: false
+        fixed: false,
+        physics: true // Enable physics by default
       }));
+      
 
       const edgesData = data.links.map((link, index) => {
         const visualReasoningText = link.visual_connectivity_summary || link.visual_reasoning;
@@ -479,11 +481,12 @@ function Graph({
     if (node) {
       const isFixed = node.fixed || false;
       const isFullyFixed = typeof isFixed === 'object' ? (node.fixed.x && node.fixed.y) : isFixed;
-
+  
       network.body.data.nodes.update({
         id: nodeId,
         fixed: !isFullyFixed ? { x: true, y: true } : false,
-        color: !isFullyFixed ? 'orange' : 'lightgreen'
+        color: !isFullyFixed ? 'orange' : 'lightgreen',
+        physics: isFullyFixed // Disable physics when fixed, enable when unfixed
       });
     }
   }
@@ -532,24 +535,24 @@ function filterAndUpdateEdges() {
 
   
 
-  function updatePhysicsSettings() {
-    const newPhysicsOptions = {
-      physics: {
-        enabled: true,
-        forceAtlas2Based: {
-          gravitationalConstant: -repulsionStrength,
-          centralGravity: centralGravity,
-          springConstant: 0.1 * springStiffnessModulator,
+function updatePhysicsSettings() {
+  const newPhysicsOptions = {
+    physics: {
+      enabled: true,
+      forceAtlas2Based: {
+        gravitationalConstant: -repulsionStrength,
+        centralGravity: centralGravity,
+        springConstant: 0.1 * springStiffnessModulator,
           damping: 0.4
-        },
-        solver: 'forceAtlas2Based',
+      },
+      solver: 'forceAtlas2Based',
         stabilization: { iterations: 50 }
       }
-    };
-    networkInstanceRef.current.setOptions(newPhysicsOptions);
-    networkInstanceRef.current.stopSimulation();
-    networkInstanceRef.current.startSimulation();
-  }
+  };
+  networkInstanceRef.current.setOptions(newPhysicsOptions);
+  networkInstanceRef.current.stopSimulation();
+  networkInstanceRef.current.startSimulation();
+}
 
   const progressPercentage = pairCount > 0 ? Math.min((progress / pairCount) * 100, 100) : 0;
 
