@@ -34,21 +34,23 @@ graph_collection = db['ArtworksGraph']
 # Initialize OpenAI client
 client = OpenAI(api_key=API_KEY)
 
-rubrics = """Visual Connectivity Rubric:
-Color, Composition, Texture, Line, Shape, and Form
-Recurring visual motifs or symbolic representations
-Symbolic and Aesthetic Themes
+rubrics = """Visual Connectivity Rubric
+
+Elemental Harmony: Assessment of how color, composition, texture, line, shape, and form work together to create a unified visual experience.
+Visual Patterns and Symbolism: Identification and evaluation of recurring motifs and their symbolic significance.
+Thematic and Aesthetic Impact: Analysis of the overarching themes and their aesthetic appeal.
 
 For Visual Connectivity:
 1. Provide detailed reasoning.
 2. Assign a score out of 10.
 3. Provide a concise summary of the reasoning in 10 words or less.
 
-Narrative Connectivity Rubric:
-Historical or Cultural Context
-Subject Matter (themes, stories, or subjects)
-Emotional and Intellectual Resonance
-Intended Audience and Purpose
+Narrative Connectivity Rubric
+
+Contextual Depth: Examination of historical or cultural context and its integration.
+Thematic Substance: Evaluation of the subject matter, including themes, stories, or core subjects.
+Resonance and Engagement: Assessment of the emotional and intellectual impact of the narrative.
+Audience Alignment: Review of the narrative’s purpose and its appeal to the intended audience.
 
 For Narrative Connectivity:
 1. Provide detailed reasoning.
