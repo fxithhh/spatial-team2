@@ -32,12 +32,19 @@ function Graph({
   const [originalNodes, setOriginalNodes] = useState([]);
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
 
-
-
   const [loading, setLoading] = useState(false);
   const [pairCount, setPairCount] = useState(0);
   const [progress, setProgress] = useState(0);
   const [progressInterval, setProgressInterval] = useState(null);
+
+  // Map subsections to distinct colors
+  const subsectionColors = {
+    "Resilience in Adversity": "blue",
+    "Transforming the Ordinary": "red",
+    "Rituals of Resistance": "purple",
+    "Materiality and Objects": "orange",
+    "Cultural Narratives": "green"
+  };
 
   const getColorFromScore = (score) => {
     const red = Math.round(255 * score);
@@ -52,7 +59,6 @@ function Graph({
   }, [progressInterval]);
 
   const startProgressInterval = useCallback((totalPairs) => {
-    // Clear any existing interval
     stopProgressInterval();
     setProgress(0);
     const interval = setInterval(() => {
@@ -63,7 +69,7 @@ function Graph({
         }
         return newVal;
       });
-    }, 4000); // increment every 4.5 seconds
+    }, 4000);
     setProgressInterval(interval);
   }, [stopProgressInterval]);
 
@@ -101,7 +107,7 @@ function Graph({
           }
 
           if (computeData.status === "in progress") {
-            fetchPairCount(); // fetch pair count and start progress
+            fetchPairCount();
             pollStatus();
           } else if (computeData.status === "complete") {
             setLoading(false);
@@ -117,17 +123,23 @@ function Graph({
 
       const data = await response.json();
 
-      var nodesData = data.nodes.map(node => ({
-        id: node.id,
-        label: `${node.name}\n ${node.artist}`,
-        color: 'lightgreen',
-        size: 20,
-        shape: 'dot',
-        imageurl: node.imageurl,
-        fixed: false,
-        physics: true // Enable physics by default
-      }));
-      
+      var nodesData = data.nodes.map(node => {
+        let nodeColor = 'lightgreen';
+        // If assigned_subsection is present and matches one of the known subsections, use the mapped color
+        if (node.assigned_subsection && subsectionColors[node.assigned_subsection]) {
+          nodeColor = subsectionColors[node.assigned_subsection];
+        }
+
+        return {
+          id: node.id,
+          label: `${node.name}\n ${node.artist}`,
+          color: nodeColor,
+          size: 20,
+          shape: 'dot',
+          imageurl: node.imageurl,
+          fixed: false
+        };
+      });
 
       const edgesData = data.links.map((link, index) => {
         const visualReasoningText = link.visual_connectivity_summary || link.visual_reasoning;
@@ -150,11 +162,7 @@ function Graph({
           `
         };
       });
-      
-      
-      
 
-      // Update min/max scores
       if (edgesData.length > 0) {
         setMinVisual(Math.min(...edgesData.map(e => e.visual_connectivity_score)));
         setMaxVisual(Math.max(...edgesData.map(e => e.visual_connectivity_score)));
@@ -163,10 +171,10 @@ function Graph({
       }
 
       setAllNodes(nodesData);
-      setOriginalNodes(nodesData); // Save a backup of the nodes
+      setOriginalNodes(nodesData);
       setAllEdges(edgesData);
       setLoading(false);
-      stopProgressInterval(); // Stop the progress if it was running
+      stopProgressInterval();
       setProgress(0);
     } catch (error) {
       console.error('Error fetching graph data:', error);
@@ -179,10 +187,8 @@ function Graph({
       const response = await fetch(`http://localhost:5000/api/exhibits/${exhibitId}/status`);
       const data = await response.json();
       if (data.status === 'in progress') {
-        // Still computing, wait 4 seconds then poll again
         setTimeout(pollStatus, 4000);
       } else if (data.status === 'complete') {
-        // Done computing, fetch the graph again
         fetchGraphData();
       } else if (data.status === 'not started') {
         setLoading(false);
@@ -198,17 +204,14 @@ function Graph({
   const handleUnhideNode = (nodeId) => {
     const nodeToUnhide = hiddenNodes.find((node) => node.id === nodeId);
     if (nodeToUnhide && networkInstanceRef.current) {
-      // Add the node back to the network with the correct label based on the current showLabels state
       networkInstanceRef.current.body.data.nodes.add({
         ...nodeToUnhide,
-        label: showLabels ? nodeToUnhide.label : "", // Show or hide label as needed
+        label: showLabels ? nodeToUnhide.label : "",
       });
-      setHiddenNodes(hiddenNodes.filter((node) => node.id !== nodeId)); // Update hidden nodes state
+      setHiddenNodes(hiddenNodes.filter((node) => node.id !== nodeId));
     }
   };
   
-  
-
   const calculateAverageSpringEnergy = () => {
     if (!networkInstanceRef.current) return;
 
@@ -223,21 +226,16 @@ function Graph({
       const toNode = nodes[edge.toId];
 
       if (fromNode && toNode) {
-        // Get positions of the nodes
         const x1 = fromNode.x, y1 = fromNode.y;
         const x2 = toNode.x, y2 = toNode.y;
 
-        // Calculate Euclidean distance (actual length of the spring)
         const actualLength = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 
-        // Retrieve the target spring length and spring constant
-        const springLength = edge.options.length || 100; // Default spring length
+        const springLength = edge.options.length || 100;
         const springConstant = 0.1 * springStiffnessModulator;
 
-        // Calculate spring displacement (Delta L)
         const deltaL = actualLength - springLength;
 
-        // Calculate energy for this edge and add to total energy
         const energy = 0.5 * springConstant * deltaL * deltaL;
         totalEnergy += energy;
         edgeCount++;
@@ -251,11 +249,8 @@ function Graph({
     alert(`Total Spring Energy: ${totalEnergy.toFixed(2)}\nAverage Spring Energy: ${averageEnergy.toFixed(2)}`);
   };
 
-
-
   useEffect(() => {
     fetchGraphData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exhibitId]);
 
   useEffect(() => {
@@ -287,16 +282,15 @@ function Graph({
         if (node) {
           const isHidden = hiddenNodes.some((hidden) => hidden.id === selectedNodeId);
           if (isHidden) {
-            handleUnhideNode(selectedNodeId); // Unhide the node
+            handleUnhideNode(selectedNodeId);
           } else {
-            // Preserve the label regardless of showLabels state
             const hiddenNode = {
               ...node,
-              label: originalNodes.find((n) => n.id === node.id)?.label || "", // Ensure original label is saved
+              label: originalNodes.find((n) => n.id === node.id)?.label || "",
             };
-  
-            setHiddenNodes([...hiddenNodes, hiddenNode]); // Add to hidden list
-            networkInstanceRef.current.body.data.nodes.remove(selectedNodeId); // Remove from network
+
+            setHiddenNodes([...hiddenNodes, hiddenNode]);
+            networkInstanceRef.current.body.data.nodes.remove(selectedNodeId);
           }
         }
       }
@@ -305,7 +299,6 @@ function Graph({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [selectedNodeId, hiddenNodes, showLabels, originalNodes]);
-  
 
   useEffect(() => {
     const handleKeyDown = event => {
@@ -400,13 +393,12 @@ function Graph({
       if (selectedNodeId !== null && networkInstanceRef.current) {
         const node = networkInstanceRef.current.body.data.nodes.get(selectedNodeId);
         if (node) {
-          let newSize = node.size || 20; // Default size
+          let newSize = node.size || 20;
           if (event.key === '=') {
-            newSize = Math.min(newSize + 4, 100); // Increment by 4, max 100
+            newSize = Math.min(newSize + 4, 100);
           } else if (event.key === '-') {
-            newSize = Math.max(newSize - 4, 2); // Decrement by 4, min 0
+            newSize = Math.max(newSize - 4, 2);
           }
-          // Update the node with the new size
           networkInstanceRef.current.body.data.nodes.update({
             id: selectedNodeId,
             size: newSize,
@@ -428,7 +420,7 @@ function Graph({
           const edgeId = params.edges[0];
           const edge = networkInstanceRef.current.body.data.edges.get(edgeId);
           setSelectedEdgeId(edgeId);
-          console.log("Selected Edge Title:", edge.title); // Debug
+          console.log("Selected Edge Title:", edge.title);
         } else {
           setSelectedEdgeId(null);
         }
@@ -457,8 +449,6 @@ function Graph({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [selectedEdgeId]);
-  
-  
 
   function computeOverallScore(visualScore, narrativeScore) {
     const visualWeight = 0.5;
@@ -481,78 +471,73 @@ function Graph({
     if (node) {
       const isFixed = node.fixed || false;
       const isFullyFixed = typeof isFixed === 'object' ? (node.fixed.x && node.fixed.y) : isFixed;
-  
+
       network.body.data.nodes.update({
         id: nodeId,
         fixed: !isFullyFixed ? { x: true, y: true } : false,
-        color: !isFullyFixed ? 'orange' : 'lightgreen',
-        physics: isFullyFixed // Disable physics when fixed, enable when unfixed
+        color: !isFullyFixed ? 'orange' : node.color || 'lightgreen'
       });
     }
   }
 
+  function filterAndUpdateEdges() {
+    const edges = networkInstanceRef.current.body.data.edges;
+    edges.clear();
 
-function filterAndUpdateEdges() {
-  const edges = networkInstanceRef.current.body.data.edges;
-  edges.clear();
+    const exponent = p;
 
-  // Use the dynamic p value from props
-  const exponent = p; // Renamed for clarity
+    const filteredEdges = allEdges
+      .filter(edge =>
+        edge.visual_connectivity_score >= visualThreshold &&
+        edge.narrative_connectivity_score >= narrativeThreshold
+      )
+      .map(edge => {
+        const overall_score = computeOverallScore(
+          (edge.visual_connectivity_score - minVisual) / (maxVisual - minVisual || 1),
+          (edge.narrative_connectivity_score - minNarrative) / (maxNarrative - minNarrative || 1)
+        );
+        const capped_score = Math.min(overall_score, 1.0);
+        const newWidth = 1 + capped_score * 5;
+        const newColor = getColorFromScore(capped_score);
+        const baseLength = 1000 * Math.pow(1 - capped_score, exponent) + 30;
+        const newLength = baseLength * springLengthModulator;
 
-  const filteredEdges = allEdges
-    .filter(edge =>
-      edge.visual_connectivity_score >= visualThreshold &&
-      edge.narrative_connectivity_score >= narrativeThreshold
-    )
-    .map(edge => {
-      const overall_score = computeOverallScore(
-        (edge.visual_connectivity_score - minVisual) / (maxVisual - minVisual || 1),
-        (edge.narrative_connectivity_score - minNarrative) / (maxNarrative - minNarrative || 1)
-      );
-      const capped_score = Math.min(overall_score, 1.0);
-      const newWidth = 1 + capped_score * 5;
-      const newColor = getColorFromScore(capped_score);
-      const baseLength = 1000 * Math.pow(1 - capped_score, exponent) + 30; // Updated to use exponent
-      const newLength = baseLength * springLengthModulator;
+        const isOnThreshold =
+          Math.abs(edge.visual_connectivity_score - visualThreshold) < 1e-10 ||
+          Math.abs(edge.narrative_connectivity_score - narrativeThreshold) < 1e-10;
 
-      const isOnThreshold =
-        Math.abs(edge.visual_connectivity_score - visualThreshold) < 1e-10 ||
-        Math.abs(edge.narrative_connectivity_score - narrativeThreshold) < 1e-10;
+        return {
+          from: edge.from,
+          to: edge.to,
+          width: newWidth,
+          color: isOnThreshold ? 'silver' : newColor,
+          title: edge.title,
+          length: isOnThreshold ? (newLength * 1.5) : newLength,
+          physics: !isOnThreshold
+        };
+      });
 
-      return {
-        from: edge.from,
-        to: edge.to,
-        width: newWidth,
-        color: isOnThreshold ? 'silver' : newColor,
-        title: edge.title,
-        length: isOnThreshold ? (newLength * 1.5) : newLength,
-        physics: !isOnThreshold
-      };
-    });
+    edges.add(filteredEdges);
+  }
 
-  edges.add(filteredEdges);
-}
-
-  
-
-function updatePhysicsSettings() {
-  const newPhysicsOptions = {
-    physics: {
-      enabled: true,
-      forceAtlas2Based: {
-        gravitationalConstant: -repulsionStrength,
-        centralGravity: centralGravity,
-        springConstant: 0.1 * springStiffnessModulator,
+  function updatePhysicsSettings() {
+    const newPhysicsOptions = {
+      physics: {
+        enabled: true,
+        forceAtlas2Based: {
+          gravitationalConstant: -repulsionStrength,
+          centralGravity: centralGravity,
+          springConstant: 0.1 * springStiffnessModulator,
           damping: 0.4
-      },
-      solver: 'forceAtlas2Based',
+        },
+        solver: 'forceAtlas2Based',
         stabilization: { iterations: 50 }
       }
-  };
-  networkInstanceRef.current.setOptions(newPhysicsOptions);
-  networkInstanceRef.current.stopSimulation();
-  networkInstanceRef.current.startSimulation();
-}
+    };
+    networkInstanceRef.current.setOptions(newPhysicsOptions);
+    networkInstanceRef.current.stopSimulation();
+    networkInstanceRef.current.startSimulation();
+  }
 
   const progressPercentage = pairCount > 0 ? Math.min((progress / pairCount) * 100, 100) : 0;
 
@@ -605,55 +590,49 @@ function updatePhysicsSettings() {
           ></div>
         </div>
       )}
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={calculateAverageSpringEnergy}
-              className="px-4 py-2 border border-gray-200 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition-colors duration-150"
-            >
-              Calculate Total and Average Spring Energy
-            </button>
-            <button
-  onClick={() => {
-    setShowLabels((prev) => !prev); // Toggle label visibility
-    if (networkInstanceRef.current) {
-      const updatedNodes = networkInstanceRef.current.body.data.nodes.getIds().map((id) => {
-        const node = networkInstanceRef.current.body.data.nodes.get(id);
-        return {
-          id: node.id,
-          label: !showLabels ? originalNodes.find((n) => n.id === id)?.label : "", // Restore original label when showing
-        };
-      });
-      networkInstanceRef.current.body.data.nodes.update(updatedNodes);
-    }
-  }}
-  className="px-4 py-2 border border-gray-200 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition-colors duration-150"
->
-  {showLabels ? "Hide Names" : "Show Names"}
-</button>
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={calculateAverageSpringEnergy}
+          className="px-4 py-2 border border-gray-200 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition-colors duration-150"
+        >
+          Calculate Total and Average Spring Energy
+        </button>
+        <button
+          onClick={() => {
+            setShowLabels((prev) => !prev);
+            if (networkInstanceRef.current) {
+              const updatedNodes = networkInstanceRef.current.body.data.nodes.getIds().map((id) => {
+                const node = networkInstanceRef.current.body.data.nodes.get(id);
+                return {
+                  id: node.id,
+                  label: !showLabels ? originalNodes.find((n) => n.id === id)?.label : "",
+                };
+              });
+              networkInstanceRef.current.body.data.nodes.update(updatedNodes);
+            }
+          }}
+          className="px-4 py-2 border border-gray-200 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition-colors duration-150"
+        >
+          {showLabels ? "Hide Names" : "Show Names"}
+        </button>
+      </div>
 
-
-
-          </div>
-      {/* Hidden Nodes Section */}
       {hiddenNodes.length > 0 && (
         <div className="hidden-nodes-container p-4 border border-gray-200 rounded-md mt-6">
-
           <h3 className="text-sm font-semibold text-gray-800 mb-3">Hidden Nodes</h3>
           <div className="flex flex-wrap gap-2">
-          {hiddenNodes.map((node) => (
-  <button
-    key={node.id}
-    onClick={() => handleUnhideNode(node.id)}
-    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors duration-150"
-  >
-    {node.label || "Unnamed Node"} {/* Always display stored label */}
-  </button>
-))}
-
+            {hiddenNodes.map((node) => (
+              <button
+                key={node.id}
+                onClick={() => handleUnhideNode(node.id)}
+                className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+              >
+                {node.label || "Unnamed Node"}
+              </button>
+            ))}
           </div>
         </div>
       )}
-
     </div>
   );
 }
