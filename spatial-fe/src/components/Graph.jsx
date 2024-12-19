@@ -496,14 +496,14 @@ function Graph({
     if (node) {
       const isFixed = node.fixed || false;
       const isFullyFixed = typeof isFixed === 'object' ? (node.fixed.x && node.fixed.y) : isFixed;
-
+  
       network.body.data.nodes.update({
         id: nodeId,
         fixed: !isFullyFixed ? { x: true, y: true } : false,
-        color: !isFullyFixed ? 'orange' : node.color || 'lightgreen'
+        color: !isFullyFixed ? 'orange' : 'lightgreen'
       });
     }
-  }
+  }  
 
   function filterAndUpdateEdges() {
     const edges = networkInstanceRef.current.body.data.edges;

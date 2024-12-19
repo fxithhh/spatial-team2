@@ -30,9 +30,9 @@ const ExhibitDetail = () => {
     const [values, setValues] = useState({
         narrativeThreshold: 6.0,
         visualThreshold: 4.0,
-        repulsionStrength: 10,
-        springLengthModulator: 0.7,
-        springStiffnessModulator: 0.7,
+        repulsionStrength: 100,
+        springLengthModulator: 3,
+        springStiffnessModulator: 1,
         centralGravity: 0.001,
         safety_distance: 25,
         corridor_width: 2.5,
