@@ -319,7 +319,7 @@ const ExhibitDetail = () => {
                                 <p className="text-lg text-gray-800 mb-4 font-['Roboto_Condensed']">
                                     <strong>Tool Hotkeys</strong>
                                     <br />
-                                    <strong>W: Wall, E: Entrance, F: Fire Escape</strong>
+                                    <strong>W: Wall, E: Entrance, F: Fire Escape, delete/backspace to delete selected wall, resize rectangles by dragging on the corner.</strong>
                                 </p>
                                 <div className="space-y-4">
                                     {/* Safety Travel Distance Slider */}
