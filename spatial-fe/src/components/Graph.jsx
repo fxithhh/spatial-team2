@@ -313,6 +313,31 @@ function Graph({
     };
   }, [selectedNodeId]);
 
+  // New effect for coloring nodes with QWERT keys
+  useEffect(() => {
+    const colorMap = {
+      'q': 'lightgreen',
+      'w': 'red',
+      'e': 'blue',
+      'r': 'yellow',
+      't': 'purple'
+    };
+    
+    const handleColorKeyDown = (event) => {
+      if (selectedNodeId !== null && networkInstanceRef.current && colorMap[event.key]) {
+        networkInstanceRef.current.body.data.nodes.update({
+          id: selectedNodeId,
+          color: colorMap[event.key]
+        });
+      }
+    };
+    
+    document.addEventListener('keydown', handleColorKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleColorKeyDown);
+    };
+  }, [selectedNodeId]);
+
   useEffect(() => {
     if (networkRef.current && allNodes.length > 0 && allEdges.length > 0 && !networkInstanceRef.current) {
       const nodes = new DataSet(allNodes);
@@ -575,6 +600,7 @@ function Graph({
               </button>
               <strong>Instructions:</strong> Click on a node to select it, then press <strong>F</strong> to fix/unfix its position.
               Drag fixed nodes to temporarily unfix them. Press <strong>H</strong> to hide a node, and <strong>I</strong> to toggle image mode.
+              Press <strong>Q/W/E/R/T</strong> to change the node color.
             </div>
           )}
 
