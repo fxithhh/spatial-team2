@@ -265,7 +265,7 @@ const ExhibitDetail = () => {
                                             type="range"
                                             name="springLengthModulator"
                                             min="0"
-                                            max="3.0"
+                                            max="5.0"
                                             step={0.01}
                                             value={values.springLengthModulator}
                                             onChange={handleChange}
